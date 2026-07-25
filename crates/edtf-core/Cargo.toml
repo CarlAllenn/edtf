@@ -1,0 +1,13 @@
+[package]
+name = "edtf-core"
+version = "0.0.1"
+description = "EDTF (ISO 8601-2) parsing and validation, levels 0-2. Zero dependencies."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"], optional = true }
+
+[features]
+serde = ["dep:serde"]

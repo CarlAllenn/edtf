@@ -1,0 +1,24 @@
+version: "3"
+
+tasks:
+  test:
+    desc: Run the test suite (core crate)
+    cmds:
+      - cargo test -p edtf-core
+
+  fmt:
+    desc: Format all code
+    cmds:
+      - cargo fmt --all
+
+  lint:
+    desc: Clippy with warnings as errors
+    cmds:
+      - cargo clippy --workspace --all-features -- -D warnings
+
+  check:
+    desc: Format check + lint + tests
+    cmds:
+      - cargo fmt --all --check
+      - task: lint
+      - task: test

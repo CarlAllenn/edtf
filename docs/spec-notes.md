@@ -275,6 +275,18 @@ week/day-of-month/day-of-year; `X*` (explicit-form-only construct, 4.6.2).
   the old restriction generally, but EDTF's L1 feature list pairs "negative year"
   with the 4-digit implicit form and provides `Y-…` for longer. Proposal: 4-digit
   `-YYYY` only; longer requires `Y-`.
+- **D14 — masked months match calendar months only:** `X`-masked month
+  candidates are drawn from 01–12 (9.2.2 Example 6 reads `X2` as Feb/Dec, not
+  22/32); sub-year codes 21–41 must be written explicitly. So `2X` as a month
+  is invalid (no calendar month matches).
+- **D15 — time-shift bound:** |shift| ≤ 14:00, minutes ≤ 59 (adopted from the
+  legacy conformance corpus, which rejects `+15:00`; ISO gives no bound).
+- **D16 — unspecified digits inside interval endpoints are Level 2:** §10.4
+  is listed in neither A.5 nor A.6; LoC EDTF places interval-with-unspecified
+  at L2, so `2004-06-XX/2004-07-03` classifies as L2.
+- **D17 — negative years may carry month/day:** `-1985-04-12` is accepted
+  (4.4.1.2 extends the year component generally), classified L1. LoC examples
+  show year-only negatives; revisit if interop testing disagrees.
 
 ## 10. Test-suite sources
 

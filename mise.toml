@@ -1,2 +1,16 @@
+min_version = "2026.7.12"
+
+[settings]
+lockfile = true                 # mise.lock records resolved versions + checksums
+pin = true                      # `mise use` writes exact versions, never ranges
+activate_aggressive = true      # tool bin-paths go to FRONT of PATH (system tools can never shadow pins)
+locked_verify_provenance = true # re-verify provenance on install even when the lockfile has entries
+minimum_release_age = "72h"     # never install a release younger than 3 days (supply-chain cooldown)
+
 [tools]
 rust = "1.97.1"
+task = "3.52.0"
+
+# Enforcement layer
+lefthook = "2.1.10"
+actionlint = "1.7.12"

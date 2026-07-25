@@ -1,5 +1,6 @@
 {
   "Exclude": [
+    "LICENSE-APACHE",
     "tests/fixtures/legacy/",
     "spec/",
     "Cargo.lock",

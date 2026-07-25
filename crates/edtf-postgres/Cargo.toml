@@ -1,0 +1,36 @@
+[package]
+name = "edtf-postgres"
+version = "0.1.0"
+description = "Postgres extension (pgrx) exposing edtf-core: EDTF validation, levels, canonical form and date bounds in SQL."
+edition = "2021"
+rust-version = "1.82"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/CarlAllenn/edtf"
+
+# Deliberately its own workspace: pgrx extensions need an independent
+# dependency graph and a locally-initialized pgrx toolchain.
+[workspace]
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+default = ["pg18"]
+pg18 = ["pgrx/pg18", "pgrx-tests/pg18"]
+pg_test = []
+
+[dependencies]
+edtf-core = { path = "../edtf-core", version = "0.1.0" }
+pgrx = "0.19.1"
+
+[dev-dependencies]
+pgrx-tests = "0.19.1"
+
+[profile.dev]
+panic = "unwind"
+
+[profile.release]
+panic = "unwind"
+opt-level = 3
+lto = "fat"
+codegen-units = 1

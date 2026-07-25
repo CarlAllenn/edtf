@@ -232,7 +232,10 @@ week/day-of-month/day-of-year; `X*` (explicit-form-only construct, 4.6.2).
   individual qualifiers, `X` anywhere, partially qualified/`..`-bounded interval
   endpoints.
 
-## 9. Decisions needed / ambiguities found (flag before coding tests)
+## 9. Decisions (RESOLVED — all implemented and tested as stated below)
+
+Where the ISO text is ambiguous or silent, these are the canonical behaviors
+of this implementation. Each is enforced by tests in `crates/edtf-core/tests/`.
 
 - **D1 — `Y1985`:** 4.7.2 says the Y-form "should" (not "shall") be used only
   beyond ±9999. LoC EDTF requires >4 digits. Decision: reject `Y1985`. Document.
@@ -287,6 +290,16 @@ week/day-of-month/day-of-year; `X*` (explicit-form-only construct, 4.6.2).
 - **D17 — negative years may carry month/day:** `-1985-04-12` is accepted
   (4.4.1.2 extends the year component generally), classified L1. LoC examples
   show year-only negatives; revisit if interop testing disagrees.
+- **D18 — intervals and set ranges must be ordered:** an interval (or `a..b`
+  range) whose end cannot possibly reach its start — start's earliest
+  completion later than end's latest — is invalid (`2004/2003`,
+  `{1672..1670}`), mirroring 7.14.2 Example 2. Overlap suffices: `2004-06/2004`
+  and `198X/1985` remain valid.
+- **D19 — Annex A.6.3 Example 2 is an erratum:** it prints `Y171010000S3` as
+  "between 171010000 and 171010999", contradicting the normative rule in
+  §4.4.3 (precision counts significant digits *from the left*: its own
+  Example 2 gives `3141592653S4` → 3141000000–3141999999) and the LoC EDTF
+  original. We follow §4.4.3: `Y171010000S3` → 171000000–171999999.
 
 ## 10. Test-suite sources
 

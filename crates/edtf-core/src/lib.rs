@@ -1,9 +1,12 @@
-//! EDTF (Extended Date/Time Format, ISO 8601-2:2019 Annex A) parsing and
-//! validation, conformance levels 0–2. Zero runtime dependencies; JSON
-//! support behind the optional `serde` feature.
+//! EDTF (Extended Date/Time Format, ISO 8601-2:2019 Annex A) parsing,
+//! validation, level classification, calendar bounds, and canonical
+//! formatting — conformance levels 0–2, complete.
+//!
+//! `#![no_std]` (requires `alloc`), zero runtime dependencies; JSON support
+//! behind the optional `serde` feature.
 //!
 //! ```
-//! use edtf_core::Edtf;
+//! use edtf_core::{Edtf, Bound};
 //!
 //! assert!(edtf_core::is_valid("1985-04-12"));           // level 0
 //! assert!(edtf_core::is_valid("2004-06~-11"));          // level 2 group qualification
@@ -11,14 +14,30 @@
 //!
 //! let d = Edtf::parse("1985-04-12?").unwrap();
 //! assert_eq!(d.level(), 1);
+//! assert!(d.is_uncertain());
+//!
+//! // Every expression maps to earliest/latest calendar-day bounds:
+//! let decade = Edtf::parse("156X").unwrap().bounds();
+//! assert_eq!(format!("{}", match decade.earliest { Bound::Date(d) => d, _ => panic!() }), "1560-01-01");
+//! assert_eq!(format!("{}", match decade.latest   { Bound::Date(d) => d, _ => panic!() }), "1569-12-31");
+//!
+//! // Display renders the canonical (spec-preferred) form:
+//! let messy = Edtf::parse("?2004-?06-?11").unwrap();
+//! assert_eq!(messy.to_string(), "2004-06-11?");
 //! ```
 //!
 //! The grammar and every validation decision are documented with ISO section
 //! citations in `docs/spec-notes.md` at the repository root.
+#![no_std]
 
+extern crate alloc;
+
+mod bounds;
+mod display;
 mod parser;
 mod types;
 
+pub use bounds::{Bound, BoundDate, Bounds};
 pub use types::{
     Date, DateField, DateTime, Edtf, Interval, IntervalEndpoint, ParseError, Precision, Qualifier,
     Set, SetElement, SetKind, Time, TimeShift, Year, YearKind,

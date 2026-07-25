@@ -1,0 +1,6 @@
+comment = 'EDTF (ISO 8601-2:2019 Annex A) validation, levels, canonical form and date bounds'
+default_version = '@CARGO_VERSION@'
+module_pathname = '$libdir/edtf_postgres'
+relocatable = false
+superuser = true
+trusted = true

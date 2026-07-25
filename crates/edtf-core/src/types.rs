@@ -4,13 +4,13 @@
 //! per-component qualification, unspecified-digit masks, endpoint kinds, and
 //! set semantics (see docs/spec-notes.md §6).
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+use alloc::vec::Vec;
 
 /// Error returned when an input is not valid EDTF.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ParseError {
+    /// Human-readable reason the input was rejected.
     pub message: &'static str,
 }
 
@@ -20,17 +20,20 @@ impl core::fmt::Display for ParseError {
     }
 }
 
-impl std::error::Error for ParseError {}
+impl core::error::Error for ParseError {}
 
 /// Uncertainty (`?`), approximation (`~`), or both (`%`), per ISO 8601-2 §3.2.6.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Qualifier {
+    /// The value's source is considered dubious (`?`).
     pub uncertain: bool,
+    /// The value is an estimate (`~`).
     pub approximate: bool,
 }
 
 impl Qualifier {
+    /// True if either flag is set.
     pub fn is_qualified(self) -> bool {
         self.uncertain || self.approximate
     }
@@ -43,27 +46,39 @@ impl Qualifier {
 
 /// The three syntactic forms a calendar year can take.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum YearKind {
     /// Four-digit year, possibly negative, possibly with `X` digits
     /// (`None` = unspecified digit).
     Standard {
+        /// True for years before year 0000 (written with a leading `-`).
         negative: bool,
+        /// The four digits, most significant first; `None` is an `X`.
         digits: [Option<u8>; 4],
     },
     /// `Y`-prefixed year beyond ±9999 (ISO 8601-2 §4.7.2).
-    Big { value: i64 },
+    Big {
+        /// The signed year value.
+        value: i64,
+    },
     /// `Y…E…` exponential year (ISO 8601-2 §4.7.3).
-    Exponential { significand: i64, exponent: u32 },
+    Exponential {
+        /// Signed significand; the year is `significand × 10^exponent`.
+        significand: i64,
+        /// Power-of-ten exponent.
+        exponent: u32,
+    },
 }
 
 /// A calendar year with optional significant-digit precision and qualification.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Year {
+    /// Which syntactic form the year uses, and its digits.
     pub kind: YearKind,
     /// `S`-suffix significant digits (ISO 8601-2 §4.4.3, §4.7.4).
     pub significant_digits: Option<u32>,
+    /// Qualification applying to the year component.
     pub qualifier: Qualifier,
 }
 
@@ -87,6 +102,7 @@ impl Year {
         }
     }
 
+    /// True if any digit is unspecified (`X`).
     pub fn has_unspecified(&self) -> bool {
         matches!(self.kind, YearKind::Standard { digits, .. } if digits.iter().any(|d| d.is_none()))
     }
@@ -94,9 +110,11 @@ impl Year {
 
 /// A two-digit month or day slot; `None` digits are unspecified (`X`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DateField {
+    /// Tens digit then ones digit; `None` is an `X`.
     pub digits: [Option<u8>; 2],
+    /// Qualification applying to this component.
     pub qualifier: Qualifier,
 }
 
@@ -106,6 +124,7 @@ impl DateField {
         Some(self.digits[0]? * 10 + self.digits[1]?)
     }
 
+    /// True if either digit is unspecified (`X`).
     pub fn has_unspecified(&self) -> bool {
         self.digits.iter().any(|d| d.is_none())
     }
@@ -113,26 +132,32 @@ impl DateField {
 
 /// Precision of a date expression (its lowest specified component).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Precision {
+    /// Year only (`1985`, `Y17E7`).
     Year,
+    /// Year and calendar month (`1985-04`).
     Month,
     /// Month slot holds a sub-year grouping code 21–41 (ISO 8601-2 §4.8).
     Season,
+    /// Complete calendar date (`1985-04-12`).
     Day,
 }
 
 /// A (possibly qualified, possibly partially unspecified) EDTF date.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Date {
+    /// The year component (always present).
     pub year: Year,
     /// Month 01–12 or sub-year grouping code 21–41.
     pub month: Option<DateField>,
+    /// Calendar day of month.
     pub day: Option<DateField>,
 }
 
 impl Date {
+    /// The precision of this date (its lowest specified component).
     pub fn precision(&self) -> Precision {
         if self.day.is_some() {
             Precision::Day
@@ -145,40 +170,75 @@ impl Date {
             Precision::Year
         }
     }
+
+    fn any_component<F: Fn(Qualifier) -> bool>(&self, f: F) -> bool {
+        f(self.year.qualifier)
+            || self.month.is_some_and(|m| f(m.qualifier))
+            || self.day.is_some_and(|d| f(d.qualifier))
+    }
+
+    /// True if any component is marked uncertain (`?` or `%`).
+    pub fn is_uncertain(&self) -> bool {
+        self.any_component(|q| q.uncertain)
+    }
+
+    /// True if any component is marked approximate (`~` or `%`).
+    pub fn is_approximate(&self) -> bool {
+        self.any_component(|q| q.approximate)
+    }
+
+    /// True if any component contains an unspecified digit (`X`).
+    pub fn has_unspecified(&self) -> bool {
+        self.year.has_unspecified()
+            || self.month.is_some_and(|m| m.has_unspecified())
+            || self.day.is_some_and(|d| d.has_unspecified())
+    }
 }
 
 /// UTC designator or a numeric shift from UTC.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TimeShift {
     /// `Z`
     Utc,
-    /// `±hh` or `±hh:mm`; `minutes` is the signed total offset.
-    Offset { minutes: i16, hours_only: bool },
+    /// `±hh` or `±hh:mm`.
+    Offset {
+        /// Signed total offset from UTC in minutes.
+        minutes: i16,
+        /// True when written in the hours-only form `±hh`.
+        hours_only: bool,
+    },
 }
 
 /// A complete time of day `hh:mm:ss` with optional shift (EDTF level 0).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Time {
+    /// Clock hour 00–23.
     pub hour: u8,
+    /// Clock minute 00–59.
     pub minute: u8,
+    /// Clock second 00–60 (60 admits a leap second).
     pub second: u8,
+    /// Optional UTC designator or shift.
     pub shift: Option<TimeShift>,
 }
 
 /// A complete date and time of day (EDTF level 0 only).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DateTime {
+    /// The complete calendar date.
     pub date: Date,
+    /// The complete time of day.
     pub time: Time,
 }
 
 /// One side of a time interval.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum IntervalEndpoint {
+    /// A concrete (possibly qualified/unspecified) date.
     Date(Date),
     /// `..` — open (unbounded).
     Open,
@@ -191,55 +251,76 @@ pub enum IntervalEndpoint {
 }
 
 impl IntervalEndpoint {
+    /// True unless the endpoint is open (`..`) or unknown (empty).
     pub fn is_dated(&self) -> bool {
         !matches!(self, IntervalEndpoint::Open | IntervalEndpoint::Unknown)
+    }
+
+    pub(crate) fn date(&self) -> Option<&Date> {
+        match self {
+            IntervalEndpoint::Date(d)
+            | IntervalEndpoint::OnOrBefore(d)
+            | IntervalEndpoint::OnOrAfter(d) => Some(d),
+            _ => None,
+        }
     }
 }
 
 /// A time interval `start/end`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Interval {
+    /// The start endpoint.
     pub start: IntervalEndpoint,
+    /// The end endpoint.
     pub end: IntervalEndpoint,
 }
 
 /// `{…}` (all members) vs `[…]` (one member) — ISO 8601-2 §6.1–6.2.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SetKind {
+    /// `{…}` — every member applies.
     AllMembers,
+    /// `[…]` — exactly one (unknown) member applies.
     OneMember,
 }
 
 /// An element of a set, including `..` range notation (ISO 8601-2 §6.3).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SetElement {
+    /// A single date.
     Date(Date),
-    /// `..date`
+    /// `..date` — this date or any earlier one.
     OnOrBefore(Date),
-    /// `date..`
+    /// `date..` — this date or any later one.
     OnOrAfter(Date),
-    /// `a..b` inclusive range.
+    /// `a..b` — every expression between the two, inclusive.
     Range(Date, Date),
 }
 
 /// A set expression (EDTF level 2).
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Set {
+    /// All-members (`{}`) or one-member (`[]`) semantics.
     pub kind: SetKind,
+    /// The elements, in written order.
     pub elements: Vec<SetElement>,
 }
 
 /// Any parsed EDTF expression.
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Edtf {
+    /// A single date.
     Date(Date),
+    /// A date with time of day (level 0 only).
     DateTime(DateTime),
+    /// A time interval.
     Interval(Interval),
+    /// A set of dates (level 2).
     Set(Set),
 }
 
@@ -259,6 +340,33 @@ impl Edtf {
             Edtf::Interval(iv) => interval_level(iv),
             Edtf::Set(_) => 2,
         }
+    }
+
+    fn any_date<F: Fn(&Date) -> bool>(&self, f: F) -> bool {
+        match self {
+            Edtf::Date(d) => f(d),
+            Edtf::DateTime(dt) => f(&dt.date),
+            Edtf::Interval(iv) => iv.start.date().is_some_and(&f) || iv.end.date().is_some_and(&f),
+            Edtf::Set(s) => s.elements.iter().any(|e| match e {
+                SetElement::Date(d) | SetElement::OnOrBefore(d) | SetElement::OnOrAfter(d) => f(d),
+                SetElement::Range(a, b) => f(a) || f(b),
+            }),
+        }
+    }
+
+    /// True if any component anywhere is marked uncertain (`?` or `%`).
+    pub fn is_uncertain(&self) -> bool {
+        self.any_date(Date::is_uncertain)
+    }
+
+    /// True if any component anywhere is marked approximate (`~` or `%`).
+    pub fn is_approximate(&self) -> bool {
+        self.any_date(Date::is_approximate)
+    }
+
+    /// True if any component anywhere contains an unspecified digit (`X`).
+    pub fn has_unspecified(&self) -> bool {
+        self.any_date(Date::has_unspecified)
     }
 }
 
@@ -308,7 +416,7 @@ fn date_level(d: &Date, in_interval: bool) -> u8 {
     let masks = mask_level(d);
     if masks > 0 {
         // Unspecified digits inside interval endpoints are a level 2 feature
-        // (ISO 8601-2 §10.4 appears only in the level 2 half of Annex A usage).
+        // (ISO 8601-2 §10.4 is absent from the level 1 half of Annex A).
         level = level.max(if in_interval { 2 } else { masks });
     }
     level.max(qualification_level(d))

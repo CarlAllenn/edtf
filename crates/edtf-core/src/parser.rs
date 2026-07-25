@@ -4,7 +4,10 @@
 //! ISO 8601-1/-2:2019 sections for every production. Open decisions D1–D17
 //! are implemented as proposed there.
 
+use crate::bounds::{date_bounds, is_leap, Bound};
 use crate::types::*;
+use alloc::vec;
+use alloc::vec::Vec;
 
 pub(crate) fn parse(input: &str) -> Result<Edtf, ParseError> {
     if input.is_empty() {
@@ -367,12 +370,6 @@ fn year_matches(digits: &[Option<u8>; 4], y: i64) -> bool {
         .all(|(pat, a)| pat.is_none_or(|p| i64::from(p) == a))
 }
 
-/// Proleptic Gregorian leap rule applied to the astronomical year number
-/// (ISO 8601-1 §3.1.1.21; year 0 is a leap year).
-fn is_leap(y: i64) -> bool {
-    y.rem_euclid(4) == 0 && (y.rem_euclid(100) != 0 || y.rem_euclid(400) == 0)
-}
-
 /// `Y…` years (ISO 8601-2 §4.7.2-4.7.4): year precision only, |value| > 9999.
 fn parse_prefixed_year(s: &str) -> Result<Date, ParseError> {
     let mut c = Cur::new(s);
@@ -601,6 +598,13 @@ fn parse_interval(s: &str) -> Result<Edtf, ParseError> {
     if !start.is_dated() && !end.is_dated() {
         return Err(err("interval needs at least one dated endpoint"));
     }
+    // The end must not precede the start (decision D18; cf. ISO 8601-2
+    // §7.14.2 Example 2). Comparable only when both endpoints are dates.
+    if let (IntervalEndpoint::Date(s), IntervalEndpoint::Date(e)) = (&start, &end) {
+        if dates_out_of_order(s, e) {
+            return Err(err("interval end precedes interval start"));
+        }
+    }
     Ok(Edtf::Interval(Interval { start, end }))
 }
 
@@ -672,7 +676,20 @@ fn parse_set_element(p: &str) -> Result<SetElement, ParseError> {
         if b.contains("..") {
             return Err(err("set element cannot contain multiple '..'"));
         }
-        return Ok(SetElement::Range(parse_date(a)?, parse_date(b)?));
+        let (from, to) = (parse_date(a)?, parse_date(b)?);
+        if dates_out_of_order(&from, &to) {
+            return Err(err("set range end precedes range start"));
+        }
+        return Ok(SetElement::Range(from, to));
     }
     Ok(SetElement::Date(parse_date(p)?))
+}
+
+/// True when `a` cannot possibly precede-or-touch `b`: a's earliest possible
+/// day is later than b's latest possible day.
+fn dates_out_of_order(a: &Date, b: &Date) -> bool {
+    match (date_bounds(a).earliest, date_bounds(b).latest) {
+        (Bound::Date(lo), Bound::Date(hi)) => lo > hi,
+        _ => false,
+    }
 }

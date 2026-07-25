@@ -1,11 +1,17 @@
 [workspace]
 resolver = "2"
-members = ["crates/edtf-core"]
-# Wrapper crates join the workspace once the core is real:
-#   crates/edtf-wasm      (wasm-bindgen wrapper for the app)
-#   crates/edtf-postgres  (pgrx extension for the DB)
+members = ["crates/edtf-core", "crates/edtf-wasm"]
+# crates/edtf-postgres is intentionally NOT a workspace member: pgrx
+# extensions need their own dependency graph and a locally-initialized pgrx
+# toolchain (`cargo pgrx init`). Build/test it via `task pg:test`.
+exclude = ["crates/edtf-postgres"]
 
 [workspace.package]
 edition = "2021"
+rust-version = "1.82"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/CarlAllenn/edtf"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "deny"

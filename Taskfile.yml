@@ -21,6 +21,8 @@ tasks:
       - taplo lint
       - ec
       - codespell
+      # edtf-postgres is outside the workspace (pgrx); at least keep fmt honest.
+      - cargo fmt --check --manifest-path crates/edtf-postgres/Cargo.toml
 
   check:
     desc: Format check + lint + tests (what CI runs)
@@ -28,3 +30,20 @@ tasks:
       - cargo fmt --all --check
       - task: lint
       - task: test
+
+  wasm:
+    desc: Build the WebAssembly artifact
+    cmds:
+      - cargo build -p edtf-wasm --target wasm32-unknown-unknown --release
+
+  pg:test:
+    desc: Run the Postgres extension test suite (requires `cargo pgrx init`)
+    dir: crates/edtf-postgres
+    cmds:
+      - cargo pgrx test pg18
+
+  pg:package:
+    desc: Package the Postgres extension for installation
+    dir: crates/edtf-postgres
+    cmds:
+      - cargo pgrx package

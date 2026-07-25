@@ -1,4 +1,5 @@
 target/
+/crates/edtf-wasm/pkg/
 .DS_Store
 # ISO documents are copyrighted — never commit them
 /spec/

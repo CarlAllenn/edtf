@@ -36,6 +36,11 @@ tasks:
     cmds:
       - cargo build -p edtf-wasm --target wasm32-unknown-unknown --release
 
+  wasm:pack:
+    desc: Build the npm-ready package (JS glue + .d.ts) via wasm-pack
+    cmds:
+      - wasm-pack build crates/edtf-wasm --target web --out-dir pkg
+
   pg:test:
     desc: Run the Postgres extension test suite (requires `cargo pgrx init`)
     dir: crates/edtf-postgres

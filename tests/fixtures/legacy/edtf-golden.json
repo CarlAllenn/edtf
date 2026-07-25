@@ -1,0 +1,625 @@
+{
+ "198": {
+  "valid": true,
+  "edtf": "198",
+  "type": "Decade",
+  "min": 315532800000,
+  "max": 631151999999,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1985": {
+  "valid": true,
+  "edtf": "1985",
+  "type": "Date",
+  "min": 473385600000,
+  "max": 504921599999,
+  "precision": 1,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1985-04-12": {
+  "valid": true,
+  "edtf": "1985-04-12",
+  "type": "Date",
+  "min": 482112000000,
+  "max": 482198399999,
+  "precision": 3,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1985-04": {
+  "valid": true,
+  "edtf": "1985-04",
+  "type": "Date",
+  "min": 481161600000,
+  "max": 483753599999,
+  "precision": 2,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1985-04-12T23:20:30": {
+  "valid": true,
+  "edtf": "1985-04-12T23:20:30.000Z",
+  "type": "Date",
+  "min": 482196030000,
+  "max": 482196030000,
+  "precision": 0,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1985-04-12T23:20:30Z": {
+  "valid": true,
+  "edtf": "1985-04-12T23:20:30.000Z",
+  "type": "Date",
+  "min": 482196030000,
+  "max": 482196030000,
+  "precision": 0,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1985-04-12T23:20:30+04:30": {
+  "valid": true,
+  "edtf": "1985-04-12T18:50:30.000Z",
+  "type": "Date",
+  "min": 482179830000,
+  "max": 482179830000,
+  "precision": 0,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1985-04-12T23:20:30+04": {
+  "valid": true,
+  "edtf": "1985-04-12T19:20:30.000Z",
+  "type": "Date",
+  "min": 482181630000,
+  "max": 482181630000,
+  "precision": 0,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1964/2008": {
+  "valid": true,
+  "edtf": "1964/2008",
+  "type": "Interval",
+  "min": -189388800000,
+  "max": 1230767999999,
+  "precision": 1,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "2004-06/2006-08": {
+  "valid": true,
+  "edtf": "2004-06/2006-08",
+  "type": "Interval",
+  "min": 1086048000000,
+  "max": 1157068799999,
+  "precision": 2,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "2004-02-01/2005-02-08": {
+  "valid": true,
+  "edtf": "2004-02-01/2005-02-08",
+  "type": "Interval",
+  "min": 1075593600000,
+  "max": 1107907199999,
+  "precision": 3,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "2004-02-01/2005": {
+  "valid": true,
+  "edtf": "2004-02-01/2005",
+  "type": "Interval",
+  "min": 1075593600000,
+  "max": 1136073599999,
+  "precision": 3,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "Y170000002": {
+  "valid": true,
+  "edtf": "Y170000002",
+  "type": "Year",
+  "min": null,
+  "max": null,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "-1985": {
+  "valid": true,
+  "edtf": "-1985",
+  "type": "Date",
+  "min": -124807737600000,
+  "max": -124776201600001,
+  "precision": 1,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "2001-21": {
+  "valid": true,
+  "edtf": "2001-21",
+  "type": "Season",
+  "min": 978307200000,
+  "max": 986083199999,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "2001-24": {
+  "valid": true,
+  "edtf": "2001-24",
+  "type": "Season",
+  "min": 1001894400000,
+  "max": 1009843199999,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1985-04-12?": {
+  "valid": true,
+  "edtf": "1985-04-12?",
+  "type": "Date",
+  "min": 482112000000,
+  "max": 482198399999,
+  "precision": 3,
+  "uncertain": 255,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1985-04?": {
+  "valid": true,
+  "edtf": "1985-04?",
+  "type": "Date",
+  "min": 481161600000,
+  "max": 483753599999,
+  "precision": 2,
+  "uncertain": 63,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1985~": {
+  "valid": true,
+  "edtf": "1985~",
+  "type": "Date",
+  "min": 473385600000,
+  "max": 504921599999,
+  "precision": 1,
+  "uncertain": 0,
+  "approximate": 15,
+  "unspecified": 0
+ },
+ "1985%": {
+  "valid": true,
+  "edtf": "1985%",
+  "type": "Date",
+  "min": 473385600000,
+  "max": 504921599999,
+  "precision": 1,
+  "uncertain": 15,
+  "approximate": 15,
+  "unspecified": 0
+ },
+ "1985-04-XX": {
+  "valid": true,
+  "edtf": "1985-04-XX",
+  "type": "Date",
+  "min": 481161600000,
+  "max": 483753599999,
+  "precision": 3,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 192
+ },
+ "1985-XX-XX": {
+  "valid": true,
+  "edtf": "1985-XX-XX",
+  "type": "Date",
+  "min": 473385600000,
+  "max": 504921599999,
+  "precision": 3,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 240
+ },
+ "2004-XX": {
+  "valid": true,
+  "edtf": "2004-XX",
+  "type": "Date",
+  "min": 1072915200000,
+  "max": 1104537599999,
+  "precision": 2,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 48
+ },
+ "201X": {
+  "valid": true,
+  "edtf": "201X",
+  "type": "Date",
+  "min": 1262304000000,
+  "max": 1577836799999,
+  "precision": 1,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 8
+ },
+ "20XX": {
+  "valid": true,
+  "edtf": "20XX",
+  "type": "Date",
+  "min": 946684800000,
+  "max": 4102444799999,
+  "precision": 1,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 12
+ },
+ "1985-04-12/..": {
+  "valid": true,
+  "edtf": "1985-04-12/..",
+  "type": "Interval",
+  "min": 482112000000,
+  "max": "infinity",
+  "precision": 3,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "../1985-04-12": {
+  "valid": true,
+  "edtf": "../1985-04-12",
+  "type": "Interval",
+  "min": "-infinity",
+  "max": 482198399999,
+  "precision": 3,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1986-04/": {
+  "valid": true,
+  "edtf": "1986-04/",
+  "type": "Interval",
+  "min": 512697600000,
+  "max": null,
+  "precision": 2,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "/1985": {
+  "valid": true,
+  "edtf": "/1985",
+  "type": "Interval",
+  "min": null,
+  "max": 504921599999,
+  "precision": 1,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1984?/2004%": {
+  "valid": true,
+  "edtf": "1984?/2004%",
+  "type": "Interval",
+  "min": 441763200000,
+  "max": 1104537599999,
+  "precision": 1,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1984-01-02~/2004-06-04": {
+  "valid": true,
+  "edtf": "1984-01-02~/2004-06-04",
+  "type": "Interval",
+  "min": 441849600000,
+  "max": 1086393599999,
+  "precision": 3,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1985-04-12~/": {
+  "valid": true,
+  "edtf": "1985-04-12~/",
+  "type": "Interval",
+  "min": 482112000000,
+  "max": null,
+  "precision": 3,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "Y-17E7": {
+  "valid": true,
+  "edtf": "Y-170000000",
+  "type": "Year",
+  "min": null,
+  "max": null,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "Y17E7": {
+  "valid": true,
+  "edtf": "Y170000000",
+  "type": "Year",
+  "min": null,
+  "max": null,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "1950S2": {
+  "valid": true,
+  "edtf": "1950S2",
+  "type": "Year",
+  "min": -631152000000,
+  "max": -599616000001,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "Y171010000S3": {
+  "valid": true,
+  "edtf": "Y171010000S3",
+  "type": "Year",
+  "min": null,
+  "max": null,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "Y3388E2S3": {
+  "valid": true,
+  "edtf": "Y338800S3",
+  "type": "Year",
+  "min": null,
+  "max": null,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "2001-34": {
+  "valid": true,
+  "edtf": "2001-34",
+  "type": "Season",
+  "min": 986083200000,
+  "max": 993945599999,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "{1960,1961-12}": {
+  "valid": true,
+  "edtf": "{1960,1961-12}",
+  "type": "List",
+  "min": -315619200000,
+  "max": -252460800001,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "[1667,1760-12]": {
+  "valid": true,
+  "edtf": "[1667,1760-12]",
+  "type": "Set",
+  "min": -9561715200000,
+  "max": -6595344000001,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "[..1984]": {
+  "valid": true,
+  "edtf": "[..1984]",
+  "type": "Set",
+  "min": "-infinity",
+  "max": 473385599999,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "[1984..]": {
+  "valid": true,
+  "edtf": "[1984..]",
+  "type": "Set",
+  "min": 441763200000,
+  "max": "infinity",
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "[1670..1672]": {
+  "valid": true,
+  "edtf": "[1670..1672]",
+  "type": "Set",
+  "min": -9467020800000,
+  "max": -9435484800001,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "{1667,1668,1670..1672}": {
+  "valid": true,
+  "edtf": "{1667,1668,1670..1672}",
+  "type": "List",
+  "min": -9561715200000,
+  "max": -9435484800001,
+  "precision": null,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "2004-06~-11": {
+  "valid": true,
+  "edtf": "2004-06~-11",
+  "type": "Date",
+  "min": 1086912000000,
+  "max": 1086998399999,
+  "precision": 3,
+  "uncertain": 0,
+  "approximate": 63,
+  "unspecified": 0
+ },
+ "2004?-06-11": {
+  "valid": true,
+  "edtf": "2004?-06-11",
+  "type": "Date",
+  "min": 1086912000000,
+  "max": 1086998399999,
+  "precision": 3,
+  "uncertain": 15,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "?2004-06-~11": {
+  "valid": true,
+  "edtf": "2004?-06-~11",
+  "type": "Date",
+  "min": 1086912000000,
+  "max": 1086998399999,
+  "precision": 3,
+  "uncertain": 15,
+  "approximate": 192,
+  "unspecified": 0
+ },
+ "2004-%06-11": {
+  "valid": true,
+  "edtf": "2004-%06-11",
+  "type": "Date",
+  "min": 1086912000000,
+  "max": 1086998399999,
+  "precision": 3,
+  "uncertain": 48,
+  "approximate": 48,
+  "unspecified": 0
+ },
+ "156X-12-25": {
+  "valid": true,
+  "edtf": "156X-12-25",
+  "type": "Date",
+  "min": -12907382400000,
+  "max": -12623299200001,
+  "precision": 3,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 8
+ },
+ "XXXX-12-XX": {
+  "valid": true,
+  "edtf": "XXXX-12-XX",
+  "type": "Date",
+  "min": -62138275200000,
+  "max": 253402300799999,
+  "precision": 3,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 207
+ },
+ "1XXX-XX": {
+  "valid": true,
+  "edtf": "1XXX-XX",
+  "type": "Date",
+  "min": -30610224000000,
+  "max": 946684799999,
+  "precision": 2,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 62
+ },
+ "1560-X2": {
+  "valid": true,
+  "edtf": "1560-X2",
+  "type": "Date",
+  "min": -12935721600000,
+  "max": -12906777600001,
+  "precision": 2,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 16
+ },
+ "2004-06-~01/2004-06-~20": {
+  "valid": true,
+  "edtf": "2004-06-~01/2004-06-~20",
+  "type": "Interval",
+  "min": 1086048000000,
+  "max": 1087775999999,
+  "precision": 3,
+  "uncertain": 0,
+  "approximate": 0,
+  "unspecified": 0
+ },
+ "..2004-06-01/2004-06-20..": {
+  "valid": false,
+  "error": "Syntax error at line 1 col 3:\n\n1 ..2004-06-01/2004-06-20..\n    ^\n\nUnexpected \"2\". Instead, I was expecting to see one of the following:\n\nA \"/\" based on:\n    L2i → L2i_date ● \"/\" date_time\n    L2 →  ● L2i\n    edtf →  ● L2\nA \"/\" based on:\n    L2i → L2i_date ● \"/\" L2i_date\n    L2 →  ● L2i\n    edtf →  ● L2\nA \"/\" based on:\n    L1i → L1i_date ● \"/\" date_time\n    L1 →  ● L1i\n    edtf →  ● L1\nA \"/\" based on:\n    L1i → L1i_date ● \"/\" L1i_date\n    L1 →  ● L1i\n    edtf →  ● L1\n for \"..2004-06-01/2004-06-20..\""
+ },
+ "1985-13": {
+  "valid": false,
+  "error": "Syntax error at line 1 col 7:\n\n1 1985-13\n        ^\n\nUnexpected \"3\". Instead, I was expecting to see one of the following:\n\nA \"1\" based on:\n    m30$subexpression$1$string$4 → \"1\" ● \"1\"\n    m30$subexpression$1 →  ● m30$subexpression$1$string$4\n    m30 →  ● m30$subexpression$1\n    md →  ● m30\n    L1X → nd4 \"-\" ● md L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"2\" based on:\n    m31$subexpression$1$string$7 → \"1\" ● \"2\"\n    m31$subexpression$1 →  ● m31$subexpression$1$string$7\n    m31 →  ● m31$subexpression$1\n    md →  ● m31\n    L1X → nd4 \"-\" ● md L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"0\" based on:\n    m31$subexpression$1$string$6 → \"1\" ● \"0\"\n    m31$subexpression$1 →  ● m31$subexpression$1$string$6\n    m31 →  ● m31$subexpression$1\n    md →  ● m31\n    L1X → nd4 \"-\" ● md L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"2\" based on:\n    d01_12$string$1 → \"1\" ● \"2\"\n    d01_12 →  ● d01_12$string$1\n    month →  ● d01_12\n    year_month → year \"-\" ● month\n    date →  ● year_month\n    date_time →  ● date\n    L0 →  ● date_time\n    edtf →  ● L0\nA token matching function test() { [native code] } based on:\n    d01_11 → \"1\" ● <function test() { [native code] }>\n    d01_12 →  ● d01_11\n    month →  ● d01_12\n    year_month → year \"-\" ● month\n    date →  ● year_month\n    date_time →  ● date\n    L0 →  ● date_time\n    edtf →  ● L0\nA \"1\" based on:\n    m30x$string$1 → \"1\" ● \"1\"\n    m30x →  ● m30x$string$1\n    mdx →  ● m30x \"-\" d30x\n    L2X → dx4 \"-\" ● mdx\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\nA \"X\" based on:\n    m31x$string$1 → \"1\" ● \"X\"\n    m31x →  ● m31x$string$1\n    mdx →  ● m31x \"-\" d31x\n    L2X → dx4 \"-\" ● mdx\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\nA token matching function test() { [native code] } based on:\n    m31x → <function test() { [native code] }> ● <function test() { [native code] }>\n    mdx →  ● m31x \"-\" d31x\n    L2X → dx4 \"-\" ● mdx\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\nA token matching function test() { [native code] } based on:\n    mx → <function test() { [native code] }> ● <function test() { [native code] }>\n    L2X → dx4 \"-\" ● mx\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\n for \"1985-13\""
+ },
+ "1985-00": {
+  "valid": false,
+  "error": "Syntax error at line 1 col 7:\n\n1 1985-00\n        ^\n\nUnexpected \"0\". Instead, I was expecting to see one of the following:\n\nA \"2\" based on:\n    ua_month_day$macrocall$10$string$1 → \"0\" ● \"2\"\n    ua_month_day$macrocall$10 →  ● ua_month_day$macrocall$10$string$1\n    ua_month_day$macrocall$9 → ua_month_day$macrocall$9$ebnf$1 ● ua_month_day$macrocall$10 ua_month_day$macrocall$9$ebnf$2\n    ua_month_day →  ● ua_month_day$macrocall$9 \"-\" ua_month_day$macrocall$11\n    ua_year_month_day → ua_year_month_day$macrocall$1 \"-\" ● ua_month_day\n    ua_date →  ● ua_year_month_day\n    L2d →  ● ua_date\n    L2 →  ● L2d\n    edtf →  ● L2\nA \"9\" based on:\n    m30$subexpression$1$string$3 → \"0\" ● \"9\"\n    m30$subexpression$1 →  ● m30$subexpression$1$string$3\n    m30 →  ● m30$subexpression$1\n    md →  ● m30\n    L1X → nd4 \"-\" ● md L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"6\" based on:\n    m30$subexpression$1$string$2 → \"0\" ● \"6\"\n    m30$subexpression$1 →  ● m30$subexpression$1$string$2\n    m30 →  ● m30$subexpression$1\n    md →  ● m30\n    L1X → nd4 \"-\" ● md L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"4\" based on:\n    m30$subexpression$1$string$1 → \"0\" ● \"4\"\n    m30$subexpression$1 →  ● m30$subexpression$1$string$1\n    m30 →  ● m30$subexpression$1\n    md →  ● m30\n    L1X → nd4 \"-\" ● md L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"8\" based on:\n    m31$subexpression$1$string$5 → \"0\" ● \"8\"\n    m31$subexpression$1 →  ● m31$subexpression$1$string$5\n    m31 →  ● m31$subexpression$1\n    md →  ● m31\n    L1X → nd4 \"-\" ● md L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"7\" based on:\n    m31$subexpression$1$string$4 → \"0\" ● \"7\"\n    m31$subexpression$1 →  ● m31$subexpression$1$string$4\n    m31 →  ● m31$subexpression$1\n    md →  ● m31\n    L1X → nd4 \"-\" ● md L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"5\" based on:\n    m31$subexpression$1$string$3 → \"0\" ● \"5\"\n    m31$subexpression$1 →  ● m31$subexpression$1$string$3\n    m31 →  ● m31$subexpression$1\n    md →  ● m31\n    L1X → nd4 \"-\" ● md L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"3\" based on:\n    m31$subexpression$1$string$2 → \"0\" ● \"3\"\n    m31$subexpression$1 →  ● m31$subexpression$1$string$2\n    m31 →  ● m31$subexpression$1\n    md →  ● m31\n    L1X → nd4 \"-\" ● md L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"1\" based on:\n    m31$subexpression$1$string$1 → \"0\" ● \"1\"\n    m31$subexpression$1 →  ● m31$subexpression$1$string$1\n    m31 →  ● m31$subexpression$1\n    md →  ● m31\n    L1X → nd4 \"-\" ● md L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"2\" based on:\n    month_day$string$1 → \"0\" ● \"2\"\n    month_day →  ● month_day$string$1 \"-\" d01_29\n    year_month_day → year \"-\" ● month_day\n    date →  ● year_month_day\n    date_time →  ● date\n    L0 →  ● date_time\n    edtf →  ● L0\nA \"2\" based on:\n    mdx$string$1 → \"0\" ● \"2\" \"-\"\n    mdx →  ● mdx$string$1 d29x\n    L2X → dx4 \"-\" ● mdx\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\nA token matching function test() { [native code] } based on:\n    m30x → <function test() { [native code] }> ● <function test() { [native code] }>\n    mdx →  ● m30x \"-\" d30x\n    L2X → dx4 \"-\" ● mdx\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\nA token matching function test() { [native code] } based on:\n    m31x → <function test() { [native code] }> ● <function test() { [native code] }>\n    mdx →  ● m31x \"-\" d31x\n    L2X → dx4 \"-\" ● mdx\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\nA \"2\" based on:\n    md$string$1 → \"0\" ● \"2\"\n    md →  ● md$string$1\n    L1X → nd4 \"-\" ● md L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA token matching function test() { [native code] } based on:\n    positive_digit →  ● <function test() { [native code] }>\n    d01_11 → \"0\" ● positive_digit\n    d01_12 →  ● d01_11\n    month →  ● d01_12\n    year_month → year \"-\" ● month\n    date →  ● year_month\n    date_time →  ● date\n    L0 →  ● date_time\n    edtf →  ● L0\nA token matching function test() { [native code] } based on:\n    d1x →  ● <function test() { [native code] }>\n    mx → \"0\" ● d1x\n    L2X → dx4 \"-\" ● mx\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\n for \"1985-00\""
+ },
+ "2004-20": {
+  "valid": false,
+  "error": "Syntax error at line 1 col 7:\n\n1 2004-20\n        ^\n\nUnexpected \"0\". Instead, I was expecting to see one of the following:\n\nA token matching function test() { [native code] } based on:\n    d25_41 → \"2\" ● <function test() { [native code] }>\n    L2S → year \"-\" ● d25_41\n    L2 →  ● L2S\n    edtf →  ● L2\nA token matching function test() { [native code] } based on:\n    d21_24 → \"2\" ● <function test() { [native code] }>\n    L1S → year \"-\" ● d21_24\n    L1 →  ● L1S\n    edtf →  ● L1\n for \"2004-20\""
+ },
+ "1985-02-30": {
+  "valid": false,
+  "error": "Syntax error at line 1 col 9:\n\n1 1985-02-30\n          ^\n\nUnexpected \"3\". Instead, I was expecting to see one of the following:\n\nA \"X\" based on:\n    L1X$string$1 → \"-\" ● \"X\" \"X\"\n    L1X → nd4 \"-\" md ● L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"0\" based on:\n    d01_29 →  ● \"0\" positive_digit\n    month_day → month_day$string$1 \"-\" ● d01_29\n    year_month_day → year \"-\" ● month_day\n    date →  ● year_month_day\n    date_time →  ● date\n    L0 →  ● date_time\n    edtf →  ● L0\nA token matching function test() { [native code] } based on:\n    d01_29 →  ● <function test() { [native code] }> digit\n    month_day → month_day$string$1 \"-\" ● d01_29\n    year_month_day → year \"-\" ● month_day\n    date →  ● year_month_day\n    date_time →  ● date\n    L0 →  ● date_time\n    edtf →  ● L0\nA \"0\" based on:\n    d29x →  ● \"0\" d1x\n    mdx → mdx$string$1 ● d29x\n    L2X → dx4 \"-\" ● mdx\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\nA token matching function test() { [native code] } based on:\n    d29x →  ● <function test() { [native code] }> dx\n    mdx → mdx$string$1 ● d29x\n    L2X → dx4 \"-\" ● mdx\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\nA \"?\" based on:\n    UA →  ● \"?\"\n    ua_month_day$macrocall$11$ebnf$1 →  ● UA\n    ua_month_day$macrocall$11 →  ● ua_month_day$macrocall$11$ebnf$1 ua_month_day$macrocall$12 ua_month_day$macrocall$11$ebnf$2\n    ua_month_day → ua_month_day$macrocall$9 \"-\" ● ua_month_day$macrocall$11\n    ua_year_month_day → ua_year_month_day$macrocall$1 \"-\" ● ua_month_day\n    ua_date →  ● ua_year_month_day\n    L2d →  ● ua_date\n    L2 →  ● L2d\n    edtf →  ● L2\nA \"~\" based on:\n    UA →  ● \"~\"\n    ua_month_day$macrocall$11$ebnf$1 →  ● UA\n    ua_month_day$macrocall$11 →  ● ua_month_day$macrocall$11$ebnf$1 ua_month_day$macrocall$12 ua_month_day$macrocall$11$ebnf$2\n    ua_month_day → ua_month_day$macrocall$9 \"-\" ● ua_month_day$macrocall$11\n    ua_year_month_day → ua_year_month_day$macrocall$1 \"-\" ● ua_month_day\n    ua_date →  ● ua_year_month_day\n    L2d →  ● ua_date\n    L2 →  ● L2d\n    edtf →  ● L2\nA \"%\" based on:\n    UA →  ● \"%\"\n    ua_month_day$macrocall$11$ebnf$1 →  ● UA\n    ua_month_day$macrocall$11 →  ● ua_month_day$macrocall$11$ebnf$1 ua_month_day$macrocall$12 ua_month_day$macrocall$11$ebnf$2\n    ua_month_day → ua_month_day$macrocall$9 \"-\" ● ua_month_day$macrocall$11\n    ua_year_month_day → ua_year_month_day$macrocall$1 \"-\" ● ua_month_day\n    ua_date →  ● ua_year_month_day\n    L2d →  ● ua_date\n    L2 →  ● L2d\n    edtf →  ● L2\n for \"1985-02-30\""
+ },
+ "1985-04-31": {
+  "valid": false,
+  "error": "Syntax error at line 1 col 10:\n\n1 1985-04-31\n           ^\n\nUnexpected \"1\". Instead, I was expecting to see one of the following:\n\nA \"0\" based on:\n    d30x$string$1 → \"3\" ● \"0\"\n    d30x →  ● d30x$string$1\n    mdx → m30x \"-\" ● d30x\n    L2X → dx4 \"-\" ● mdx\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\nA \"0\" based on:\n    d01_30$string$1 → \"3\" ● \"0\"\n    d01_30 →  ● d01_30$string$1\n    month_day → m30 \"-\" ● d01_30\n    year_month_day → year \"-\" ● month_day\n    date →  ● year_month_day\n    date_time →  ● date\n    L0 →  ● date_time\n    edtf →  ● L0\n for \"1985-04-31\""
+ },
+ "1985-04-12T25:00:00": {
+  "valid": false,
+  "error": "Syntax error at line 1 col 13:\n\n1 1985-04-12T25:00:00\n              ^\n\nUnexpected \"5\". Instead, I was expecting to see one of the following:\n\nA token matching function test() { [native code] } based on:\n    d01_23 → \"2\" ● <function test() { [native code] }>\n    d00_23 →  ● d01_23\n    hours →  ● d00_23\n    time →  ● hours \":\" minutes \":\" seconds milliseconds\n    datetime → year_month_day \"T\" ● time datetime$ebnf$1\n    date_time →  ● datetime\n    L0 →  ● date_time\n    edtf →  ● L0\nA \"4\" based on:\n    time$string$1 → \"2\" ● \"4\" \":\" \"0\" \"0\"\n    time →  ● time$string$1 time$ebnf$1\n    datetime → year_month_day \"T\" ● time datetime$ebnf$1\n    date_time →  ● datetime\n    L0 →  ● date_time\n    edtf →  ● L0\n for \"1985-04-12T25:00:00\""
+ },
+ "1985-1": {
+  "valid": false,
+  "error": "edtf: No possible parsings (@EOS) for \"1985-1\""
+ },
+ "hello": {
+  "valid": false,
+  "error": "Syntax error at line 1 col 1:\n\n1 hello\n  ^\n\nUnexpected \"h\". Instead, I was expecting to see one of the following:\n\nA \"-\" based on:\n    century →  ● \"-\" positive_century\n    L0 →  ● century\n    edtf →  ● L0\nA \"Y\" based on:\n    L1Y →  ● \"Y\" d5+\n    L1 →  ● L1Y\n    edtf →  ● L1\nA \"0\" based on:\n    positive_century →  ● \"0\" positive_digit\n    century →  ● positive_century\n    L0 →  ● century\n    edtf →  ● L0\nA \"0\" based on:\n    century$string$1 →  ● \"0\" \"0\"\n    century →  ● century$string$1\n    L0 →  ● century\n    edtf →  ● L0\nA \"Y\" based on:\n    L1Y$string$1 →  ● \"Y\" \"-\"\n    L1Y →  ● L1Y$string$1 d5+\n    L1 →  ● L1Y\n    edtf →  ● L1\nA \"Y\" based on:\n    exp_year →  ● \"Y\" exp\n    L2Y →  ● exp_year\n    L2 →  ● L2Y\n    edtf →  ● L2\nA \"-\" based on:\n    decade →  ● \"-\" positive_decade\n    L2D →  ● decade\n    L2 →  ● L2D\n    edtf →  ● L2\nA \"[\" based on:\n    LSB →  ● \"[\"\n    set →  ● LSB OL RSB\n    L2 →  ● set\n    edtf →  ● L2\nA \"{\" based on:\n    LLB →  ● \"{\"\n    list →  ● LLB OL RLB\n    L2 →  ● list\n    edtf →  ● L2\nA token matching function test() { [native code] } based on:\n    positive_digit →  ● <function test() { [native code] }>\n    positive_century →  ● positive_digit digit\n    century →  ● positive_century\n    L0 →  ● century\n    edtf →  ● L0\nA \"-\" based on:\n    nd4 →  ● \"-\" d4\n    L1X →  ● nd4 \"-\" md L1X$string$1\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"X\" based on:\n    L1X$string$3 →  ● \"X\" \"X\" \"X\" \"X\" \"-\" \"X\" \"X\" \"-\" \"X\" \"X\"\n    L1X →  ● L1X$string$3\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"X\" based on:\n    L1X$string$5 →  ● \"X\" \"X\" \"X\" \"X\" \"-\" \"X\" \"X\"\n    L1X →  ● L1X$string$5\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"-\" based on:\n    nd2 →  ● \"-\" d2\n    L1X →  ● nd2 L1X$string$6\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"-\" based on:\n    nd3 →  ● \"-\" d3\n    L1X →  ● nd3 \"X\"\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"X\" based on:\n    L1X$string$7 →  ● \"X\" \"X\" \"X\" \"X\"\n    L1X →  ● L1X$string$7\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"0\" based on:\n    positive_year →  ● \"0\" positive_digit digit digit\n    year →  ● positive_year\n    L1S →  ● year \"-\" d21_24\n    L1 →  ● L1S\n    edtf →  ● L1\nA \"-\" based on:\n    negative_year →  ● \"-\" positive_year\n    year →  ● negative_year\n    L1S →  ● year \"-\" d21_24\n    L1 →  ● L1S\n    edtf →  ● L1\nA \"0\" based on:\n    year$string$1 →  ● \"0\" \"0\" \"0\" \"0\"\n    year →  ● year$string$1\n    L1S →  ● year \"-\" d21_24\n    L1 →  ● L1S\n    edtf →  ● L1\nA \"/\" based on:\n    L1i → L1i_date ● \"/\" date_time\n    L1 →  ● L1i\n    edtf →  ● L1\nA \"/\" based on:\n    L1i → L1i_date ● \"/\" L1i_date\n    L1 →  ● L1i\n    edtf →  ● L1\nA \"-\" based on:\n    dx4 →  ● \"-\" dx2 dx2\n    L2X →  ● dx4\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\nA \"Y\" based on:\n    exp_year$string$1 →  ● \"Y\" \"-\"\n    exp_year →  ● exp_year$string$1 exp\n    L2Y →  ● exp_year\n    L2 →  ● L2Y\n    edtf →  ● L2\nA \"0\" based on:\n    positive_decade →  ● \"0\" positive_digit digit\n    decade →  ● positive_decade\n    L2D →  ● decade\n    L2 →  ● L2D\n    edtf →  ● L2\nA \"0\" based on:\n    decade$string$1 →  ● \"0\" \"0\" \"0\"\n    decade →  ● decade$string$1\n    L2D →  ● decade\n    L2 →  ● L2D\n    edtf →  ● L2\nA \"/\" based on:\n    L2i → L2i_date ● \"/\" date_time\n    L2 →  ● L2i\n    edtf →  ● L2\nA \"/\" based on:\n    L2i → L2i_date ● \"/\" L2i_date\n    L2 →  ● L2i\n    edtf →  ● L2\nA \"[\" based on:\n    LSB$string$1 →  ● \"[\" \".\" \".\"\n    LSB →  ● LSB$string$1\n    set →  ● LSB OL RSB\n    L2 →  ● set\n    edtf →  ● L2\nA \"{\" based on:\n    LLB$string$1 →  ● \"{\" \".\" \".\"\n    LLB →  ● LLB$string$1\n    list →  ● LLB OL RLB\n    L2 →  ● list\n    edtf →  ● L2\nA \"0\" based on:\n    positive_year$string$1 →  ● \"0\" \"0\"\n    positive_year →  ● positive_year$string$1 positive_digit digit\n    year →  ● positive_year\n    L1S →  ● year \"-\" d21_24\n    L1 →  ● L1S\n    edtf →  ● L1\nA \"0\" based on:\n    positive_year$string$2 →  ● \"0\" \"0\" \"0\"\n    positive_year →  ● positive_year$string$2 positive_digit\n    year →  ● positive_year\n    L1S →  ● year \"-\" d21_24\n    L1 →  ● L1S\n    edtf →  ● L1\nA \".\" based on:\n    INFINITY$string$1 →  ● \".\" \".\"\n    INFINITY →  ● INFINITY$string$1\n    L1i_date →  ● INFINITY\n    L1i →  ● L1i_date \"/\" L1i_date\n    L1 →  ● L1i\n    edtf →  ● L1\nA \"?\" based on:\n    UA →  ● \"?\"\n    ua_year →  ● UA year\n    ua_date →  ● ua_year\n    L2d →  ● ua_date\n    L2 →  ● L2d\n    edtf →  ● L2\nA \"~\" based on:\n    UA →  ● \"~\"\n    ua_year →  ● UA year\n    ua_date →  ● ua_year\n    L2d →  ● ua_date\n    L2 →  ● L2d\n    edtf →  ● L2\nA \"%\" based on:\n    UA →  ● \"%\"\n    ua_year →  ● UA year\n    ua_date →  ● ua_year\n    L2d →  ● ua_date\n    L2 →  ● L2d\n    edtf →  ● L2\nA \"0\" based on:\n    positive_decade$string$1 →  ● \"0\" \"0\"\n    positive_decade →  ● positive_decade$string$1 positive_digit\n    decade →  ● positive_decade\n    L2D →  ● decade\n    L2 →  ● L2D\n    edtf →  ● L2\nA \"0\" based on:\n    digit →  ● \"0\"\n    d2 →  ● digit digit\n    nd2 →  ● d2\n    L1X →  ● nd2 L1X$string$6\n    L1d →  ● L1X\n    L1 →  ● L1d\n    edtf →  ● L1\nA \"0\" based on:\n    dx →  ● \"0\"\n    dx2 →  ● dx dx\n    dx4 →  ● dx2 dx2\n    L2X →  ● dx4\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\nA token matching function test() { [native code] } based on:\n    d1x →  ● <function test() { [native code] }>\n    dx →  ● d1x\n    dx2 →  ● dx dx\n    dx4 →  ● dx2 dx2\n    L2X →  ● dx4\n    L2d →  ● L2X\n    L2 →  ● L2d\n    edtf →  ● L2\n for \"hello\""
+ },
+ "1985-04-12T23:20:30+15:00": {
+  "valid": false,
+  "error": "Syntax error at line 1 col 22:\n\n1 1985-04-12T23:20:30+15:00\n                       ^\n\nUnexpected \"5\". Instead, I was expecting to see one of the following:\n\nA \"3\" based on:\n    d01_13$string$1 → \"1\" ● \"3\"\n    d01_13 →  ● d01_13$string$1\n    d00_14 →  ● d01_13\n    positive_offset →  ● d00_14\n    timezone → \"+\" ● positive_offset\n    datetime$ebnf$1$subexpression$1 →  ● timezone\n    datetime$ebnf$1 →  ● datetime$ebnf$1$subexpression$1\n    datetime → year_month_day \"T\" time ● datetime$ebnf$1\n    date_time →  ● datetime\n    L0 →  ● date_time\n    edtf →  ● L0\nA \"2\" based on:\n    d01_12$string$1 → \"1\" ● \"2\"\n    d01_12 →  ● d01_12$string$1\n    offset →  ● d01_12\n    positive_offset →  ● offset\n    timezone → \"+\" ● positive_offset\n    datetime$ebnf$1$subexpression$1 →  ● timezone\n    datetime$ebnf$1 →  ● datetime$ebnf$1$subexpression$1\n    datetime → year_month_day \"T\" time ● datetime$ebnf$1\n    date_time →  ● datetime\n    L0 →  ● date_time\n    edtf →  ● L0\nA \"4\" based on:\n    d00_14$string$2 → \"1\" ● \"4\"\n    d00_14 →  ● d00_14$string$2\n    positive_offset →  ● d00_14\n    timezone → \"+\" ● positive_offset\n    datetime$ebnf$1$subexpression$1 →  ● timezone\n    datetime$ebnf$1 →  ● datetime$ebnf$1$subexpression$1\n    datetime → year_month_day \"T\" time ● datetime$ebnf$1\n    date_time →  ● datetime\n    L0 →  ● date_time\n    edtf →  ● L0\nA \"3\" based on:\n    positive_offset$subexpression$1$string$2 → \"1\" ● \"3\"\n    positive_offset$subexpression$1 →  ● positive_offset$subexpression$1$string$2\n    positive_offset →  ● positive_offset$subexpression$1 positive_offset$ebnf$2 minutes\n    timezone → \"+\" ● positive_offset\n    datetime$ebnf$1$subexpression$1 →  ● timezone\n    datetime$ebnf$1 →  ● datetime$ebnf$1$subexpression$1\n    datetime → year_month_day \"T\" time ● datetime$ebnf$1\n    date_time →  ● datetime\n    L0 →  ● date_time\n    edtf →  ● L0\nA \"2\" based on:\n    positive_offset$subexpression$1$string$1 → \"1\" ● \"2\"\n    positive_offset$subexpression$1 →  ● positive_offset$subexpression$1$string$1\n    positive_offset →  ● positive_offset$subexpression$1 positive_offset$ebnf$2 minutes\n    timezone → \"+\" ● positive_offset\n    datetime$ebnf$1$subexpression$1 →  ● timezone\n    datetime$ebnf$1 →  ● datetime$ebnf$1$subexpression$1\n    datetime → year_month_day \"T\" time ● datetime$ebnf$1\n    date_time →  ● datetime\n    L0 →  ● date_time\n    edtf →  ● L0\nA \"2\" based on:\n    offset$string$2 → \"1\" ● \"2\"\n    offset →  ● offset$string$2 offset$ebnf$3 offset$string$3\n    positive_offset →  ● offset\n    timezone → \"+\" ● positive_offset\n    datetime$ebnf$1$subexpression$1 →  ● timezone\n    datetime$ebnf$1 →  ● datetime$ebnf$1$subexpression$1\n    datetime → year_month_day \"T\" time ● datetime$ebnf$1\n    date_time →  ● datetime\n    L0 →  ● date_time\n    edtf →  ● L0\nA token matching function test() { [native code] } based on:\n    d01_11 → \"1\" ● <function test() { [native code] }>\n    offset →  ● d01_11 offset$ebnf$1 minutes\n    positive_offset →  ● offset\n    timezone → \"+\" ● positive_offset\n    datetime$ebnf$1$subexpression$1 →  ● timezone\n    datetime$ebnf$1 →  ● datetime$ebnf$1$subexpression$1\n    datetime → year_month_day \"T\" time ● datetime$ebnf$1\n    date_time →  ● datetime\n    L0 →  ● date_time\n    edtf →  ● L0\nA \"4\" based on:\n    positive_offset$string$3 → \"1\" ● \"4\"\n    positive_offset →  ● positive_offset$string$3 positive_offset$ebnf$3 positive_offset$string$4\n    timezone → \"+\" ● positive_offset\n    datetime$ebnf$1$subexpression$1 →  ● timezone\n    datetime$ebnf$1 →  ● datetime$ebnf$1$subexpression$1\n    datetime → year_month_day \"T\" time ● datetime$ebnf$1\n    date_time →  ● datetime\n    L0 →  ● date_time\n    edtf →  ● L0\n for \"1985-04-12T23:20:30+15:00\""
+ }
+}

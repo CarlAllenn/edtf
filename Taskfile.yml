@@ -2,22 +2,28 @@ version: "3"
 
 tasks:
   test:
-    desc: Run the test suite (core crate)
+    desc: Run the test suite (all crates, all features)
     cmds:
-      - cargo test -p edtf-core
+      - cargo test --workspace --all-features
 
   fmt:
     desc: Format all code
     cmds:
       - cargo fmt --all
+      - taplo fmt
 
   lint:
-    desc: Clippy with warnings as errors
+    desc: All linters, warnings as errors
     cmds:
       - cargo clippy --workspace --all-features -- -D warnings
+      - cargo deny check
+      - taplo fmt --check
+      - taplo lint
+      - ec
+      - codespell
 
   check:
-    desc: Format check + lint + tests
+    desc: Format check + lint + tests (what CI runs)
     cmds:
       - cargo fmt --all --check
       - task: lint

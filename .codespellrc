@@ -1,0 +1,3 @@
+[codespell]
+skip = target,mise.lock,Cargo.lock,tests/fixtures/legacy,spec
+ignore-words-list = crate

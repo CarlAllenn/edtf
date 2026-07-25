@@ -7,6 +7,16 @@ pre-commit:
     clippy:
       glob: "*.rs"
       run: cargo clippy --workspace --all-features -- -D warnings
+    taplo:
+      glob: "*.toml"
+      run: taplo fmt --check && taplo lint
+    deny:
+      glob: "{Cargo.toml,Cargo.lock,deny.toml}"
+      run: cargo deny check
+    editorconfig:
+      run: ec
+    codespell:
+      run: codespell
     actionlint:
       glob: ".github/workflows/*.yml"
       run: actionlint

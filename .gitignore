@@ -1,3 +1,4 @@
 /target
+.DS_Store
 # ISO documents are copyrighted — never commit them
 /spec/

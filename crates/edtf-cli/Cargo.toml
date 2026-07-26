@@ -2,6 +2,8 @@
 name = "edtf-cli"
 version = "0.1.0"
 description = "Command-line EDTF (ISO 8601-2) validator: validate, canonicalize, level, bounds, temporal relations and Julian (Old Style) conversion."
+keywords = ["edtf", "date", "iso8601", "cli", "validator"]
+categories = ["command-line-utilities", "date-and-time"]
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

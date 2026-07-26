@@ -2,6 +2,8 @@
 name = "edtf-postgres"
 version = "0.2.0"
 description = "Postgres extension (pgrx) exposing edtf-core: EDTF validation, levels, canonical form and date bounds in SQL."
+keywords = ["edtf", "date", "iso8601", "postgres", "pgrx"]
+categories = ["date-and-time", "database"]
 edition = "2021"
 rust-version = "1.82"
 license = "MIT OR Apache-2.0"

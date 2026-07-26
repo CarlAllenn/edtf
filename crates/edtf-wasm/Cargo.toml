@@ -2,6 +2,8 @@
 name = "edtf-wasm"
 version = "0.2.0"
 description = "WebAssembly bindings for edtf-core: EDTF (ISO 8601-2) validation for JavaScript."
+keywords = ["edtf", "date", "iso8601", "wasm", "javascript"]
+categories = ["date-and-time", "wasm", "web-programming"]
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

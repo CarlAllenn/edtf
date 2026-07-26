@@ -300,12 +300,24 @@ of this implementation. Each is enforced by tests in `crates/edtf-core/tests/`.
   §4.4.3 (precision counts significant digits *from the left*: its own
   Example 2 gives `3141592653S4` → 3141000000–3141999999) and the LoC EDTF
   original. We follow §4.4.3: `Y171010000S3` → 171000000–171999999.
+- **D20 — no leading zeros in Y-year significands:** `Y018470` and
+  `Y08470847E1` are invalid. Leading zeros are mandatory padding for
+  four-digit years (P1 4.5) but carry no information after `Y`, and they
+  desynchronize the S-digit budget from the value: `Y08470847E1S9` counted 9
+  written digits, yet its canonical zero-stripped form `Y8470847E1S9` has a
+  value of only 8 digits and failed to reparse (round-trip violation, found
+  by coverage-guided fuzzing). Significant digits count digits of the value
+  (§4.4.3), so the written form must not inflate them.
 
 ## 10. Test-suite sources
 
 1. Every quoted example string in Annex A (the conformance surface).
 2. Every implicit-form example in Clauses 4.5–4.8, 6, 8, 9, 10 that falls inside
    the profile (many above are already listed).
-3. LoC EDTF 1.0 examples/test corpora for interop cross-checks.
+3. Every example on the LoC EDTF specification page
+   (loc.gov/standards/datetime), transcribed verbatim into
+   `tests/fixtures/loc/loc-edtf-examples.json` and enforced by
+   `crates/edtf-core/tests/loc.rs` — the interop cross-check against the
+   original the ISO profile codifies. ISO Annex A wins on disagreement.
 4. The old monument JS engine's test suite as behavioral oracle (read-only).
 5. Adversarial negatives from §5's reject list and every D-decision.

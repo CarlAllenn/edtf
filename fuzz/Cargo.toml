@@ -1,0 +1,27 @@
+[package]
+name = "edtf-core-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+edtf-core = { path = "../crates/edtf-core" }
+
+[[bin]]
+name = "parse"
+path = "fuzz_targets/parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "roundtrip"
+path = "fuzz_targets/roundtrip.rs"
+test = false
+doc = false
+bench = false

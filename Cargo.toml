@@ -4,7 +4,9 @@ members = ["crates/edtf-core", "crates/edtf-wasm", "crates/edtf-cli"]
 # crates/edtf-postgres is intentionally NOT a workspace member: pgrx
 # extensions need their own dependency graph and a locally-initialized pgrx
 # toolchain (`cargo pgrx init`). Build/test it via `task pg:test`.
-exclude = ["crates/edtf-postgres"]
+# fuzz/ is excluded for the same reason: cargo-fuzz targets need nightly and
+# libfuzzer, and must not drag those into the everyday workspace build.
+exclude = ["crates/edtf-postgres", "fuzz"]
 
 [workspace.package]
 edition = "2021"

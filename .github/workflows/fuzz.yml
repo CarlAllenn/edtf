@@ -1,0 +1,50 @@
+name: Fuzz
+
+# Coverage-guided deep fuzzing (cargo-fuzz/libFuzzer), per issue #1. Not a
+# push gate: the deterministic harness in crates/edtf-core/tests/fuzz.rs
+# already runs on every push; this job digs deeper on a nightly schedule or
+# on demand. Nightly toolchain is confined to this workflow.
+
+on:
+  schedule:
+    - cron: "41 5 * * *"
+  workflow_dispatch:
+    inputs:
+      max_total_time:
+        description: Seconds of fuzzing per target
+        default: "1200"
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    name: cargo fuzz (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [parse, roundtrip]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - run: rustup toolchain install nightly --profile minimal
+      - name: Cache cargo-fuzz
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.cargo/bin/cargo-fuzz
+          key: cargo-fuzz-0.13.2-${{ runner.os }}
+      - run: command -v cargo-fuzz || cargo install cargo-fuzz --version 0.13.2 --locked
+      - name: Seed corpus from fixtures
+        run: ./fuzz/seed.sh
+      - name: Fuzz
+        run: |
+          cargo +nightly fuzz run ${{ matrix.target }} -- \
+            -max_total_time=${{ github.event.inputs.max_total_time || 1200 }} \
+            -timeout=5
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fuzz-artifacts-${{ matrix.target }}
+          path: fuzz/artifacts/
+          if-no-files-found: ignore

@@ -140,6 +140,15 @@ fn decisions() {
     assert!(is_valid("-1985-04-12")); // D17: negative year with month/day
     assert_level("-1985-04-12", 1);
     assert_invalid("Y20000-04"); // Y-years are year-only
+
+    // D20: no leading zeros in Y-year significands. Found by cargo-fuzz:
+    // "Y08470847E1S9" used to parse with a 9-digit S-budget, then its
+    // canonical zero-stripped form failed to reparse.
+    assert_invalid("Y08470847E1S9");
+    assert_invalid("Y-01694194E1S9");
+    assert_invalid("Y018470");
+    assert_invalid("Y012E3");
+    assert!(is_valid("Y8470847E1S8"));
     assert_invalid("{}");
     assert_invalid("{1960,}");
     assert_invalid("{1960, 1961}"); // space

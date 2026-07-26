@@ -1,6 +1,6 @@
 [package]
 name = "edtf-wasm"
-version = "0.1.0"
+version = "0.2.0"
 description = "WebAssembly bindings for edtf-core: EDTF (ISO 8601-2) validation for JavaScript."
 edition.workspace = true
 rust-version.workspace = true
@@ -13,8 +13,11 @@ workspace = true
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Oz", "--enable-bulk-memory", "--enable-nontrapping-float-to-int"]
+
 [dependencies]
-edtf-core = { path = "../edtf-core", version = "0.1.0", features = ["serde"] }
+edtf-core = { path = "../edtf-core", version = "0.2.0", features = ["serde"] }
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = "1"
 wasm-bindgen = "0.2"

@@ -1,6 +1,6 @@
 [package]
 name = "edtf-postgres"
-version = "0.1.0"
+version = "0.2.0"
 description = "Postgres extension (pgrx) exposing edtf-core: EDTF validation, levels, canonical form and date bounds in SQL."
 edition = "2021"
 rust-version = "1.82"
@@ -16,11 +16,15 @@ crate-type = ["cdylib", "lib"]
 
 [features]
 default = ["pg18"]
+pg14 = ["pgrx/pg14", "pgrx-tests/pg14"]
+pg15 = ["pgrx/pg15", "pgrx-tests/pg15"]
+pg16 = ["pgrx/pg16", "pgrx-tests/pg16"]
+pg17 = ["pgrx/pg17", "pgrx-tests/pg17"]
 pg18 = ["pgrx/pg18", "pgrx-tests/pg18"]
 pg_test = []
 
 [dependencies]
-edtf-core = { path = "../edtf-core", version = "0.1.0" }
+edtf-core = { path = "../edtf-core", version = "0.2.0" }
 pgrx = "0.19.1"
 
 [dev-dependencies]

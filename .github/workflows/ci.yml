@@ -28,8 +28,12 @@ jobs:
       - run: cargo build -p edtf-wasm --target wasm32-unknown-unknown --release
 
   postgres:
-    name: pgrx extension tests (Postgres 18)
+    name: pgrx extension tests (Postgres ${{ matrix.pg }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pg: [14, 15, 16, 17, 18]
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
@@ -39,8 +43,8 @@ jobs:
           path: |
             ~/.pgrx
             ~/.cargo/bin/cargo-pgrx
-          key: pgrx-0.19.1-pg18-${{ runner.os }}
+          key: pgrx-0.19.1-pg${{ matrix.pg }}-${{ runner.os }}
       - run: sudo apt-get update && sudo apt-get install -y pkg-config libreadline-dev zlib1g-dev
       - run: command -v cargo-pgrx || cargo install cargo-pgrx --version 0.19.1 --locked
-      - run: test -f ~/.pgrx/config.toml || cargo pgrx init --pg18 download
-      - run: cd crates/edtf-postgres && cargo pgrx test pg18
+      - run: grep -q "pg${{ matrix.pg }}" ~/.pgrx/config.toml 2>/dev/null || cargo pgrx init --pg${{ matrix.pg }} download
+      - run: cd crates/edtf-postgres && cargo pgrx test pg${{ matrix.pg }} --no-default-features --features pg${{ matrix.pg }}

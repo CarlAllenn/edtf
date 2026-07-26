@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/edtf-core", "crates/edtf-wasm"]
+members = ["crates/edtf-core", "crates/edtf-wasm", "crates/edtf-cli"]
 # crates/edtf-postgres is intentionally NOT a workspace member: pgrx
 # extensions need their own dependency graph and a locally-initialized pgrx
 # toolchain (`cargo pgrx init`). Build/test it via `task pg:test`.
@@ -15,3 +15,11 @@ repository = "https://github.com/CarlAllenn/edtf"
 [workspace.lints.rust]
 unsafe_code = "forbid"
 missing_docs = "deny"
+
+# Size-tuned release: matters most for the wasm artifact; the CLI and core
+# are tiny either way, and edtf-postgres has its own workspace/profile.
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+strip = "symbols"

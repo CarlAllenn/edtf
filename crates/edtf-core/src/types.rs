@@ -12,11 +12,17 @@ use alloc::vec::Vec;
 pub struct ParseError {
     /// Human-readable reason the input was rejected.
     pub message: &'static str,
+    /// Byte offset into the original input where the problem was detected.
+    pub offset: usize,
 }
 
 impl core::fmt::Display for ParseError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "invalid EDTF: {}", self.message)
+        write!(
+            f,
+            "invalid EDTF at offset {}: {}",
+            self.offset, self.message
+        )
     }
 }
 

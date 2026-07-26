@@ -178,3 +178,18 @@ fn model_accessors() {
     assert_eq!(set.kind, SetKind::OneMember);
     assert_eq!(set.elements.len(), 2);
 }
+
+#[test]
+fn error_offsets_point_at_the_problem() {
+    fn offset_of(s: &str) -> usize {
+        Edtf::parse(s).unwrap_err().offset
+    }
+    assert_eq!(offset_of("1985-13"), 5); // the bad month
+    assert_eq!(offset_of("1985-02-30"), 8); // the bad day
+    assert_eq!(offset_of("1985-04-12T25:00:00"), 11); // the bad hour
+    assert_eq!(offset_of("1985-04-12T23:20:30+15:00"), 19); // the bad shift
+    assert_eq!(offset_of("1985 -04"), 4); // the space
+    assert_eq!(offset_of("2004/2003"), 5); // the out-of-order end
+    assert_eq!(offset_of("{1960,1985-00}"), 11); // bad month inside a set
+    assert_eq!(offset_of("../1985-13"), 8); // bad month after '..' prefix
+}

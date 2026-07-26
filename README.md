@@ -9,9 +9,10 @@ that is valid in your application is valid in your database — always:
 
 | Crate | What it is |
 |---|---|
-| **`edtf-core`** | The implementation. `#![no_std]`, zero runtime dependencies. Parsing, validation, level classification, calendar bounds, canonical formatting. Optional `serde` feature. |
-| **`edtf-wasm`** | WebAssembly bindings for JavaScript: `isValid`, `level`, `canonical`, `parse` (JSON summary). |
-| **`edtf-postgres`** | Postgres extension (via [pgrx]): `edtf_valid()`, `edtf_level()`, `edtf_canonical()`, `edtf_min()`, `edtf_max()` as SQL functions. |
+| **`edtf-core`** | The implementation. `#![no_std]`, zero runtime dependencies. Parsing, validation, level classification, calendar bounds, canonical formatting, positioned errors. Optional `serde` feature. |
+| **`edtf-wasm`** | WebAssembly bindings for JavaScript (~61 KB): `isValid`, `level`, `canonical`, `parse` (JSON summary). |
+| **`edtf-postgres`** | Postgres extension (via [pgrx], Postgres 14–18): `edtf_valid()`, `edtf_level()`, `edtf_canonical()`, `edtf_min()`, `edtf_max()` as SQL functions. |
+| **`edtf-cli`** | The `edtf` command-line tool: `validate` / `canonical` / `level` / `info` over arguments or stdin. Installable anywhere via `cargo install edtf-cli` (or pin it with mise: `"cargo:edtf-cli"`). |
 
 [pgrx]: https://github.com/pgcentralfoundation/pgrx
 
@@ -89,7 +90,11 @@ task pg:test     # Postgres extension tests (needs `cargo pgrx init` once)
 
 The test suite includes a 63-case conformance corpus derived from every
 Annex A example plus adversarial cases, ~200 spec-derived assertions, bounds
-verification, and a canonical-form round-trip property over all fixtures.
+verification, a canonical-form round-trip property over all fixtures, and a
+deterministic fuzz harness (hundreds of thousands of hostile inputs per run;
+the parser must never panic, and everything it accepts must round-trip).
+Parse errors carry the byte offset of the problem:
+`1985-02-30` → `invalid EDTF at offset 8: day is out of range for the month`.
 
 ## License
 

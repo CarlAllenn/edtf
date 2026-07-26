@@ -20,6 +20,8 @@ serde = { version = "1", default-features = false, features = [
 
 [dev-dependencies]
 serde_json = "=1.0.151"
+# Model-side property tests; std-only subset (no fork/timeout machinery).
+proptest = { version = "=1.11.0", default-features = false, features = ["std"] }
 # Bench-only; default features off to keep plotters/rayon out of the tree.
 criterion = { version = "=0.8.2", default-features = false, features = [
   "cargo_bench_support",

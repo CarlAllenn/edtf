@@ -93,12 +93,18 @@ task pg:test     # Postgres extension tests (needs `cargo pgrx init` once)
 The test suite includes a 63-case conformance corpus derived from every
 Annex A example plus adversarial cases, every example from the Library of
 Congress EDTF specification page as an interop cross-check
-(`tests/fixtures/loc`), ~200 spec-derived assertions, bounds verification, a
-canonical-form round-trip property over all fixtures, and a deterministic
-fuzz harness (hundreds of thousands of hostile inputs per run; the parser
-must never panic, and everything it accepts must round-trip). On top of
-that, coverage-guided fuzzing (`fuzz/`, cargo-fuzz) runs nightly in CI
-against the same never-panic and round-trip properties.
+(`tests/fixtures/loc`), a second interop corpus harvested from the edtf.js
+and python-edtf test suites (`tests/fixtures/interop` — shared verdicts
+enforced, implementation extensions pinned as must-rejects, every
+divergence a documented decision), ~200 spec-derived assertions, bounds
+verification, a canonical-form round-trip property over all fixtures,
+model-side property tests (proptest generates random valid values as
+structured data and checks round-trip identity, level stability and bounds
+ordering), and a deterministic fuzz harness (hundreds of thousands of
+hostile inputs per run; the parser must never panic, and everything it
+accepts must round-trip). On top of that, coverage-guided fuzzing
+(`fuzz/`, cargo-fuzz) runs nightly in CI against the same never-panic and
+round-trip properties.
 Parse errors carry the byte offset of the problem:
 `1985-02-30` → `invalid EDTF at offset 8: day is out of range for the month`.
 

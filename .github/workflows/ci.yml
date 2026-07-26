@@ -17,6 +17,15 @@ jobs:
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
       - run: task check
 
+  msrv:
+    name: MSRV check (Rust 1.82)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+      - run: rustup toolchain install 1.82 --profile minimal
+      - run: rustup run 1.82 cargo check --workspace --all-features
+
   wasm:
     name: WebAssembly build + native tests
     runs-on: ubuntu-latest

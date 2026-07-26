@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices", ":semanticCommits"],
+  "minimumReleaseAge": "3 days",
+  "packageRules": [
+    {
+      "description": "Group all mise-managed tool pins",
+      "matchManagers": ["mise"],
+      "groupName": "mise tools"
+    },
+    {
+      "description": "Rust toolchain bumps need a deliberate decision (MSRV)",
+      "matchDepNames": ["rust"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "pgrx must move in lockstep across cargo-pgrx, pgrx and pgrx-tests",
+      "matchPackageNames": ["pgrx", "pgrx-tests"],
+      "groupName": "pgrx"
+    }
+  ]
+}

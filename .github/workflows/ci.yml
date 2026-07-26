@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # renovate/**: branch-automerge needs the CI check on the branch itself
+    # (no PR is opened unless the branch goes red).
+    branches: [main, "renovate/**"]
   pull_request:
 
 permissions:

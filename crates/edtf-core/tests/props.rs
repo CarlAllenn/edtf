@@ -13,8 +13,8 @@
 //! only generated in shapes `Display` can spell.
 
 use edtf_core::{
-    Bound, Date, DateField, DateTime, Edtf, Interval, IntervalEndpoint, Qualifier, Set, SetElement,
-    SetKind, Time, TimeShift, Year, YearKind,
+    Bound, Date, DateField, DateTime, Edtf, Interval, IntervalEndpoint, Modality, Qualifier,
+    Relation, Set, SetElement, SetKind, Time, TimeShift, Year, YearKind,
 };
 use proptest::prelude::*;
 
@@ -403,6 +403,105 @@ proptest! {
         let b = v.bounds();
         if let (Bound::Date(lo), Bound::Date(hi)) = (b.earliest, b.latest) {
             prop_assert!(lo <= hi, "earliest {} > latest {} for {}", lo, hi, v);
+        }
+    }
+
+    /// `relation()` is converse-symmetric: swapping the operands maps every
+    /// relation to its converse with the same modality (issue #22's
+    /// antisymmetry ceremony, strengthened to all six relations).
+    #[test]
+    fn relation_is_converse_symmetric(a in edtf(), b in edtf()) {
+        let ab = a.relation(&b);
+        let ba = b.relation(&a);
+        for r in Relation::ALL {
+            prop_assert_eq!(
+                ab.modality(r), ba.modality(r.converse()),
+                "{} vs {}: {:?} != converse", a, b, r
+            );
+        }
+    }
+
+    /// The possible-set is sound: never empty, at most one Definite (and
+    /// then nothing else possible), Definite only ever Before/After/Equal,
+    /// and any Unknown bound on either side means possible-everything.
+    #[test]
+    fn relation_possible_set_is_sound(a in edtf(), b in edtf()) {
+        let rel = a.relation(&b);
+        let possible: Vec<Relation> = rel.possible().collect();
+        prop_assert!(!possible.is_empty(), "{} vs {}: empty possible set", a, b);
+        let definite: Vec<Relation> =
+            Relation::ALL.into_iter().filter(|r| rel.is_definite(*r)).collect();
+        prop_assert!(definite.len() <= 1, "{} vs {}: two definites", a, b);
+        prop_assert_eq!(rel.definite(), definite.first().copied());
+        if let Some(d) = rel.definite() {
+            prop_assert_eq!(&possible, &[d], "{} vs {}: definite must be sole", a, b);
+            prop_assert!(
+                matches!(d, Relation::Before | Relation::After | Relation::Equal),
+                "{} vs {}: containment/overlap can never be forced", a, b
+            );
+        }
+        let unknown = |bd: Bound| bd == Bound::Unknown;
+        if [a.bounds(), b.bounds()]
+            .iter()
+            .any(|bo| unknown(bo.earliest) || unknown(bo.latest))
+        {
+            for r in Relation::ALL {
+                prop_assert_eq!(
+                    rel.modality(r), Modality::Possible,
+                    "{} vs {}: Unknown must be possible-everything", a, b
+                );
+            }
+        }
+    }
+
+    /// Definite-Before agrees with the bounds regions directly: it holds
+    /// exactly when A's latest day precedes B's earliest day and no bound
+    /// anywhere is Unknown (Unknown is possible-everything even when the
+    /// other bounds alone would settle the comparison).
+    #[test]
+    fn definite_before_matches_bounds(a in edtf(), b in edtf()) {
+        let no_unknown = [a.bounds(), b.bounds()]
+            .iter()
+            .all(|bo| bo.earliest != Bound::Unknown && bo.latest != Bound::Unknown);
+        let expected = no_unknown && matches!(
+            (a.bounds().latest, b.bounds().earliest),
+            (Bound::Date(hi), Bound::Date(lo)) if hi < lo
+        );
+        prop_assert_eq!(
+            a.relation(&b).is_definite(Relation::Before), expected,
+            "{} vs {}", a, b
+        );
+    }
+
+    /// D18 consistency: any interval the parser accepts as `a/b` must not
+    /// relate its endpoints as Definitely-After.
+    #[test]
+    fn interval_endpoints_never_definitely_after(iv in interval()) {
+        let s = Edtf::Interval(iv).to_string();
+        let Ok(Edtf::Interval(parsed)) = Edtf::parse(&s) else {
+            return Err(TestCaseError::fail(format!("{s} did not reparse as interval")));
+        };
+        if let (IntervalEndpoint::Date(start), IntervalEndpoint::Date(end)) =
+            (parsed.start, parsed.end)
+        {
+            let rel = Edtf::Date(start).relation(&Edtf::Date(end));
+            prop_assert!(
+                !rel.is_definite(Relation::After),
+                "parser accepted {} yet start is definitely after end", s
+            );
+        }
+    }
+
+    /// Every expression relates to itself reflexively-honestly: Equal is
+    /// always possible, and single-day expressions are definitely Equal.
+    #[test]
+    fn self_relation_admits_equal(v in edtf()) {
+        let rel = v.relation(&v);
+        prop_assert!(rel.is_possible(Relation::Equal), "{}", v);
+        if let (Bound::Date(lo), Bound::Date(hi)) = (v.bounds().earliest, v.bounds().latest) {
+            if lo == hi {
+                prop_assert_eq!(rel.definite(), Some(Relation::Equal), "{}", v);
+            }
         }
     }
 }

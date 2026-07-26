@@ -6,8 +6,9 @@
 //! - `level(input)` → `0 | 1 | 2 | -1` (-1 = invalid)
 //! - `canonical(input)` → `string | undefined` (spec-preferred form)
 //! - `parse(input)` → JSON string of a [`Summary`] or `undefined`
+//! - `relation(a, b)` → JSON string of a [`RelationSummary`] or `undefined`
 
-use edtf_core::{Bound, Edtf};
+use edtf_core::{Bound, Edtf, Relation};
 use serde::Serialize;
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -76,6 +77,41 @@ fn precision_str(d: &edtf_core::Date) -> &'static str {
     }
 }
 
+/// The JSON shape `relation` returns: the modality of each of the six
+/// coarsened Allen relations between the two inputs, each
+/// `"impossible" | "possible" | "definite"`. Semantics: `docs/spec-notes.md`
+/// D23 (possible-completions over bounds regions; Unknown bounds are
+/// possible-everything, never definite).
+#[derive(Debug, Serialize)]
+pub struct RelationSummary {
+    /// A ends before B starts.
+    pub before: &'static str,
+    /// A starts after B ends.
+    pub after: &'static str,
+    /// Partial overlap on opposite sides.
+    pub overlaps: &'static str,
+    /// B lies within A without being equal.
+    pub contains: &'static str,
+    /// A lies within B without being equal.
+    pub within: &'static str,
+    /// A and B cover exactly the same days.
+    pub equal: &'static str,
+}
+
+/// Build the [`RelationSummary`] for two inputs, if both are valid EDTF.
+pub fn relate(a: &str, b: &str) -> Option<RelationSummary> {
+    let rel = Edtf::parse(a).ok()?.relation(&Edtf::parse(b).ok()?);
+    let m = |r: Relation| rel.modality(r).as_str();
+    Some(RelationSummary {
+        before: m(Relation::Before),
+        after: m(Relation::After),
+        overlaps: m(Relation::Overlaps),
+        contains: m(Relation::Contains),
+        within: m(Relation::Within),
+        equal: m(Relation::Equal),
+    })
+}
+
 /// True if `input` is valid EDTF (levels 0–2).
 #[wasm_bindgen(js_name = isValid)]
 pub fn is_valid(input: &str) -> bool {
@@ -100,6 +136,14 @@ pub fn canonical(input: &str) -> Option<String> {
 pub fn parse(input: &str) -> Option<String> {
     let summary = summarize(input)?;
     serde_json::to_string(&summary).ok()
+}
+
+/// Three-valued temporal relation between `a` and `b` as a JSON string, or
+/// `undefined` if either input is invalid. See [`RelationSummary`] for the
+/// object shape.
+#[wasm_bindgen]
+pub fn relation(a: &str, b: &str) -> Option<String> {
+    serde_json::to_string(&relate(a, b)?).ok()
 }
 
 #[cfg(test)]
@@ -139,6 +183,23 @@ mod tests {
         assert!(summarize("1985-02-30").is_none());
         assert_eq!(level("1985-02-30"), -1);
         assert!(is_valid("1985-04-12"));
+    }
+
+    #[test]
+    fn relation_shape() {
+        let r = relate("1985~", "199X").unwrap();
+        assert_eq!(r.before, "definite");
+        assert_eq!(r.after, "impossible");
+        assert_eq!(r.equal, "impossible");
+        let j = relation("198X", "1985").unwrap();
+        assert_eq!(
+            j,
+            "{\"before\":\"possible\",\"after\":\"possible\",\
+                \"overlaps\":\"possible\",\"contains\":\"possible\",\
+                \"within\":\"possible\",\"equal\":\"possible\"}"
+        );
+        assert!(relation("junk", "1985").is_none());
+        assert!(relation("1985", "junk").is_none());
     }
 
     #[test]

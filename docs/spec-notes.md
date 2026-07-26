@@ -334,6 +334,29 @@ of this implementation. Each is enforced by tests in `crates/edtf-core/tests/`.
   any of these; edtf.js gates them all behind its non-standard "level 3"
   (rejecting them at spec levels). We accept at the level the parts imply;
   documented divergences in the interop corpus.
+- **D23 — temporal relations use possible-completions semantics over bounds
+  regions:** `relation(a, b)` treats each expression as denoting some
+  nonempty day-interval lying within its `bounds()` region — the "sometime
+  during" reading, consistent with how masks bound to their completions
+  (D11) and how D18 orders intervals. The six coarsened Allen relations
+  (before / after / overlaps / contains / within / equal) are exhaustive
+  and mutually exclusive over concrete day-intervals; each is reported as
+  impossible / possible (some completion pair) / definite (every
+  completion pair), so a lone possible relation is automatically definite.
+  Documented consequences: (a) qualification never moves bounds (8.4.2
+  NOTE) — `1985?` relates exactly as `1985`; (b) only before, after and
+  equal can ever be definite, because any region wider than one day admits
+  single-day completions, so containment/overlap can never be forced —
+  `1985` vs `1985-06` is possibly-contains, not definitely (the "sometime
+  during" vs "throughout" conflation, resolved in favor of never
+  over-asserting); (c) interval endpoint linkage is coarsened away —
+  `2004/2005` vs `2004-06` reports possibly-before although every true
+  completion straddles June 2004; (d) Unknown bounds are
+  possible-everything and never definite, even where the other endpoint
+  could in principle constrain them (`1985/` vs `../1980`); (e) bounds are
+  day-granular, so same-day datetimes are definitely equal. Enforced by
+  `tests/relation.rs` (pinned table) and `tests/props.rs` (converse
+  symmetry, soundness, D18 agreement).
 
 ## 10. Test-suite sources
 

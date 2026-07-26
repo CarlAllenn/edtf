@@ -31,7 +31,10 @@ jobs:
         with:
           # renovate: datasource=github-releases depName=jdx/mise
           version: 2026.7.12
-      - run: task check
+      - env:
+          # zizmor: enables online audits (known-vulnerable-actions etc.)
+          GH_TOKEN: ${{ github.token }}
+        run: task check
 
   msrv:
     # Stable job name: it is a required status check on main, and a name
@@ -39,11 +42,11 @@ jobs:
     #
     # The MSRV toolchain is a sanctioned exception to the everything-via-mise
     # rule: it is deliberately a second rustup toolchain, bumped manually.
+    # The version lives only in Cargo.toml rust-version — derived below,
+    # never duplicated.
     name: MSRV check
     runs-on: ubuntu-latest
     env:
-      # Keep in sync with rust-version in Cargo.toml
-      MSRV: "1.82"
       MISE_DISABLE_TOOLS: "cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -53,6 +56,8 @@ jobs:
         with:
           # renovate: datasource=github-releases depName=jdx/mise
           version: 2026.7.12
+      - name: Derive MSRV from Cargo.toml
+        run: echo "MSRV=$(taplo get -f Cargo.toml 'workspace.package.rust-version')" >> "$GITHUB_ENV"
       - run: rustup toolchain install "$MSRV" --profile minimal
       - run: rustup run "$MSRV" cargo check --workspace --all-features
 

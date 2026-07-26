@@ -158,7 +158,7 @@ pub(crate) fn date_bounds(d: &Date) -> Bounds {
 }
 
 /// Digit width of the year form, for significant-digit ranges.
-fn big_width(kind: &YearKind) -> u32 {
+pub(crate) fn big_width(kind: &YearKind) -> u32 {
     match kind {
         YearKind::Standard { .. } => 4,
         YearKind::Big { value } => decimal_digits(value.unsigned_abs()),
@@ -183,7 +183,11 @@ fn decimal_digits(mut v: u64) -> u32 {
 /// `precision` digits, sweep the rest 0..9. `None` when the top of the swept
 /// range exceeds the numeric range this library computes with (e.g.
 /// `Y9E18S1`), mirroring how un-valuable years bound to `Unknown`.
-fn significant_range(value: i64, precision: Option<u32>, width: u32) -> Option<(i64, i64)> {
+pub(crate) fn significant_range(
+    value: i64,
+    precision: Option<u32>,
+    width: u32,
+) -> Option<(i64, i64)> {
     let Some(p) = precision else {
         return Some((value, value));
     };
@@ -360,14 +364,14 @@ fn extremum_in_year(d: &Date, y: i64, ascending: bool) -> Option<BoundDate> {
     None
 }
 
-fn month_candidates_of(f: &DateField) -> alloc::vec::Vec<u8> {
+pub(crate) fn month_candidates_of(f: &DateField) -> alloc::vec::Vec<u8> {
     match f.value() {
         Some(v) => alloc::vec![v],
         None => (1..=12).filter(|v| field_matches(f, *v)).collect(),
     }
 }
 
-fn day_candidates_of(f: &DateField) -> alloc::vec::Vec<u8> {
+pub(crate) fn day_candidates_of(f: &DateField) -> alloc::vec::Vec<u8> {
     match f.value() {
         Some(v) => alloc::vec![v],
         None => (1..=31).filter(|v| field_matches(f, *v)).collect(),

@@ -11,7 +11,7 @@ that is valid in your application is valid in your database — always:
 
 | Crate | What it is |
 | --- | --- |
-| **`edtf-core`** | The implementation. `#![no_std]`, zero runtime dependencies. Parsing, validation, level classification, calendar bounds, three-valued temporal relations, canonical formatting, positioned errors. Optional `serde` feature. |
+| **`edtf-core`** | The implementation. `#![no_std]`, zero runtime dependencies. Parsing, validation, level classification, calendar bounds, three-valued temporal relations, value enumeration, canonical formatting, positioned errors. Optional `serde` feature. |
 | **`edtf-calendars`** | Proleptic Julian (Old Style) → Gregorian conversion at the ingest boundary: day precision converts exactly, year/month precision returns honest earliest/latest spans. `#![no_std]`, zero dependencies. |
 | **`edtf-wasm`** | WebAssembly bindings for JavaScript (~61 KB): `isValid`, `level`, `canonical`, `parse` (JSON summary), `relation`. |
 | **`edtf-postgres`** | Postgres extension (via [pgrx], Postgres 14–18): `edtf_valid()`, `edtf_level()`, `edtf_canonical()`, `edtf_min()`, `edtf_max()`, `edtf_relation()` as SQL functions. |
@@ -40,6 +40,12 @@ that is valid in your application is valid in your database — always:
   before `199X`? Definitely; is `198X` before `1985`? Possibly. Six
   coarsened Allen relations, each impossible / possible / definite, never
   over-asserting (semantics: D23 in the spec notes).
+- **Value enumeration**: `values()` lazily yields the concrete calendar
+  values an expression denotes — `{1667,1668,1670..1672}` expands exactly
+  as ISO 8601-2 §6.4 does, `156X` yields its ten years, `1985-0X-31` its
+  five valid months, `XXXX-XX-XX` streams ~3.65M days without allocating.
+  Intervals and `..`-open set elements are honestly `Unenumerable`
+  (semantics: D24–D29 in the spec notes).
 - **Canonical formatting**: `Display` renders the spec-preferred form
   (ISO 8601-2 §8.2.4) — `?2004-?06-?11` normalizes to `2004-06-11?`.
 - **Strict profile boundaries**: everything Annex A excludes is rejected —
@@ -47,8 +53,8 @@ that is valid in your application is valid in your database — always:
   explicit-form designator system are not EDTF and do not parse.
 
 Every grammar production and every judgment call is documented with ISO
-section citations in [docs/spec-notes.md](docs/spec-notes.md), including 23
-resolved decisions (D1–D23) and one identified erratum in the ISO text
+section citations in [docs/spec-notes.md](docs/spec-notes.md), including 29
+resolved decisions (D1–D29) and one identified erratum in the ISO text
 itself (Annex A.6.3 Example 2, which contradicts its own normative clause).
 
 ## Usage

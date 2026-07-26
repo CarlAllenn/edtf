@@ -10,8 +10,9 @@ One zero-dependency core, compiled into every layer that needs it, so a date
 that is valid in your application is valid in your database — always:
 
 | Crate | What it is |
-|---|---|
+| --- | --- |
 | **`edtf-core`** | The implementation. `#![no_std]`, zero runtime dependencies. Parsing, validation, level classification, calendar bounds, three-valued temporal relations, canonical formatting, positioned errors. Optional `serde` feature. |
+| **`edtf-calendars`** | Proleptic Julian (Old Style) → Gregorian conversion at the ingest boundary: day precision converts exactly, year/month precision returns honest earliest/latest spans. `#![no_std]`, zero dependencies. |
 | **`edtf-wasm`** | WebAssembly bindings for JavaScript (~61 KB): `isValid`, `level`, `canonical`, `parse` (JSON summary), `relation`. |
 | **`edtf-postgres`** | Postgres extension (via [pgrx], Postgres 14–18): `edtf_valid()`, `edtf_level()`, `edtf_canonical()`, `edtf_min()`, `edtf_max()`, `edtf_relation()` as SQL functions. |
 | **`edtf-cli`** | The `edtf` command-line tool: `validate` / `canonical` / `level` / `info` over arguments or stdin. Installable anywhere via `cargo install edtf-cli` (or pin it with mise: `"cargo:edtf-cli"`). |
@@ -95,7 +96,7 @@ JSON.parse(parse("1985-04-12/.."));// { kind: "interval", earliest: "1985-04-12"
 Toolchain and every linter are pinned via [mise](https://mise.jdx.dev) with a
 checksum lockfile; git hooks (lefthook) and CI run the same gauntlet:
 
-```
+```sh
 mise install     # pinned Rust + all linters
 task check       # fmt + clippy + cargo-deny + taplo + codespell + ec + tests
 task wasm        # build the WebAssembly artifact
@@ -126,7 +127,7 @@ Criterion benchmarks live in `crates/edtf-core/benches/core.rs` (`task bench`).
 Representative numbers, Apple M1 Pro, rustc 1.97.1, `--release`:
 
 | Input | parse | canonicalize | bounds |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `1985-04-12` | 187 ns | 283 ns | 190 ns |
 | `1985-04-12T23:20:30+04:30` | 150 ns | 458 ns | 209 ns |
 | `2004-06~` | 106 ns | 203 ns | 139 ns |

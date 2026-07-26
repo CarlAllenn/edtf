@@ -83,9 +83,6 @@ jobs:
   secrets:
     name: gitleaks history scan
     runs-on: ubuntu-latest
-    env:
-      # Heavy source-built tools this job never invokes.
-      MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
       # First step of every job, before checkout: runtime egress audit —
       # enforcement per issue #6 canon (allowlist derived from audit run;
@@ -94,22 +91,17 @@ jobs:
         with:
           egress-policy: block
           disable-sudo: true
-          # gitleaks itself makes no network calls; this is the GitHub-owned
-          # cold-cache set (mise tool installs on cache miss).
+          # gitleaks itself makes no network calls; minimal cold-cache
+          # set for the gitleaks-only install (see install_args below).
           allowed-endpoints: >
             api.github.com:443
             codeload.github.com:443
-            files.pythonhosted.org:443
             github.com:443
             mise-versions.jdx.dev:443
             mise.jdx.dev:443
-            nodejs.org:443
             objects.githubusercontent.com:443
-            pypi.org:443
             raw.githubusercontent.com:443
-            registry.npmjs.org:443
             release-assets.githubusercontent.com:443
-            static.rust-lang.org:443
             tuf-repo-cdn.sigstore.dev:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -121,14 +113,14 @@ jobs:
         with:
           # renovate: datasource=github-releases depName=jdx/mise
           version: 2026.7.12
+          # Scanner jobs install only their own tools — the history scan
+          # must not pay (or egress for) the whole toolchain.
+          install_args: gitleaks task
       - run: task scan:secrets
 
   semver:
     name: cargo-semver-checks (published crates)
     runs-on: ubuntu-latest
-    env:
-      # Heavy source-built tools this job never invokes.
-      MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
       # First step of every job, before checkout: runtime egress audit —
       # enforcement per issue #6 canon (allowlist derived from audit run;
@@ -144,16 +136,12 @@ jobs:
             api.github.com:443
             codeload.github.com:443
             crates.io:443
-            files.pythonhosted.org:443
             github.com:443
             index.crates.io:443
             mise-versions.jdx.dev:443
             mise.jdx.dev:443
-            nodejs.org:443
             objects.githubusercontent.com:443
-            pypi.org:443
             raw.githubusercontent.com:443
-            registry.npmjs.org:443
             release-assets.githubusercontent.com:443
             static.crates.io:443
             static.rust-lang.org:443
@@ -165,6 +153,8 @@ jobs:
         with:
           # renovate: datasource=github-releases depName=jdx/mise
           version: 2026.7.12
+          # Scanner jobs install only their own tools.
+          install_args: rust github:obi1kenobi/cargo-semver-checks task
       - run: task semver
 
   msrv:

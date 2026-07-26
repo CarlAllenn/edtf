@@ -109,17 +109,14 @@ Representative numbers, Apple M1 Pro, rustc 1.97.1, `--release`:
 
 | Input | parse | canonicalize | bounds |
 |---|---|---|---|
-| `1985-04-12` | 188 ns | 283 ns | 223 ns |
-| `1985-04-12T23:20:30+04:30` | 154 ns | 456 ns | 226 ns |
-| `2004-06~` | 97 ns | 211 ns | 171 ns |
-| `?2004-06-~11` | 193 ns | 287 ns | 230 ns |
-| `156X-12-25` | 182 ns | 275 ns | 99 µs¹ |
-| `Y-17E7S3` | 81 ns | 167 ns | 15 ns |
-| `{..1983-12-31,1984-10-10..1984-11-01,1984-11-05..}` | 1.32 µs | 1.18 µs | 939 ns |
-| `1985-02-30` (rejected) | 195 ns | — | — |
-
-¹ Bounds over unspecified year digits currently enumerate candidates;
-  a known optimization target.
+| `1985-04-12` | 187 ns | 283 ns | 190 ns |
+| `1985-04-12T23:20:30+04:30` | 150 ns | 458 ns | 209 ns |
+| `2004-06~` | 106 ns | 203 ns | 139 ns |
+| `?2004-06-~11` | 192 ns | 295 ns | 199 ns |
+| `156X-12-25` | 185 ns | 284 ns | 173 ns |
+| `Y-17E7S3` | 74 ns | 178 ns | 15 ns |
+| `{..1983-12-31,1984-10-10..1984-11-01,1984-11-05..}` | 1.25 µs | 1.20 µs | 795 ns |
+| `1985-02-30` (rejected) | 189 ns | — | — |
 
 ## License
 

@@ -240,7 +240,9 @@ fn season_bounds(d: &Date, code: u8) -> Bounds {
     }
 }
 
-/// Min and max year completions of a standard year.
+/// Min and max year completions of a standard year: masked digits take 0
+/// for the minimum and 9 for the maximum (fixed digits pin their place, so
+/// the extremes are independent per digit).
 fn year_range(d: &Date) -> (i64, i64) {
     match d.year.kind {
         YearKind::Standard { negative, digits } => {
@@ -248,84 +250,110 @@ fn year_range(d: &Date) -> (i64, i64) {
                 (v, v)
             } else {
                 debug_assert!(!negative);
-                let lo = (0..=9999i64)
-                    .find(|y| year_matches(&digits, *y))
-                    .expect("some year matches any digit pattern");
-                let hi = (0..=9999i64)
-                    .rev()
-                    .find(|y| year_matches(&digits, *y))
-                    .expect("some year matches any digit pattern");
-                (lo, hi)
+                (year_value(digits, 0), year_value(digits, 9))
             }
         }
         _ => unreachable!("caller checked Standard"),
     }
 }
 
-/// Earliest (`ascending`) or latest completion of a masked/plain date.
-fn extremum(d: &Date, ascending: bool) -> Option<BoundDate> {
-    let (y_lo, y_hi) = year_range(d);
-    let years: alloc::vec::Vec<i64> = match d.year.kind {
-        YearKind::Standard { digits, .. } if d.year.value().is_none() => {
-            let iter = (y_lo..=y_hi).filter(|y| year_matches(&digits, *y));
-            if ascending {
-                iter.collect()
-            } else {
-                let mut v: alloc::vec::Vec<i64> = iter.collect();
-                v.reverse();
-                v
-            }
+/// The year denoted by `digits` with every masked digit replaced by `fill`.
+fn year_value(digits: [Option<u8>; 4], fill: u8) -> i64 {
+    digits
+        .iter()
+        .fold(0, |acc, d| acc * 10 + i64::from(d.unwrap_or(fill)))
+}
+
+/// Completions of a masked year, ascending or descending. The masked
+/// positions form an odometer (most significant first), so consecutive
+/// counter values yield consecutive matching years in order.
+fn year_completions(digits: [Option<u8>; 4], ascending: bool) -> impl Iterator<Item = i64> {
+    let mut masked = [0usize; 4];
+    let mut n = 0;
+    for (i, d) in digits.iter().enumerate() {
+        if d.is_none() {
+            masked[n] = i;
+            n += 1;
         }
-        _ => alloc::vec![y_lo],
+    }
+    let count = 10u32.pow(n as u32);
+    (0..count).map(move |i| {
+        let mut rem = if ascending { i } else { count - 1 - i };
+        let mut filled = digits.map(|d| d.unwrap_or(0));
+        for pos in masked[..n].iter().rev() {
+            filled[*pos] = (rem % 10) as u8;
+            rem /= 10;
+        }
+        filled.iter().fold(0, |acc, d| acc * 10 + i64::from(*d))
+    })
+}
+
+/// Earliest (`ascending`) or latest completion of a masked/plain date.
+///
+/// For masked years the completions are visited lazily in order; almost
+/// every pattern resolves on the first year, and the only patterns that
+/// advance further are leap-sensitive (a February 29 that the first
+/// candidate year lacks), which validation guarantees resolve eventually.
+fn extremum(d: &Date, ascending: bool) -> Option<BoundDate> {
+    if let YearKind::Standard { digits, .. } = d.year.kind {
+        if d.year.value().is_none() {
+            return year_completions(digits, ascending)
+                .find_map(|y| extremum_in_year(d, y, ascending));
+        }
+    }
+    let (y, _) = year_range(d);
+    extremum_in_year(d, y, ascending)
+}
+
+/// Earliest (`ascending`) or latest day within year `y` matching the
+/// month/day pattern of `d`, if the year admits one.
+fn extremum_in_year(d: &Date, y: i64, ascending: bool) -> Option<BoundDate> {
+    let Some(month) = &d.month else {
+        return Some(if ascending {
+            BoundDate {
+                year: y,
+                month: 1,
+                day: 1,
+            }
+        } else {
+            BoundDate {
+                year: y,
+                month: 12,
+                day: 31,
+            }
+        });
     };
-    for y in years {
-        let Some(month) = &d.month else {
+    let mut months = month_candidates_of(month);
+    if !ascending {
+        months.reverse();
+    }
+    for m in months {
+        let Some(day) = &d.day else {
             return Some(if ascending {
                 BoundDate {
                     year: y,
-                    month: 1,
+                    month: m,
                     day: 1,
                 }
             } else {
                 BoundDate {
                     year: y,
-                    month: 12,
-                    day: 31,
+                    month: m,
+                    day: last_day(m, is_leap(y)),
                 }
             });
         };
-        let mut months = month_candidates_of(month);
+        let mut days = day_candidates_of(day);
         if !ascending {
-            months.reverse();
+            days.reverse();
         }
-        for m in months {
-            let Some(day) = &d.day else {
-                return Some(if ascending {
-                    BoundDate {
-                        year: y,
-                        month: m,
-                        day: 1,
-                    }
-                } else {
-                    BoundDate {
-                        year: y,
-                        month: m,
-                        day: last_day(m, is_leap(y)),
-                    }
+        for dd in days {
+            if dd <= last_day(m, is_leap(y)) {
+                return Some(BoundDate {
+                    year: y,
+                    month: m,
+                    day: dd,
                 });
-            };
-            let mut days = day_candidates_of(day);
-            if !ascending {
-                days.reverse();
-            }
-            for dd in days {
-                if dd <= last_day(m, is_leap(y)) {
-                    return Some(BoundDate {
-                        year: y,
-                        month: m,
-                        day: dd,
-                    });
-                }
             }
         }
     }
@@ -348,14 +376,6 @@ fn day_candidates_of(f: &DateField) -> alloc::vec::Vec<u8> {
 
 fn field_matches(f: &DateField, v: u8) -> bool {
     f.digits[0].is_none_or(|p| p == v / 10) && f.digits[1].is_none_or(|p| p == v % 10)
-}
-
-fn year_matches(digits: &[Option<u8>; 4], y: i64) -> bool {
-    let actual = [(y / 1000) % 10, (y / 100) % 10, (y / 10) % 10, y % 10];
-    digits
-        .iter()
-        .zip(actual)
-        .all(|(pat, a)| pat.is_none_or(|p| i64::from(p) == a))
 }
 
 /// Proleptic Gregorian leap rule on the astronomical year number.

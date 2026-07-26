@@ -3,3 +3,6 @@ target/
 .DS_Store
 # ISO documents are copyrighted — never commit them
 /spec/
+
+# go-task fingerprint cache
+.task/

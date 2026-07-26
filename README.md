@@ -98,7 +98,7 @@ checksum lockfile; git hooks (lefthook) and CI run the same gauntlet:
 
 ```sh
 mise install     # pinned Rust + all linters
-task check       # fmt + clippy + cargo-deny + taplo + codespell + ec + tests
+task ci          # fmt + clippy + cargo-deny + taplo + codespell + ec + tests
 task wasm        # build the WebAssembly artifact
 task pg:test     # Postgres extension tests (needs `cargo pgrx init` once)
 ```

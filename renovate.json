@@ -9,8 +9,7 @@
   "osvVulnerabilityAlerts": true,
   "lockFileMaintenance": {
     "enabled": true,
-    "automerge": true,
-    "automergeType": "branch"
+    "automerge": true
   },
   "customManagers": [
     {

@@ -2,9 +2,7 @@ name: CI
 
 on:
   push:
-    # renovate/lock-file-maintenance*: branch-automerge needs the ci check
-    # on the branch itself (no PR is opened unless the branch goes red).
-    branches: [main, "renovate/lock-file-maintenance*"]
+    branches: [main]
   pull_request:
 
 permissions:

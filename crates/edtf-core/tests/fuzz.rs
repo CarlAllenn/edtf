@@ -74,7 +74,7 @@ fn random_grammar_soup_never_panics() {
 
 #[test]
 fn random_bytes_never_panic() {
-    let mut rng = Rng(0xBAD5_EED_BAD5_EED);
+    let mut rng = Rng(0xBA_D5EE_DBAD_5EED);
     let mut buf = Vec::new();
     for _ in 0..iterations(50_000) {
         buf.clear();

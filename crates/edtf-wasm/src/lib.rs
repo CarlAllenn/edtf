@@ -145,7 +145,7 @@ mod tests {
     fn json_is_camel_case() {
         let j = parse("1985").unwrap();
         assert!(j.contains("\"canonical\":\"1985\""));
-        assert!(j.contains("\"level\":1") == false, "1985 is level 0: {j}");
+        assert!(!j.contains("\"level\":1"), "1985 is level 0: {j}");
         assert!(j.contains("\"level\":0"));
     }
 }

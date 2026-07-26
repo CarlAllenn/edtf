@@ -1,22 +1,54 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:best-practices", ":semanticCommits"],
+  "extends": [
+    "config:best-practices",
+    ":semanticCommits",
+    ":separateMultipleMajorReleases"
+  ],
   "minimumReleaseAge": "3 days",
+  "osvVulnerabilityAlerts": true,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
+  "customManagers": [
+    {
+      "description": "Generic: '# renovate:' comments above *_VERSION env pins in workflows",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n\\s*\\w+_VERSION: (?<currentValue>\\S+)"
+      ]
+    }
+  ],
   "packageRules": [
     {
-      "description": "Group all mise-managed tool pins",
+      "description": "Group all mise-managed tool pins (rust is handled separately below)",
       "matchManagers": ["mise"],
+      "matchDepNames": ["!rust"],
       "groupName": "mise tools"
     },
     {
-      "description": "Rust toolchain bumps need a deliberate decision (MSRV)",
+      "description": "Rust toolchain gets its own PR, never automerged - merging is the deliberate decision",
       "matchDepNames": ["rust"],
-      "dependencyDashboardApproval": true
+      "automerge": false
     },
     {
-      "description": "pgrx must move in lockstep across cargo-pgrx, pgrx and pgrx-tests",
-      "matchPackageNames": ["pgrx", "pgrx-tests"],
+      "description": "pgrx moves in lockstep: crate deps plus the cargo-pgrx CLI pinned in ci.yml",
+      "matchPackageNames": ["pgrx", "pgrx-tests", "cargo-pgrx"],
       "groupName": "pgrx"
+    },
+    {
+      "description": "Automerge dev-dependency patch/minor once CI is green (pgrx-tests rides with the pgrx group instead)",
+      "matchDepTypes": ["dev-dependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchPackageNames": ["!pgrx-tests"],
+      "automerge": true
+    },
+    {
+      "description": "Automerge digest and pin-only updates (GitHub Actions SHA bumps)",
+      "matchUpdateTypes": ["digest", "pin", "pinDigest"],
+      "automerge": true
     }
   ]
 }

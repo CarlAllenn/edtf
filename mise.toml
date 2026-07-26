@@ -20,6 +20,17 @@ lockfile_platforms = ["macos-arm64", "linux-x64", "linux-arm64"]
 # asdf plugins are legacy (single-maintainer bash, no checksums); ubi is
 # deprecated upstream in favor of github:.
 disable_backends = ["asdf", "ubi"]
+
+# Bootstrap guarantee: a fresh clone gets its git hooks installed by the
+# standard `mise install`; without this, .git/hooks/ is empty and the whole
+# enforcement layer silently doesn't exist. Idempotent; lefthook auto-resyncs
+# hooks on every run thereafter.
+# CI-guarded (same convention as lefthook's own npm postinstall): git hooks
+# are meaningless in CI, and installing them there fetches the remote config
+# into .git/, which whole-repo scanners must then be excluded from.
+[hooks]
+postinstall = 'test -n "${CI:-}" || lefthook install'
+
 [tools]
 # wasm32 target rides the toolchain pin: `mise install` adds missing targets.
 rust = { version = "1.97.1", components = "rustfmt,clippy", targets = "wasm32-unknown-unknown" }

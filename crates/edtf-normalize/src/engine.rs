@@ -17,7 +17,9 @@ use alloc::vec::Vec;
 use edtf_core::{Date, DateField, Edtf, Interval, IntervalEndpoint, Qualifier, Year, YearKind};
 
 use crate::tables::{lang_for, season_name, Lang, Span};
-use crate::{Ambiguous, Interpretation, Normalized, Note, NumericOrder, Options, Outcome};
+use crate::{
+    Ambiguous, Interpretation, NoMatchReason, Normalized, Note, NumericOrder, Options, Outcome,
+};
 
 // ---------------------------------------------------------------------------
 // Internal shapes
@@ -218,27 +220,30 @@ fn roman_num(t: &str) -> Option<u32> {
             _ => return None,
         });
     }
-    let mut total: u32 = 0;
+    // Signed accumulation: numerals STARTING with a subtractive pair (IV,
+    // IX, XL, XC) go negative on the first symbol and recover on the next.
+    let mut total: i64 = 0;
     for (i, &v) in vals.iter().enumerate() {
         if vals[i + 1..].iter().any(|&n| n > v) {
-            total = total.checked_sub(v)?;
+            total -= i64::from(v);
         } else {
-            total = total.checked_add(v)?;
+            total += i64::from(v);
         }
     }
-    (1..=99).contains(&total).then_some(total)
+    (1..=99).contains(&total).then_some(total as u32)
 }
 
 /// Ordinal in century position: digits, suffixed digits, ordinal words, and
-/// Roman numerals where the language uses them.
-fn century_ordinal(t: &str, lang: &Lang) -> Option<u32> {
-    ordinal_num(t, lang).or_else(|| {
-        if lang.roman_centuries {
-            roman_num(t)
-        } else {
-            None
-        }
-    })
+/// Roman numerals where the language uses them. The bool records the
+/// Roman-numeral provenance (surfaced as `Note::RomanCentury`, N15).
+fn century_ordinal(t: &str, lang: &Lang) -> Option<(u32, bool)> {
+    if let Some(n) = ordinal_num(t, lang) {
+        return Some((n, false));
+    }
+    if lang.roman_centuries {
+        return Some((roman_num(t)?, true));
+    }
+    None
 }
 
 /// Day-of-month token: 1–2 digits with optional ordinal suffix.
@@ -416,7 +421,9 @@ fn decade_single(parse: DecadeParse, opts: &Options) -> Single {
             },
         ]),
         DecadeParse::Bare(tens) => {
-            if let Some(century) = opts.default_century {
+            // Domain 0..=9999 (documented on Options); larger values would
+            // build unrenderable years, so they are ignored as if unset.
+            if let Some(century) = opts.default_century.filter(|c| *c <= 9999) {
                 let p3 = century / 100 * 10 + u16::from(tens);
                 Single::One(
                     Expr::Date(decade_date(p3)),
@@ -438,33 +445,33 @@ fn decade_single(parse: DecadeParse, opts: &Options) -> Single {
 // Centuries
 
 /// "19th century", "19c", "XIX век", bare "xix" (Roman-numeral languages
-/// only) → century number. Era is split off by the caller.
-fn century_toks(toks: &[&str], lang: &Lang) -> Option<u32> {
+/// only) → century number, plus the Roman-numeral provenance flag (N15).
+/// Era is split off by the caller.
+fn century_toks(toks: &[&str], lang: &Lang) -> Option<(u32, bool)> {
     let word = |t: &str| lang.century_words.contains(&strip_dot(t));
     // Attached single-letter century word: "19c", "19в".
-    let attached = |t: &str| -> Option<u32> {
+    let attached = |t: &str| -> Option<(u32, bool)> {
         let t = strip_dot(t);
         let d = lang
             .century_words
             .iter()
             .filter(|w| w.chars().count() == 1)
             .find_map(|w| t.strip_suffix(w))?;
-        let n = century_ordinal(d, lang)?;
-        (1..=99).contains(&n).then_some(n)
+        century_ordinal(d, lang)
     };
-    let n = match toks {
+    let (n, roman) = match toks {
         [t] => attached(t).or_else(|| {
             // A bare Roman numeral reads as a century where the language
             // writes centuries that way ("XIX—XX вв." endpoints) — but a
             // lone letter with no century word is too weak a signal.
             (lang.roman_centuries && t.chars().count() >= 2)
-                .then(|| roman_num(t))
+                .then(|| roman_num(t).map(|n| (n, true)))
                 .flatten()
         })?,
         [o, w] if word(w) => century_ordinal(o, lang)?,
         _ => return None,
     };
-    (1..=99).contains(&n).then_some(n)
+    (1..=99).contains(&n).then_some((n, roman))
 }
 
 /// Astronomical year span of century `n`: 19th CE = 1801..=1900,
@@ -480,18 +487,20 @@ fn century_span(n: u32, bc: bool) -> (i32, i32) {
 
 /// Whole century as a date/interval expression (masked when possible).
 fn century_expr(n: u32, bc: bool) -> Option<(Expr, Vec<Note>)> {
-    let mut notes = vec![Note::CenturyMask];
     if bc {
         // edtf-core rejects unspecified digits in negative years (Annex A's
         // mask shapes are positive-only), and the 1st century BC would need
-        // year -0000 anyway — BC centuries are exact intervals (N2).
-        notes.push(Note::AstronomicalYear);
-        notes.push(Note::BcCenturyInterval);
+        // year -0000 anyway — BC centuries are exact intervals, and the
+        // CenturyMask note would be a lie for them (N2).
+        let notes = vec![Note::AstronomicalYear, Note::BcCenturyInterval];
         let (s, e) = century_span(n, true);
         return Some((interval(date_y(s)?, date_y(e)?), notes));
     }
     let prefix2 = u8::try_from(n - 1).ok()?;
-    Some((Expr::Date(century_date(prefix2, bc)), notes))
+    Some((
+        Expr::Date(century_date(prefix2, bc)),
+        vec![Note::CenturyMask],
+    ))
 }
 
 /// Early/mid/late/half of a century as a decade-rounded interval (N1).
@@ -657,10 +666,19 @@ fn parse_single(s: &str, opts: &Options, lang: &Lang, in_range: bool) -> Option<
     }
 
     // Trailing era phrase, if any ("500 bc", "xix век до н. э.").
-    let (era, core_toks) = match split_era(&toks, lang) {
+    let (era, mut core_toks) = match split_era(&toks, lang) {
         Some((bc, rest)) => (Some(bc), rest),
         None => (None, toks.clone()),
     };
+    // A year marker may sit BEFORE the era phrase ("44 г. до н. э.") — strip
+    // trailing noise again now that the era is off (N3 scope).
+    while core_toks.len() > 1
+        && lang
+            .noise_trailing
+            .contains(&strip_dot(core_toks[core_toks.len() - 1]))
+    {
+        core_toks.pop();
+    }
     let bc = era == Some(true);
 
     // Part-of-century / decade modifier, spaced or attached ("mid-1930s").
@@ -674,22 +692,46 @@ fn parse_single(s: &str, opts: &Options, lang: &Lang, in_range: bool) -> Option<
                 }
             }
         }
-        if let Some(n) = century_toks(&rest, lang) {
-            let (expr, notes) = if in_range {
+        if let Some((n, roman)) = century_toks(&rest, lang) {
+            let (expr, mut notes) = if in_range {
                 let (e, mut ns) = century_expr(n, bc)?;
                 ns.push(Note::ModifierDropped);
                 (e, ns)
             } else {
                 century_part_expr(span, n, bc)?
             };
+            if roman {
+                notes.push(Note::RomanCentury);
+            }
             return Some(Single::One(expr, notes));
         }
         return None;
     }
 
-    if let Some(n) = century_toks(&core_toks, lang) {
-        let (expr, notes) = century_expr(n, bc)?;
+    if let Some((n, roman)) = century_toks(&core_toks, lang) {
+        let (expr, mut notes) = century_expr(n, bc)?;
+        if roman {
+            notes.push(Note::RomanCentury);
+        }
         return Some(Single::One(expr, notes));
+    }
+
+    // Decade of an explicit century: "60-е годы XIX века" → 186X (N6).
+    if era.is_none() && core_toks.len() >= 2 {
+        if let Some(DecadeParse::Bare(tens)) = decade_tok(core_toks[0], lang) {
+            let mut rest = core_toks[1..].to_vec();
+            while rest.len() > 1 && lang.noise_trailing.contains(&strip_dot(rest[0])) {
+                rest.remove(0);
+            }
+            if let Some((n, roman)) = century_toks(&rest, lang) {
+                let prefix3 = (n as u16 - 1) * 10 + u16::from(tens);
+                let mut notes = vec![Note::DecadeOfCentury];
+                if roman {
+                    notes.push(Note::RomanCentury);
+                }
+                return Some(Single::One(Expr::Date(decade_date(prefix3)), notes));
+            }
+        }
     }
 
     // Era-qualified plain year: "500 bc" → -0499, "79 ce" → 0079 (N3).
@@ -937,9 +979,12 @@ fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option
             if !rnotes.contains(&Note::CenturyMask) || ls.contains(' ') {
                 return None;
             }
-            let n = century_ordinal(&ls, lang)?;
+            let (n, roman) = century_ordinal(&ls, lang)?;
             let bc = matches!(rd.year.kind, YearKind::Standard { negative: true, .. });
-            let (expr, ns) = century_expr(n, bc)?;
+            let (expr, mut ns) = century_expr(n, bc)?;
+            if roman {
+                ns.push(Note::RomanCentury);
+            }
             (Single::One(expr, ns), r)
         }
         // "1914 - 18": the right side elides the left year's century (N4).
@@ -948,10 +993,38 @@ fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option
                 return None;
             };
             let y = i32::try_from(ld.year.value()?).ok()?;
+            // Elision needs an AD start with a real century prefix. A BC
+            // (negative astronomical) start has no deterministic elided
+            // reading — truncating arithmetic would fabricate one (N4).
+            if y < 100 {
+                return None;
+            }
             let v = num(&rs).filter(|_| rs.len() <= 2)?;
             let elided = y / 100 * 100 + v as i32;
-            if elided <= y {
+            // Mirror the unspaced NNNN-NN limits: 01–12 read as months and
+            // are never ranges (N4); 21–41 collide with sub-year codes (N13).
+            if elided <= y || v <= 12 {
                 return None;
+            }
+            if (21..=41).contains(&v) && ld.month.is_none() && ld.day.is_none() {
+                let mut season = *ld;
+                season.month = Some(quiet(v as u8));
+                qualify_date(&mut season, lq);
+                let (mut a, mut b) = (*ld, date_y(elided)?);
+                qualify_date(&mut a, lq);
+                qualify_date(&mut b, rq);
+                return Some(Single::Many(vec![
+                    Candidate {
+                        expr: Expr::Date(season),
+                        reading: format!("sub-year code {v} ({})", season_name(v as u8)),
+                        notes: vec![Note::SeasonRangeCollision],
+                    },
+                    Candidate {
+                        expr: interval(a, b),
+                        reading: format!("year range {y}/{elided}"),
+                        notes: vec![Note::ElidedEndYear, Note::SeasonRangeCollision],
+                    },
+                ]));
             }
             let r = Single::One(Expr::Date(date_y(elided)?), vec![Note::ElidedEndYear]);
             (l, r)
@@ -972,12 +1045,23 @@ fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option
     };
     match (lres, rres) {
         (Single::One(Expr::Date(ld), ln), Single::One(Expr::Date(rd), rn)) => {
+            // "June-July 1940": an endpoint without a year inherits the other
+            // endpoint's stated year — the year is elided, not missing (N16).
+            let (ld, ln, rd, rn) = distribute_year(ld, ln, rd, rn)?;
+            // "winter 1941-42": one boundary-spanning winter, or winter 1941
+            // through the whole of 1942? Both readings, honestly (N17).
+            if let Some(many) = cross_year_season(&ld, &ln, &rd, &rn, lq, &build) {
+                return Some(many);
+            }
             let expr = build(&ld, &rd)?;
             let mut notes = ln;
             notes.extend(rn);
             Some(Single::One(expr, notes))
         }
         (Single::One(Expr::Date(ld), ln), Single::Many(cands)) => {
+            // A candidate eliminated here (reversed range) is a prose error
+            // poisoning the whole input, not a disambiguation — refuse.
+            let total = cands.len();
             let out: Vec<Candidate> = cands
                 .into_iter()
                 .filter_map(|c| {
@@ -992,9 +1076,10 @@ fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option
                     })
                 })
                 .collect();
-            (!out.is_empty()).then_some(Single::Many(out))
+            (out.len() == total && !out.is_empty()).then_some(Single::Many(out))
         }
         (Single::Many(cands), Single::One(Expr::Date(rd), rn)) => {
+            let total = cands.len();
             let out: Vec<Candidate> = cands
                 .into_iter()
                 .filter_map(|c| {
@@ -1009,11 +1094,81 @@ fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option
                     })
                 })
                 .collect();
-            (!out.is_empty()).then_some(Single::Many(out))
+            (out.len() == total && !out.is_empty()).then_some(Single::Many(out))
         }
         // A two-sided ambiguity would be a 4-way product — refuse to guess.
         _ => None,
     }
+}
+
+/// N16: when exactly one range endpoint lacks a year (`XXXX` via N9) and the
+/// other states one, the year scopes both endpoints — copy it over and swap
+/// the note. Fails (→ `NoMatch`) when the year-less endpoint cannot inherit.
+type Endpoints = (Date, Vec<Note>, Date, Vec<Note>);
+
+fn distribute_year(
+    mut ld: Date,
+    mut ln: Vec<Note>,
+    mut rd: Date,
+    mut rn: Vec<Note>,
+) -> Option<Endpoints> {
+    let l_masked = ln.contains(&Note::MissingYearMasked);
+    let r_masked = rn.contains(&Note::MissingYearMasked);
+    if l_masked != r_masked {
+        let (masked_d, masked_n, source_d) = if l_masked {
+            (&mut ld, &mut ln, &rd)
+        } else {
+            (&mut rd, &mut rn, &ld)
+        };
+        // Only a fully-specified year is worth inheriting; pairing a masked
+        // month with a masked decade would compound the guessing.
+        source_d.year.value()?;
+        masked_d.year.kind = source_d.year.kind;
+        masked_n.retain(|n| *n != Note::MissingYearMasked);
+        masked_n.push(Note::EndpointYearDistributed);
+    }
+    Some((ld, ln, rd, rn))
+}
+
+/// N17: "winter 1941-42" (and "winter 1941-1942") — EDTF's winter code 24
+/// wraps the year boundary, so the prose may name ONE winter or a
+/// winter-to-year range. Emit both readings.
+fn cross_year_season(
+    ld: &Date,
+    ln: &[Note],
+    rd: &Date,
+    rn: &[Note],
+    lq: Qualifier,
+    build: &impl Fn(&Date, &Date) -> Option<Expr>,
+) -> Option<Single> {
+    const WINTER: u8 = 24;
+    if ld.month.and_then(|m| m.value()) != Some(WINTER) || rd.month.is_some() || rd.day.is_some() {
+        return None;
+    }
+    let (a, b) = (ld.year.value()?, rd.year.value()?);
+    if b != a + 1 {
+        return None;
+    }
+    let mut season = *ld;
+    qualify_date(&mut season, lq);
+    let mut season_notes = ln.to_vec();
+    season_notes.push(Note::CrossYearSeason);
+    let range = build(ld, rd)?;
+    let mut range_notes = ln.to_vec();
+    range_notes.extend(rn.iter().copied());
+    range_notes.push(Note::CrossYearSeason);
+    Some(Single::Many(vec![
+        Candidate {
+            expr: Expr::Date(season),
+            reading: String::from("one winter spanning the year boundary"),
+            notes: season_notes,
+        },
+        Candidate {
+            expr: range,
+            reading: format!("winter {a} through the whole of {b}"),
+            notes: range_notes,
+        },
+    ]))
 }
 
 /// Apply a `Single`-level transform that may reject candidates.
@@ -1090,6 +1245,10 @@ fn render(expr: Expr) -> Option<(Edtf, String)> {
     Some((reparsed, s))
 }
 
+fn no_match(reason: NoMatchReason) -> Outcome {
+    Outcome::NoMatch { reason }
+}
+
 fn outcome_from(single: Single, q: Qualifier, base_notes: Vec<Note>) -> Outcome {
     match single {
         Single::One(mut expr, mut notes) => {
@@ -1108,10 +1267,15 @@ fn outcome_from(single: Single, q: Qualifier, base_notes: Vec<Note>) -> Outcome 
                         notes: all,
                     })
                 }
-                None => Outcome::NoMatch,
+                None => no_match(NoMatchReason::ImpossibleDate),
             }
         }
         Single::Many(cands) => {
+            // Fail closed: a reading that dies at the calendar check
+            // (February 30, a reversed masked range) is a prose error, and
+            // silently promoting the survivor would fake certainty the input
+            // never had (N14).
+            let total = cands.len();
             let mut interps: Vec<Interpretation> = cands
                 .into_iter()
                 .filter_map(|mut c| {
@@ -1127,8 +1291,11 @@ fn outcome_from(single: Single, q: Qualifier, base_notes: Vec<Note>) -> Outcome 
                     })
                 })
                 .collect();
+            if interps.len() < total {
+                return no_match(NoMatchReason::ImpossibleDate);
+            }
             match interps.len() {
-                0 => Outcome::NoMatch,
+                0 => no_match(NoMatchReason::ImpossibleDate),
                 1 => {
                     let i = interps.remove(0);
                     Outcome::Normalized(Normalized {
@@ -1152,7 +1319,7 @@ pub(crate) fn run(input: &str, opts: &Options) -> Outcome {
     let lang = lang_for(opts.language);
     let trimmed = input.trim();
     if trimmed.is_empty() {
-        return Outcome::NoMatch;
+        return no_match(NoMatchReason::OutOfGrammar);
     }
 
     // Dash-unified copy of the verbatim input (EDTF is case-sensitive:
@@ -1193,10 +1360,11 @@ pub(crate) fn run(input: &str, opts: &Options) -> Outcome {
     let (rest, q2) = strip_qualifiers(&pre, lang);
     merge(&mut q, q2);
     if rest.is_empty() {
-        return Outcome::NoMatch;
+        return no_match(NoMatchReason::OutOfGrammar);
     }
     if lang.explicit_no_date.contains(&rest.as_str()) {
-        return Outcome::NoMatch; // the form decides what "unknown" means (N12)
+        // The form decides what "unknown" means; the reason lets it (N12).
+        return no_match(NoMatchReason::ExplicitNoDate);
     }
     let toks: Vec<&str> = rest.split(' ').collect();
 
@@ -1212,7 +1380,7 @@ pub(crate) fn run(input: &str, opts: &Options) -> Outcome {
     if let Some(single) = parse_range(&rest, &toks, opts, lang) {
         return outcome_from(single, q, Vec::new());
     }
-    Outcome::NoMatch
+    no_match(NoMatchReason::OutOfGrammar)
 }
 
 /// `NNNN-NN` with a sub-year code 21–41 and a plausible elided range (N13).

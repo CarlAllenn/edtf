@@ -47,7 +47,7 @@ fn shared_no_match_cases() {
     for case in entries(&doc, "agreements_no_match") {
         let input = case["input"].as_str().expect("input");
         assert!(
-            matches!(normalize(input), Outcome::NoMatch),
+            matches!(normalize(input), Outcome::NoMatch { .. }),
             "expected NoMatch for {input:?}"
         );
     }
@@ -98,7 +98,7 @@ fn not_adopted_behaviors_stay_no_match() {
             "not_adopted {input:?} must document the ism"
         );
         assert!(
-            matches!(normalize(input), Outcome::NoMatch),
+            matches!(normalize(input), Outcome::NoMatch { .. }),
             "expected NoMatch for {input:?} (python-edtf: {:?})",
             case["theirs"].as_str()
         );
@@ -127,7 +127,7 @@ fn every_normalized_or_ambiguous_output_parses_in_core() {
                     assert_eq!(parsed, i.value);
                 }
             }
-            Outcome::NoMatch => {}
+            Outcome::NoMatch { .. } => {}
         }
     }
 }

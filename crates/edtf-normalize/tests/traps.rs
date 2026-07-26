@@ -40,7 +40,7 @@ fn ambiguous(input: &str, expected: &[&str]) {
 #[track_caller]
 fn no_match(input: &str) {
     assert!(
-        matches!(normalize(input), Outcome::NoMatch),
+        matches!(normalize(input), Outcome::NoMatch { .. }),
         "expected NoMatch for {input:?}"
     );
 }
@@ -305,6 +305,103 @@ fn whole_expression_qualifier_distributes() {
         other => panic!("expected Normalized, got {other:?}"),
     }
     ok("1868-1871?", "1868?/1871?", 1);
+}
+
+#[test]
+fn negated_open_phrases() {
+    // N8: the English forms the doc quotes must actually work.
+    ok("no later than 1917", "../1917", 1);
+    ok("no earlier than 1917", "1917/..", 1);
+}
+
+#[test]
+fn range_endpoints_inherit_the_stated_year() {
+    // N16: the year is elided, not missing — never XXXX inside these.
+    ok("June-July 1940", "1940-06/1940-07", 0);
+    ok("June to July 1940", "1940-06/1940-07", 0);
+    ok("between May and June 1940", "1940-05/1940-06", 0);
+    ok("12 January to 15 March 1940", "1940-01-12/1940-03-15", 0);
+    ok("from January 1940 to June", "1940-01/1940-06", 0);
+    // Reversed month ranges are prose errors and fail closed.
+    no_match("July-June 1940");
+}
+
+#[test]
+fn cross_year_winter_is_ambiguous() {
+    // N17: one boundary-spanning winter, or winter through the whole end
+    // year? Both readings, honestly.
+    ambiguous("winter 1941-42", &["1941-24", "1941-24/1942"]);
+    ambiguous("winter 1941-1942", &["1941-24", "1941-24/1942"]);
+    // A non-adjacent end year is a plain range.
+    ok("winter 1941-45", "1941-24/1945", 1);
+}
+
+#[test]
+fn bc_starts_refuse_elided_end_years() {
+    // N4: an elided end after a BC start has no deterministic reading —
+    // truncating arithmetic would fabricate one.
+    no_match("500 BC to 18");
+    no_match("100 BC-18");
+    no_match("1900 BC to 5");
+    ok("500 BC to 418 BC", "-0499/-0417", 1);
+}
+
+#[test]
+fn spaced_hyphens_mirror_the_unspaced_limits() {
+    // N4/N13: spacing must not smuggle readings past the NNNN-NN rules.
+    no_match("2000 - 05"); // 01-12 read as months, never ranges
+    ambiguous("1914 - 21", &["1914-21", "1914/1921"]);
+    ok("1914 - 18", "1914/1918", 0);
+}
+
+#[test]
+fn dead_readings_poison_the_whole_input() {
+    // N14: an impossible alternative is a prose error — never collapse to
+    // the survivor.
+    no_match("31 June 1940 or 1 July 1940");
+    no_match("29 February 1900 or 1901");
+    // Reversed decade ranges must not resolve to the century reading.
+    no_match("1910s to 1900s");
+    no_match("1990s-1980s");
+    // Two valid alternatives still report both.
+    ambiguous("1 July 1940 or 2 July 1940", &["1940-07-01", "1940-07-02"]);
+}
+
+#[test]
+fn out_of_domain_default_century_is_ignored() {
+    // Domain 0..=9999 (documented); larger values behave as unset.
+    let opts = Options {
+        default_century: Some(10000),
+        ..Options::default()
+    };
+    assert!(matches!(
+        normalize_with("the 80s", &opts),
+        Outcome::Ambiguous(_)
+    ));
+}
+
+#[test]
+fn no_match_reasons_discriminate() {
+    // N11/N12/N14: bulk-import triage routes on the reason.
+    use edtf_normalize::NoMatchReason;
+    assert!(matches!(
+        normalize("unknown"),
+        Outcome::NoMatch {
+            reason: NoMatchReason::ExplicitNoDate
+        }
+    ));
+    assert!(matches!(
+        normalize("birthday in 1872"),
+        Outcome::NoMatch {
+            reason: NoMatchReason::OutOfGrammar
+        }
+    ));
+    assert!(matches!(
+        normalize("30/02/1985"),
+        Outcome::NoMatch {
+            reason: NoMatchReason::ImpossibleDate
+        }
+    ));
 }
 
 #[test]

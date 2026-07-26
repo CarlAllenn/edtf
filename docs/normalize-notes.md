@@ -22,8 +22,11 @@ against the N-number.
   February 31 fails closed) and the proof that every output is valid EDTF at
   a known level.
 - The return type is honest: `Normalized { edtf, value, notes }`,
-  `Ambiguous { interpretations }`, or `NoMatch`. Nothing ever guesses
-  silently; every non-obvious mapping carries a `Note` citing its N-decision.
+  `Ambiguous { interpretations }`, or `NoMatch { reason }`. Nothing ever
+  guesses silently; every non-obvious mapping carries a `Note` citing its
+  N-decision, and `NoMatchReason` discriminates out-of-grammar (N11),
+  explicitly-undated (N12), and impossible-date (N14) failures so a
+  bulk-import triage step can route them differently.
 - Pattern tables are per-language (`Language::English`, `Language::Russian`).
   The grammar in `engine.rs` is language-neutral; a locale is one `Lang`
   const in `tables.rs` (word tables, era phrases, modifier phrases, range
@@ -52,19 +55,29 @@ against the N-number.
   edtf-core rejects unspecified digits in negative years (Annex A's L1 mask
   shapes are positive-only), and the 1st century BC would need `-0000`. They
   are emitted as exact astronomical intervals: "2nd century BC" →
-  `-0199/-0100`, "1st century BC" → `-0099/0000`. python-edtf emits `-01XX`,
-  which our core rejects — recorded as an ism, not adopted.
+  `-0199/-0100`, "1st century BC" → `-0099/0000`, carrying
+  `BcCenturyInterval` (never `CenturyMask`, whose masking claim would be
+  false for them). python-edtf emits `-01XX`, which our core rejects —
+  recorded as an ism, not adopted.
 - **N3 — astronomical BC years:** EDTF/ISO 8601-2 uses astronomical
   numbering: year 0 exists and is 1 BC. Year *b* BC = `-(b-1)`: "500 BC" →
-  `-0499`, "64 BCE" → `-0063`. python-edtf applies the offset to centuries
-  but *not* to years (its tests demand `c64 BCE` → `-0064~` yet
+  `-0499`, "64 BCE" → `-0063`. Year markers may sit *before* the era phrase
+  ("44 г. до н. э.", the standard Russian textbook form) — trailing noise is
+  stripped again after the era splits off. python-edtf applies the offset to
+  centuries but *not* to years (its tests demand `c64 BCE` → `-0064~` yet
   `2nd century bc` → `-01XX` = −199..−100) — the internal inconsistency is
   recorded as an ism and its year outputs are not adopted.
 - **N4 — elided end years:** in a hyphen range whose right side is two
   digits, the end year inherits the start's century: "1914-18" → `1914/1918`,
   "1851-52" → `1851/1852`. The elided value must exceed the start year;
   otherwise no range reading exists. Two-digit ends 01–12 are never ranges
-  (they read as EDTF months) and 21–41 collide with sub-year codes (N13).
+  (they read as EDTF months) and 21–41 collide with sub-year codes (N13) —
+  and these limits apply identically to the spaced and range-word forms
+  ("1914 - 21", "from 1914 to 21"), so spacing cannot smuggle a reading past
+  them. A **BC start refuses elision entirely** ("500 BC to 18" → `NoMatch`):
+  no deterministic reading exists — the CE reading, the BC-ordinal reading,
+  and truncating century arithmetic all disagree — so per the contract the
+  normalizer refuses rather than fabricates.
 - **N5 — all-numeric dates:** "12/04/1985" is DD/MM or MM/DD; without context
   the order is *unknowable* and the result is `Ambiguous` with both readings
   — never python-edtf's silent `dayfirst=False` guess. Resolution, in
@@ -78,9 +91,12 @@ against the N-number.
   ambiguous and reported as such: "**1900s**" is the 1900–1909 decade
   (`190X`) *or* the century (`19XX`); a **bare decade** ("the 80s", "80-е")
   could sit in any century — we offer the 1800s and 1900s readings, and
-  `Options::default_century` (e.g. `Some(1900)`) resolves it for forms whose
-  material has a known era. python-edtf is internally inconsistent here
-  ("1800s" → `18XX` but "c1900s" → `190X~`) — recorded, not adopted.
+  `Options::default_century` (e.g. `Some(1900)`, domain `0..=9999`) resolves
+  it for forms whose material has a known era. A decade tied to an explicit
+  century is not ambiguous at all: "60-е годы XIX века" → `186X`
+  (`DecadeOfCentury`), the idiom behind «шестидесятники». python-edtf is
+  internally inconsistent here ("1800s" → `18XX` but "c1900s" → `190X~`) —
+  recorded, not adopted.
 - **N7 — seasons:** season names map to ISO 8601-2 §4.8 sub-year grouping
   codes 21–24 (northern-hemisphere reading: spring=21, summer=22,
   autumn/fall=23, winter=24; Russian весна/лето/осень/зима likewise). Codes
@@ -93,10 +109,12 @@ against the N-number.
   is one of an enumerated list, which is a different claim and a level-2
   feature besides. "no later than" style phrases (`не позднее`) read the
   same way.
-- **N9 — missing years are masked:** a month with no year ("January",
-  "January 12", "апрель") gets year `XXXX`: `XXXX-01`, `XXXX-01-12`. Never
-  an assumed current year — the normalizer has no clock on purpose
-  (determinism: same input, same output, forever). python-edtf's broader
+- **N9 — missing years are masked:** a *standalone* month with no year
+  ("January", "January 12", "апрель") gets year `XXXX`: `XXXX-01`,
+  `XXXX-01-12`. Never an assumed current year — the normalizer has no clock
+  on purpose (determinism: same input, same output, forever). Inside a range
+  the year is elided, not missing — N16 governs there, and `XXXX` never
+  leaks into a range that states its year. python-edtf's broader
   masked-precision prose ("day in Spring 1849" → `1849-21-XX`) is not
   adopted: "a day in" is annotation, not a date.
 - **N10 — whole-expression qualifiers distribute:** a qualifier scoping the
@@ -114,7 +132,10 @@ against the N-number.
   deliberate: deterministic keystroke normalization here, freeform
   extraction in the caller's triage layer.
 - **N12 — "unknown" is the form's problem:** "unknown", "undated", "n.d.",
-  "без даты", "не датировано" → `NoMatch`. Whether that means an EDTF
+  "без даты", "не датировано" → `NoMatch` with
+  `NoMatchReason::ExplicitNoDate` — distinguishable from out-of-grammar
+  prose (`OutOfGrammar`, N11) so a triage step can route "explicitly
+  undated" rows without re-reading the input. Whether that means an EDTF
   `XXXX`, an empty column, or a required-field error is form policy, not
   normalizer policy.
 - **N13 — the sub-year-code / elided-range collision:** `NNNN-NN` with NN in
@@ -124,15 +145,39 @@ against the N-number.
   chronologically possible, both readings are reported. Elided ends 13–20
   and 42–99 are not valid codes, so only the range reading exists
   ("1914-18" → `1914/1918`).
-- **N14 — alternatives stay alternatives:** "1863 or 1864" ("1863 или
-  1864") → `Ambiguous` with both years. python-edtf silently keeps the first.
-  (A future extension could offer a one-of set `[1863, 1864]` as a third
-  reading; today the two plain readings keep the form's choice simple.)
+- **N14 — alternatives stay alternatives, and dead readings poison:**
+  "1863 or 1864" ("1863 или 1864") → `Ambiguous` with both years.
+  python-edtf silently keeps the first. When any reading of an ambiguous
+  input dies at the calendar check ("31 June 1940 or 1 July 1940", a
+  reversed masked range like "1910s to 1900s"), the whole input fails
+  closed with `NoMatchReason::ImpossibleDate` — promoting the survivor
+  would fake certainty the prose never had. (A future extension could offer
+  a one-of set `[1863, 1864]` as a third reading; today the two plain
+  readings keep the form's choice simple.)
 - **N15 — Roman-numeral centuries (Russian):** "XIX век", "XIX в.",
   "XVII-XIX вв." parse as centuries, including with Cyrillic lookalike
-  letters (Х/х for X, etc.), which real Russian sources routinely contain. A
-  *bare* Roman numeral is accepted as a century only when it is at least two
-  letters ("I" alone is too weak a signal; "I век" is fine).
+  letters (Х/х for X, etc.), which real Russian sources routinely contain,
+  and including numerals that *start* with a subtractive pair ("IV век",
+  "IX-X вв." — the accumulator is signed for exactly this reason). A *bare*
+  Roman numeral is accepted as a century only when it is at least two
+  letters ("I" alone is too weak a signal; "I век" is fine). Roman
+  provenance is cited on results as `Note::RomanCentury`.
+- **N16 — range endpoints inherit the stated year:** "June-July 1940",
+  "с июня по июль 1940", "12 January to 15 March 1940" — when exactly one
+  endpoint lacks a year and the other states one, the year scopes both: the
+  year-less endpoint inherits it (`EndpointYearDistributed`), symmetric to
+  N4's century inheritance and direction-aware ("from January 1940 to June"
+  fills rightward). Emitting `XXXX` there would assert the year is unknown
+  when the prose gives it. Reversed month ranges ("July-June 1940") fail
+  closed at the calendar check. Both-endpoints-year-less ranges
+  ("May-June") keep their masks: no year exists anywhere in the input.
+- **N17 — cross-year winters are ambiguous:** "winter 1941-42" (also
+  "-1942", "зима 1941-1942 гг.") names either ONE winter spanning the year
+  boundary — EDTF's code 24 wraps, so `1941-24` already covers Dec 1941 –
+  Feb 1942 — or winter 1941 through the whole of 1942. Both readings are
+  reported (`CrossYearSeason`), N13-style. A non-adjacent end year
+  ("winter 1941-45") has only the range reading. Winter is the only emitted
+  season that wraps; the others compose as plain ranges.
 
 ## 3. Test ceremony
 

@@ -4,7 +4,7 @@
 //! locale-implied day-first numeric order (N5).
 
 use edtf_core::Edtf;
-use edtf_normalize::{normalize_with, Language, Note, Options, Outcome};
+use edtf_normalize::{normalize_with, Language, NoMatchReason, Note, Options, Outcome};
 
 fn ru() -> Options {
     Options {
@@ -40,7 +40,7 @@ fn ambiguous(input: &str, expected: &[&str]) {
 #[track_caller]
 fn no_match(input: &str) {
     assert!(
-        matches!(normalize_with(input, &ru()), Outcome::NoMatch),
+        matches!(normalize_with(input, &ru()), Outcome::NoMatch { .. }),
         "expected NoMatch for {input:?}"
     );
 }
@@ -87,6 +87,57 @@ fn roman_centuries() {
     ok("ХIХ век", "18XX", 1);
     // BC centuries are exact intervals (N2).
     ok("II век до н. э.", "-0199/-0100", 1);
+    // Numerals STARTING with a subtractive pair (N15 — the underflow trap).
+    ok("IV век", "03XX", 1);
+    ok("IX век", "08XX", 1);
+    ok("XL век", "39XX", 1);
+    ok("IX-X вв.", "08XX/09XX", 2);
+    // Roman provenance is citable (N15).
+    match normalize_with("XIX век", &ru()) {
+        Outcome::Normalized(n) => {
+            assert!(n.notes.contains(&Note::RomanCentury));
+            assert!(n.notes.iter().any(|note| note.decision() == Some("N15")));
+        }
+        other => panic!("expected Normalized, got {other:?}"),
+    }
+}
+
+#[test]
+fn century_word_forms() {
+    // Genitive plural, prepositional, and the "ст." abbreviation.
+    ok("XIX-XX веков", "18XX/19XX", 2);
+    ok("конец XIX - начало XX веков", "18XX/19XX", 2);
+    ok("в XIX столетии", "18XX", 1);
+    ok("XIX ст.", "18XX", 1);
+    ok("в XIX-XX веках", "18XX/19XX", 2);
+}
+
+#[test]
+fn prepositional_months() {
+    // "в мае 1945 года" is the most common Russian month-year prose form.
+    ok("в мае 1945 года", "1945-05", 0);
+    ok("в январе 1985 году", "1985-01", 0);
+    ok("в сентябре 1939 г.", "1939-09", 0);
+    ok("в августе 1991", "1991-08", 0);
+}
+
+#[test]
+fn year_marker_before_era() {
+    // "44 г. до н. э." — the standard textbook form (N3).
+    ok("44 г. до н. э.", "-0043", 1);
+    ok("44 г. до н.э.", "-0043", 1);
+    ok("79 г. н. э.", "0079", 0);
+    ok("около 44 г. до н.э.", "-0043~", 1);
+    ok("в 44 году до н. э.", "-0043", 1);
+}
+
+#[test]
+fn decade_of_century() {
+    // "60-е годы XIX века" — the idiom behind «шестидесятники» (N6).
+    ok("60-е годы XIX века", "186X", 1);
+    ok("20-е годы XX века", "192X", 1);
+    ok("в 60-х годах XIX века", "186X", 1);
+    ok("60-е гг. XIX в.", "186X", 1);
 }
 
 #[test]
@@ -179,11 +230,26 @@ fn alternatives() {
 
 #[test]
 fn explicit_no_date() {
-    // N12: the form decides what "unknown" means.
+    // N12: the form decides what "unknown" means — and the reason lets it.
     no_match("неизвестно");
     no_match("без даты");
     no_match("б.д.");
     no_match("не датировано");
+    assert!(matches!(
+        normalize_with("без даты", &ru()),
+        Outcome::NoMatch {
+            reason: NoMatchReason::ExplicitNoDate
+        }
+    ));
+}
+
+#[test]
+fn ranges_inherit_years_and_winters_stay_honest() {
+    // N16 / N17 through the Russian tables.
+    ok("с июня по июль 1940", "1940-06/1940-07", 0);
+    ambiguous("зима 1941-1942 гг.", &["1941-24", "1941-24/1942"]);
+    // N4: BC starts refuse elided end years in Russian too.
+    no_match("с 500 до н. э. по 18");
 }
 
 #[test]

@@ -174,7 +174,7 @@ proptest! {
                     assert_eq!(parsed, i.value);
                 }
             }
-            Outcome::NoMatch => {} // Feb 30 and friends fail closed
+            Outcome::NoMatch { .. } => {} // Feb 30 and friends fail closed
         }
     }
 }

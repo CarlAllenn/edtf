@@ -66,6 +66,8 @@ pub struct Options {
     pub numeric_order: Option<NumericOrder>,
     /// Century base year for bare decades: `Some(1900)` reads "the 80s" as
     /// `198X` (N6). `None` (default) reports the plausible readings.
+    /// Domain is `0..=9999` (the value's century is used); values above 9999
+    /// are ignored as if unset.
     pub default_century: Option<u16>,
 }
 
@@ -90,7 +92,8 @@ pub enum Note {
     AstronomicalYear,
     /// "1914-18": the end year inherits the start's century (N4).
     ElidedEndYear,
-    /// Numeric date order was provable from the values (a field > 12) (N5).
+    /// Numeric date order was provable from the input: a year-first layout,
+    /// or a field whose value exceeds 12 (N5).
     NumericUnambiguous,
     /// Numeric date order resolved by [`Options::numeric_order`] (N5).
     NumericResolvedByOption,
@@ -117,6 +120,18 @@ pub enum Note {
     /// `NNNN-NN` collides between an EDTF sub-year code and an elided year
     /// range; both readings reported (N13).
     SeasonRangeCollision,
+    /// Century read from a Roman numeral, Cyrillic lookalike letters
+    /// tolerated ("XIX век", "ХІХ век") (N15).
+    RomanCentury,
+    /// A bare decade tied to an explicit century ("60-е годы XIX века" →
+    /// `186X`) (N6).
+    DecadeOfCentury,
+    /// A range endpoint without a year inherited the other endpoint's stated
+    /// year ("June-July 1940" → `1940-06/1940-07`) (N16).
+    EndpointYearDistributed,
+    /// "winter 1941-42" may be one boundary-spanning winter or a
+    /// season-to-year range; both readings reported (N17).
+    CrossYearSeason,
 }
 
 impl Note {
@@ -133,13 +148,18 @@ impl Note {
             | Note::NumericResolvedByLocale
             | Note::NumericOrderIrrelevant
             | Note::NumericOrderAmbiguous => Some("N5"),
-            Note::DecadeAmbiguity | Note::DefaultCenturyApplied => Some("N6"),
+            Note::DecadeAmbiguity | Note::DefaultCenturyApplied | Note::DecadeOfCentury => {
+                Some("N6")
+            }
             Note::SeasonCode => Some("N7"),
             Note::OpenInterval => Some("N8"),
             Note::MissingYearMasked => Some("N9"),
             Note::QualifierDistributed => Some("N10"),
             Note::SeasonRangeCollision => Some("N13"),
             Note::OrAlternatives => Some("N14"),
+            Note::RomanCentury => Some("N15"),
+            Note::EndpointYearDistributed => Some("N16"),
+            Note::CrossYearSeason => Some("N17"),
         }
     }
 
@@ -159,7 +179,9 @@ impl Note {
             }
             Note::AstronomicalYear => "BC year converted to astronomical numbering (year 0 exists)",
             Note::ElidedEndYear => "elided end year inherits the start year's century",
-            Note::NumericUnambiguous => "field order provable: one value exceeds 12",
+            Note::NumericUnambiguous => {
+                "field order provable from the input (year-first layout or a value over 12)"
+            }
             Note::NumericResolvedByOption => "field order resolved by caller options",
             Note::NumericResolvedByLocale => "field order implied by the language's convention",
             Note::NumericOrderIrrelevant => "day and month are equal; order cannot matter",
@@ -175,6 +197,16 @@ impl Note {
             Note::OrAlternatives => "alternatives reported instead of picking one",
             Note::SeasonRangeCollision => {
                 "NNNN-NN is both an EDTF sub-year code and a plausible year range"
+            }
+            Note::RomanCentury => {
+                "century read from a Roman numeral (Cyrillic lookalike letters tolerated)"
+            }
+            Note::DecadeOfCentury => "decade tied to the explicitly named century",
+            Note::EndpointYearDistributed => {
+                "endpoint without a year inherited the other endpoint's stated year"
+            }
+            Note::CrossYearSeason => {
+                "season-year-pair prose may name one boundary-spanning season or a range"
             }
         }
     }
@@ -213,6 +245,33 @@ pub struct Ambiguous {
     pub interpretations: Vec<Interpretation>,
 }
 
+/// Why a [`Outcome::NoMatch`] happened — the discriminator a bulk-import
+/// triage step routes on (N11/N12).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NoMatchReason {
+    /// The input is outside the pattern grammar (N11). Escalate to a human.
+    OutOfGrammar,
+    /// The input explicitly says there is no date ("unknown", "без даты")
+    /// (N12). What that means — `XXXX`, an empty column, an error — is form
+    /// policy.
+    ExplicitNoDate,
+    /// The prose matched, but every reading named an impossible or
+    /// contradictory date (February 30, a reversed range, an impossible
+    /// "or" alternative). A prose error: escalate, never guess (N14).
+    ImpossibleDate,
+}
+
+impl NoMatchReason {
+    /// The N-decision in `docs/normalize-notes.md` this reason cites, if any.
+    pub fn decision(self) -> Option<&'static str> {
+        match self {
+            NoMatchReason::OutOfGrammar => Some("N11"),
+            NoMatchReason::ExplicitNoDate => Some("N12"),
+            NoMatchReason::ImpossibleDate => Some("N14"),
+        }
+    }
+}
+
 /// The honest return type: a match, several readings, or nothing — never a
 /// silent guess.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -221,9 +280,12 @@ pub enum Outcome {
     Normalized(Normalized),
     /// More than one plausible reading; the caller decides.
     Ambiguous(Ambiguous),
-    /// The input is outside the grammar. Escalate to a human (or a bulk-import
-    /// triage step) — this crate will not guess.
-    NoMatch,
+    /// No answer, with the reason a triage step needs — this crate will not
+    /// guess.
+    NoMatch {
+        /// Why nothing was produced.
+        reason: NoMatchReason,
+    },
 }
 
 /// Normalize English date prose with default options.

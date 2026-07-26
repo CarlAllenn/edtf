@@ -14,7 +14,7 @@
 //!   "defaultCentury": 1900}` — all fields optional.
 
 use edtf_core::{Bound, Edtf, Relation};
-use edtf_normalize::{normalize_with, Language, NumericOrder, Options, Outcome};
+use edtf_normalize::{normalize_with, Language, NoMatchReason, NumericOrder, Options, Outcome};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -140,9 +140,16 @@ pub enum NormalizeSummary {
         /// Every plausible reading, in table order.
         interpretations: Vec<InterpretationJson>,
     },
-    /// Outside the grammar; escalate to a human.
+    /// No answer; `reason` is the triage discriminator:
+    /// `"outOfGrammar"` (N11) | `"explicitNoDate"` (N12) |
+    /// `"impossibleDate"` (N14).
     #[serde(rename_all = "camelCase")]
-    NoMatch {},
+    NoMatch {
+        /// Why nothing was produced.
+        reason: &'static str,
+        /// The governing N-decision in docs/normalize-notes.md.
+        decision: Option<&'static str>,
+    },
 }
 
 /// One note: the governing N-decision (or null) and a human-readable message.
@@ -169,9 +176,11 @@ pub struct InterpretationJson {
     pub notes: Vec<NoteJson>,
 }
 
-/// JSON options accepted by `normalize` (all fields optional).
+/// JSON options accepted by `normalize` (all fields optional). Unknown keys
+/// are rejected, matching the invalid-value behavior — a typo'd option must
+/// never silently fall back to defaults.
 #[derive(Debug, Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
+#[serde(rename_all = "camelCase", default, deny_unknown_fields)]
 struct NormalizeOptionsJson {
     language: Option<String>,
     numeric_order: Option<String>,
@@ -194,6 +203,11 @@ fn parse_options(options: Option<&str>) -> Option<Options> {
         Some("monthFirst") => Some(NumericOrder::MonthFirst),
         Some(_) => return None,
     };
+    // Out-of-domain values are option errors (undefined to JS), never a
+    // fabricated noMatch for in-grammar prose.
+    if parsed.default_century.is_some_and(|c| c > 9999) {
+        return None;
+    }
     Some(Options {
         language,
         numeric_order,
@@ -233,14 +247,23 @@ pub fn normalize_summary(input: &str, options: Option<&str>) -> Option<Normalize
                 })
                 .collect(),
         },
-        Outcome::NoMatch => NormalizeSummary::NoMatch {},
+        Outcome::NoMatch { reason } => NormalizeSummary::NoMatch {
+            reason: match reason {
+                NoMatchReason::OutOfGrammar => "outOfGrammar",
+                NoMatchReason::ExplicitNoDate => "explicitNoDate",
+                NoMatchReason::ImpossibleDate => "impossibleDate",
+            },
+            decision: reason.decision(),
+        },
     })
 }
 
 /// Deterministic prose-date normalization ("1980s" → 198X) as a JSON string.
-/// Always returns a value for valid options (`{"kind":"noMatch"}` when the
-/// prose is outside the grammar); `undefined` only for invalid options JSON.
-/// See [`NormalizeSummary`] for the object shape.
+/// Always returns a value for valid options (a `noMatch` object with a
+/// `reason` when nothing can be produced); `undefined` only for invalid
+/// options — malformed JSON, unknown keys, or out-of-domain values. An
+/// empty/whitespace options string means defaults. See [`NormalizeSummary`]
+/// for the object shape.
 #[wasm_bindgen]
 pub fn normalize(input: &str, options: Option<String>) -> Option<String> {
     let summary = normalize_summary(input, options.as_deref())?;
@@ -353,7 +376,15 @@ mod tests {
         assert!(j.contains("\"decision\":\"N5\""), "{j}");
 
         let j = normalize("no idea", None).unwrap();
-        assert_eq!(j, "{\"kind\":\"noMatch\"}");
+        assert_eq!(
+            j,
+            "{\"kind\":\"noMatch\",\"reason\":\"outOfGrammar\",\"decision\":\"N11\"}"
+        );
+        let j = normalize("unknown", None).unwrap();
+        assert!(j.contains("\"reason\":\"explicitNoDate\""), "{j}");
+        assert!(j.contains("\"decision\":\"N12\""), "{j}");
+        let j = normalize("30/02/1985", None).unwrap();
+        assert!(j.contains("\"reason\":\"impossibleDate\""), "{j}");
     }
 
     #[test]
@@ -373,6 +404,11 @@ mod tests {
 
         assert!(normalize("1985", Some(String::from("{\"language\":\"tlh\"}"))).is_none());
         assert!(normalize("1985", Some(String::from("not json"))).is_none());
+        // A typo'd KEY must be an option error, not a silent default (a
+        // misspelled "lang" would otherwise silently run English tables).
+        assert!(normalize("около 1920", Some(String::from("{\"lang\":\"ru\"}"))).is_none());
+        // Out-of-domain defaultCentury is an option error, not a noMatch.
+        assert!(normalize("the 80s", Some(String::from("{\"defaultCentury\":12345}"))).is_none());
     }
 
     #[test]

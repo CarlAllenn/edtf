@@ -167,8 +167,6 @@ jobs:
     # never duplicated.
     name: MSRV check
     runs-on: ubuntu-latest
-    env:
-      MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
       # First step of every job, before checkout: runtime egress audit —
       # enforcement per issue #6 canon (allowlist derived from audit run;
@@ -182,20 +180,12 @@ jobs:
           allowed-endpoints: >
             api.github.com:443
             codeload.github.com:443
-            crates.io:443
-            files.pythonhosted.org:443
             github.com:443
-            index.crates.io:443
             mise-versions.jdx.dev:443
             mise.jdx.dev:443
-            nodejs.org:443
             objects.githubusercontent.com:443
-            pypi.org:443
             raw.githubusercontent.com:443
-            registry.npmjs.org:443
             release-assets.githubusercontent.com:443
-            static.crates.io:443
-            static.rust-lang.org:443
             tuf-repo-cdn.sigstore.dev:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -204,6 +194,9 @@ jobs:
         with:
           # renovate: datasource=github-releases depName=jdx/mise
           version: 2026.7.12
+          # Single-purpose job: install only its own tools (canon rule,
+          # templates/ci/README.md).
+          install_args: taplo
       - name: Derive MSRV from Cargo.toml
         run: echo "MSRV=$(taplo get -f Cargo.toml 'workspace.package.rust-version')" >> "$GITHUB_ENV"
       - run: rustup toolchain install "$MSRV" --profile minimal
@@ -212,8 +205,6 @@ jobs:
   wasm:
     name: WebAssembly build + native tests
     runs-on: ubuntu-latest
-    env:
-      MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
       # First step of every job, before checkout: runtime egress audit —
       # enforcement per issue #6 canon (allowlist derived from audit run;
@@ -227,21 +218,14 @@ jobs:
           allowed-endpoints: >
             api.github.com:443
             codeload.github.com:443
-            crates.io:443
-            files.pythonhosted.org:443
             github.com:443
-            index.crates.io:443
             mise-versions.jdx.dev:443
             mise.jdx.dev:443
-            nodejs.org:443
             objects.githubusercontent.com:443
-            pypi.org:443
             raw.githubusercontent.com:443
-            registry.npmjs.org:443
             release-assets.githubusercontent.com:443
-            static.crates.io:443
-            static.rust-lang.org:443
             tuf-repo-cdn.sigstore.dev:443
+            static.rust-lang.org:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -250,6 +234,9 @@ jobs:
         with:
           # renovate: datasource=github-releases depName=jdx/mise
           version: 2026.7.12
+          # Single-purpose job: install only its own tools (canon rule,
+          # templates/ci/README.md).
+          install_args: rust
       - run: cargo test -p edtf-wasm
       - run: cargo build -p edtf-wasm --target wasm32-unknown-unknown --release
 
@@ -264,7 +251,6 @@ jobs:
       # cargo-pgrx is pinned in mise.toml (cargo backend, compiled from
       # source); this job carries its own mise cache so the compile is
       # amortized separately from the lint jobs' cache.
-      MISE_DISABLE_TOOLS: cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
       # Routed through env so no template expands inside run: code
       # (zizmor template-injection, pedantic tier).
       PG: ${{ matrix.pg }}
@@ -287,17 +273,13 @@ jobs:
             crates.io:443
             dl.google.com:443
             esm.ubuntu.com:443
-            files.pythonhosted.org:443
             github.com:443
             index.crates.io:443
             mise-versions.jdx.dev:443
             mise.jdx.dev:443
-            nodejs.org:443
             objects.githubusercontent.com:443
             packages.microsoft.com:443
-            pypi.org:443
             raw.githubusercontent.com:443
-            registry.npmjs.org:443
             release-assets.githubusercontent.com:443
             security.ubuntu.com:80
             static.crates.io:443
@@ -310,6 +292,9 @@ jobs:
         with:
           # renovate: datasource=github-releases depName=jdx/mise
           version: 2026.7.12
+          # Single-purpose job: install only its own tools (canon rule,
+          # templates/ci/README.md).
+          install_args: rust cargo:cargo-pgrx
           cache_key_prefix: mise-pgrx-v1
       - name: Resolve pinned cargo-pgrx version
         run: echo "PGRX_VERSION=$(cargo pgrx --version | awk '{print $2}')" >> "$GITHUB_ENV"

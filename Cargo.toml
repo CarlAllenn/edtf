@@ -8,6 +8,14 @@ members = ["crates/edtf-core", "crates/edtf-calendars", "crates/edtf-wasm", "cra
 # libfuzzer, and must not drag those into the everyday workspace build.
 exclude = ["crates/edtf-postgres", "fuzz"]
 
+[workspace.dependencies]
+edtf-core = { path = "crates/edtf-core", version = "0.2.0" }
+edtf-calendars = { path = "crates/edtf-calendars", version = "0.1.0" }
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde_json = "1"
+# Model-side property tests; std-only subset (no fork/timeout machinery).
+proptest = { version = "=1.11.0", default-features = false, features = ["std"] }
+
 [workspace.package]
 edition = "2021"
 rust-version = "1.82"

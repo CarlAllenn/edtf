@@ -13,12 +13,11 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-edtf-core = { path = "../edtf-core", version = "0.2.0" }
-serde = { version = "1", default-features = false, features = ["derive"], optional = true }
+edtf-core = { workspace = true }
+serde = { workspace = true, optional = true }
 
 [features]
 serde = ["dep:serde", "edtf-core/serde"]
 
 [dev-dependencies]
-# Same pinned std-only subset as edtf-core's property tests.
-proptest = { version = "=1.11.0", default-features = false, features = ["std"] }
+proptest = { workspace = true }

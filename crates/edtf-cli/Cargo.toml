@@ -17,9 +17,6 @@ name = "edtf"
 path = "src/main.rs"
 
 [dependencies]
-edtf-core = { path = "../edtf-core", version = "0.2.0" }
-edtf-calendars = { path = "../edtf-calendars", version = "0.1.0" }
-serde_json = "1"
-
-[dev-dependencies]
-serde_json = "=1.0.151"
+edtf-core = { workspace = true }
+edtf-calendars = { workspace = true }
+serde_json = { workspace = true }

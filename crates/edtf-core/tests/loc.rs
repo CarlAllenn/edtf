@@ -1,0 +1,58 @@
+//! Interop cross-check against every example on the Library of Congress
+//! EDTF specification page (loc.gov/standards/datetime) — the original that
+//! the ISO 8601-2:2019 profile codifies. Where LoC and ISO disagree, ISO
+//! Annex A wins; divergences are recorded in docs/spec-notes.md (D19, D20)
+//! and as `our_level` overrides in the fixture.
+
+use edtf_core::Edtf;
+use serde_json::Value;
+
+fn corpus() -> Value {
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tests/fixtures/loc/loc-edtf-examples.json"
+    );
+    let text = std::fs::read_to_string(path).expect("read LoC corpus");
+    serde_json::from_str(&text).expect("parse LoC corpus")
+}
+
+#[test]
+fn loc_examples_parse_at_their_level_and_round_trip() {
+    let c = corpus();
+    for case in c["examples"].as_array().expect("examples is an array") {
+        let s = case["edtf"].as_str().expect("edtf field");
+        let feature = case["feature"].as_str().unwrap_or("");
+        // ISO-derived level; falls back to LoC's own level when they agree.
+        let want = case["our_level"]
+            .as_u64()
+            .or_else(|| case["level"].as_u64())
+            .expect("level field");
+
+        let parsed = Edtf::parse(s)
+            .unwrap_or_else(|e| panic!("LoC example {s:?} ({feature}) should parse: {e}"));
+        assert_eq!(
+            u64::from(parsed.level()),
+            want,
+            "wrong level for LoC example {s:?} ({feature})"
+        );
+
+        let rendered = parsed.to_string();
+        let reparsed = Edtf::parse(&rendered).unwrap_or_else(|e| {
+            panic!("LoC example {s:?}: canonical form {rendered:?} fails to reparse: {e}")
+        });
+        assert_eq!(parsed, reparsed, "round trip changed meaning for {s:?}");
+    }
+}
+
+#[test]
+fn loc_invalid_cases_reject() {
+    let c = corpus();
+    for case in c["invalid"].as_array().expect("invalid is an array") {
+        let s = case["edtf"].as_str().expect("edtf field");
+        assert!(
+            Edtf::parse(s).is_err(),
+            "{s:?} should be rejected ({})",
+            case["feature"].as_str().unwrap_or("")
+        );
+    }
+}

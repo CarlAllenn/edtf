@@ -1,5 +1,7 @@
 # edtf
 
+[![CI](https://github.com/CarlAllenn/edtf/actions/workflows/ci.yml/badge.svg)](https://github.com/CarlAllenn/edtf/actions/workflows/ci.yml)
+
 A complete, spec-exact Rust implementation of **EDTF** — the Extended
 Date/Time Format, standardized as the profile in **ISO 8601-2:2019 Annex A**
 — covering conformance **levels 0, 1 and 2 in full**.
@@ -40,8 +42,8 @@ that is valid in your application is valid in your database — always:
   explicit-form designator system are not EDTF and do not parse.
 
 Every grammar production and every judgment call is documented with ISO
-section citations in [docs/spec-notes.md](docs/spec-notes.md), including 19
-resolved ambiguities (D1–D19) and one identified erratum in the ISO text
+section citations in [docs/spec-notes.md](docs/spec-notes.md), including 20
+resolved ambiguities (D1–D20) and one identified erratum in the ISO text
 itself (Annex A.6.3 Example 2, which contradicts its own normative clause).
 
 ## Usage
@@ -89,12 +91,35 @@ task pg:test     # Postgres extension tests (needs `cargo pgrx init` once)
 ```
 
 The test suite includes a 63-case conformance corpus derived from every
-Annex A example plus adversarial cases, ~200 spec-derived assertions, bounds
-verification, a canonical-form round-trip property over all fixtures, and a
-deterministic fuzz harness (hundreds of thousands of hostile inputs per run;
-the parser must never panic, and everything it accepts must round-trip).
+Annex A example plus adversarial cases, every example from the Library of
+Congress EDTF specification page as an interop cross-check
+(`tests/fixtures/loc`), ~200 spec-derived assertions, bounds verification, a
+canonical-form round-trip property over all fixtures, and a deterministic
+fuzz harness (hundreds of thousands of hostile inputs per run; the parser
+must never panic, and everything it accepts must round-trip). On top of
+that, coverage-guided fuzzing (`fuzz/`, cargo-fuzz) runs nightly in CI
+against the same never-panic and round-trip properties.
 Parse errors carry the byte offset of the problem:
 `1985-02-30` → `invalid EDTF at offset 8: day is out of range for the month`.
+
+### Performance
+
+Criterion benchmarks live in `crates/edtf-core/benches/core.rs` (`task bench`).
+Representative numbers, Apple M1 Pro, rustc 1.97.1, `--release`:
+
+| Input | parse | canonicalize | bounds |
+|---|---|---|---|
+| `1985-04-12` | 188 ns | 283 ns | 223 ns |
+| `1985-04-12T23:20:30+04:30` | 154 ns | 456 ns | 226 ns |
+| `2004-06~` | 97 ns | 211 ns | 171 ns |
+| `?2004-06-~11` | 193 ns | 287 ns | 230 ns |
+| `156X-12-25` | 182 ns | 275 ns | 99 µs¹ |
+| `Y-17E7S3` | 81 ns | 167 ns | 15 ns |
+| `{..1983-12-31,1984-10-10..1984-11-01,1984-11-05..}` | 1.32 µs | 1.18 µs | 939 ns |
+| `1985-02-30` (rejected) | 195 ns | — | — |
+
+¹ Bounds over unspecified year digits currently enumerate candidates;
+  a known optimization target.
 
 ## License
 

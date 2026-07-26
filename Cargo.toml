@@ -1,11 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
-  "crates/edtf-core",
-  "crates/edtf-calendars",
-  "crates/edtf-wasm",
-  "crates/edtf-cli",
-]
+members = ["crates/edtf-core", "crates/edtf-calendars", "crates/edtf-wasm", "crates/edtf-cli"]
 # crates/edtf-postgres is intentionally NOT a workspace member: pgrx
 # extensions need their own dependency graph and a locally-initialized pgrx
 # toolchain (`cargo pgrx init`). Build/test it via `task pg:test`.

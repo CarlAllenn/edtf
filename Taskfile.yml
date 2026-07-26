@@ -132,7 +132,7 @@ tasks:
       - mise.lock
     cmds:
       - actionlint
-      - zizmor --min-severity low .github/workflows/
+      - zizmor --persona=pedantic --offline .
 
   lint:shell:
     desc: shellcheck + shfmt (check mode) over shell scripts

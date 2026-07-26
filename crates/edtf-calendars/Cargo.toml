@@ -14,9 +14,7 @@ workspace = true
 
 [dependencies]
 edtf-core = { path = "../edtf-core", version = "0.2.0" }
-serde = { version = "1", default-features = false, features = [
-  "derive",
-], optional = true }
+serde = { version = "1", default-features = false, features = ["derive"], optional = true }
 
 [features]
 serde = ["dep:serde", "edtf-core/serde"]

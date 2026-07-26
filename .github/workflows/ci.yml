@@ -5,14 +5,14 @@ name: CI
   push:
     # renovate/**: branch-automerge needs the CI check on the branch itself
     # (no PR is opened unless the branch goes red).
-    branches: [main, "renovate/**"]
-  pull_request:
+    branches: [main, renovate/**]
+  pull_request: {}
   schedule:
     # Weekly full gate on main: cargo-deny's advisories check has an input —
     # the RustSec database — that changes without commits; this catches new
     # advisories during quiet weeks. Fingerprinted gates restore the .task
     # cache from the last green run and skip.
-    - cron: "0 6 * * 1"
+    - cron: 0 6 * * 1
 
 permissions:
   contents: read
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Heavy source-built tools this job never invokes.
-      MISE_DISABLE_TOOLS: "cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack"
+      MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -65,7 +65,7 @@ jobs:
     name: MSRV check
     runs-on: ubuntu-latest
     env:
-      MISE_DISABLE_TOOLS: "cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack"
+      MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -83,7 +83,7 @@ jobs:
     name: WebAssembly build + native tests
     runs-on: ubuntu-latest
     env:
-      MISE_DISABLE_TOOLS: "cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack"
+      MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -107,7 +107,10 @@ jobs:
       # cargo-pgrx is pinned in mise.toml (cargo backend, compiled from
       # source); this job carries its own mise cache so the compile is
       # amortized separately from the lint jobs' cache.
-      MISE_DISABLE_TOOLS: "cargo:cargo-fuzz,aqua:rustwasm/wasm-pack"
+      MISE_DISABLE_TOOLS: cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
+      # Routed through env so no template expands inside run: code
+      # (zizmor template-injection, pedantic tier).
+      PG: ${{ matrix.pg }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -126,8 +129,8 @@ jobs:
           key: pgrx-${{ env.PGRX_VERSION }}-pg${{ matrix.pg }}-${{ runner.os }}
       - run: sudo apt-get update && sudo apt-get install -y pkg-config libreadline-dev zlib1g-dev
       - run: >
-          grep -q "pg${{ matrix.pg }}" ~/.pgrx/config.toml 2>/dev/null ||
-          cargo pgrx init --pg${{ matrix.pg }} download
+          grep -q "pg$PG" ~/.pgrx/config.toml 2>/dev/null ||
+          cargo pgrx init "--pg$PG" download
       - run: >
-          cd crates/edtf-postgres && cargo pgrx test pg${{ matrix.pg }}
-          --no-default-features --features pg${{ matrix.pg }}
+          cd crates/edtf-postgres && cargo pgrx test "pg$PG"
+          --no-default-features --features "pg$PG"

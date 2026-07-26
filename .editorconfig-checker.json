@@ -1,9 +1,8 @@
 {
   "Exclude": [
-    "LICENSE-APACHE",
-    "tests/fixtures/legacy/",
-    "spec/",
-    "Cargo.lock",
-    "mise.lock"
+    "(^|/)LICENSE-APACHE$",
+    "^tests/fixtures/legacy/",
+    "^spec/",
+    "^mise\\.lock$"
   ]
 }

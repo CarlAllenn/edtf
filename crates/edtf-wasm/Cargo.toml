@@ -20,6 +20,7 @@ wasm-opt = ["-Oz", "--enable-bulk-memory", "--enable-nontrapping-float-to-int"]
 
 [dependencies]
 edtf-core = { workspace = true, features = ["serde"] }
+edtf-normalize = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 wasm-bindgen = "0.2"

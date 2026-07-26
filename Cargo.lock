@@ -192,10 +192,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "edtf-normalize"
+version = "0.1.0"
+dependencies = [
+ "edtf-core",
+ "proptest",
+ "serde_json",
+]
+
+[[package]]
 name = "edtf-wasm"
 version = "0.2.0"
 dependencies = [
  "edtf-core",
+ "edtf-normalize",
  "serde",
  "serde_json",
  "wasm-bindgen",

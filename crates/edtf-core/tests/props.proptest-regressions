@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 4c582c59e110f338a514071ecedf2f962c099cdc480d29541f0cae223103e8c3 # shrinks to a = Date(Date { year: Year { kind: Standard { negative: false, digits: [Some(0), Some(0), Some(0), Some(0)] }, significant_digits: Some(1), qualifier: Qualifier { uncertain: false, approximate: false } }, month: None, day: None }), b = Interval(Interval { start: Date(Date { year: Year { kind: Standard { negative: false, digits: [Some(1), Some(0), Some(0), None] }, significant_digits: None, qualifier: Qualifier { uncertain: true, approximate: false } }, month: Some(DateField { digits: [Some(0), None], qualifier: Qualifier { uncertain: true, approximate: false } }), day: None }), end: Unknown })

@@ -8,8 +8,11 @@
 //! - `edtf_min(text) → date` / `edtf_max(text) → date` — earliest/latest
 //!   calendar day. Open ends map to `-infinity`/`infinity`; unknown ends and
 //!   years outside the Postgres date range map to NULL.
+//! - `edtf_relation(text, text) → text[]` — three-valued temporal relation:
+//!   one entry per non-impossible relation, `definitely_<r>` when it holds
+//!   for every completion, `possibly_<r>` otherwise.
 
-use edtf_core::{Bound, Edtf};
+use edtf_core::{Bound, Edtf, Modality};
 use pgrx::datetime::Date;
 use pgrx::prelude::*;
 
@@ -62,6 +65,29 @@ fn edtf_min(input: &str) -> Option<Date> {
 #[pg_extern(immutable, parallel_safe, strict)]
 fn edtf_max(input: &str) -> Option<Date> {
     to_pg_date(Edtf::parse(input).ok()?.bounds().latest)
+}
+
+/// Three-valued temporal relation between two EDTF expressions (semantics:
+/// `docs/spec-notes.md` D23). One entry per relation that at least some
+/// completion pair satisfies, in canonical order (before, after, overlaps,
+/// contains, within, equal): `definitely_<r>` when every completion pair
+/// satisfies it, else `possibly_<r>`. Unknown bounds yield all six as
+/// `possibly_`. NULL if either input is invalid. A consistency rule reads:
+/// `NOT ('definitely_after' = ANY(edtf_relation(born, died)))`.
+#[pg_extern(immutable, parallel_safe, strict)]
+fn edtf_relation(a: &str, b: &str) -> Option<Vec<String>> {
+    let rel = Edtf::parse(a).ok()?.relation(&Edtf::parse(b).ok()?);
+    Some(
+        rel.possible()
+            .map(|r| {
+                let adverb = match rel.modality(r) {
+                    Modality::Definite => "definitely",
+                    _ => "possibly",
+                };
+                format!("{adverb}_{}", r.as_str())
+            })
+            .collect(),
+    )
 }
 
 #[cfg(any(test, feature = "pg_test"))]
@@ -140,6 +166,27 @@ mod tests {
         // Unknown end and out-of-range years are NULL.
         assert_eq!(q_text("SELECT edtf_max('1986-04/')::text"), None);
         assert_eq!(q_text("SELECT edtf_min('Y17E7')::text"), None);
+    }
+
+    #[pg_test]
+    fn relations() {
+        assert!(q_bool(
+            "SELECT edtf_relation('1985~', '199X') = ARRAY['definitely_before']"
+        ));
+        assert!(q_bool(
+            "SELECT edtf_relation('198X', '1985') = ARRAY[\
+                'possibly_before','possibly_after','possibly_overlaps',\
+                'possibly_contains','possibly_within','possibly_equal']"
+        ));
+        // Unknown interval end: possible-everything, never definite.
+        assert!(q_bool(
+            "SELECT NOT ('definitely_after' = ANY(edtf_relation('1985/', '../1980')))"
+        ));
+        // The issue's consistency-rule shape: born must not be after died.
+        assert!(q_bool(
+            "SELECT NOT ('definitely_after' = ANY(edtf_relation('1890~', '1976-01-12')))"
+        ));
+        assert!(q_bool("SELECT edtf_relation('junk', '1985') IS NULL"));
     }
 
     #[pg_test]

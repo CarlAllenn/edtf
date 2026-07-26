@@ -11,9 +11,9 @@ that is valid in your application is valid in your database — always:
 
 | Crate | What it is |
 |---|---|
-| **`edtf-core`** | The implementation. `#![no_std]`, zero runtime dependencies. Parsing, validation, level classification, calendar bounds, canonical formatting, positioned errors. Optional `serde` feature. |
-| **`edtf-wasm`** | WebAssembly bindings for JavaScript (~61 KB): `isValid`, `level`, `canonical`, `parse` (JSON summary). |
-| **`edtf-postgres`** | Postgres extension (via [pgrx], Postgres 14–18): `edtf_valid()`, `edtf_level()`, `edtf_canonical()`, `edtf_min()`, `edtf_max()` as SQL functions. |
+| **`edtf-core`** | The implementation. `#![no_std]`, zero runtime dependencies. Parsing, validation, level classification, calendar bounds, three-valued temporal relations, canonical formatting, positioned errors. Optional `serde` feature. |
+| **`edtf-wasm`** | WebAssembly bindings for JavaScript (~61 KB): `isValid`, `level`, `canonical`, `parse` (JSON summary), `relation`. |
+| **`edtf-postgres`** | Postgres extension (via [pgrx], Postgres 14–18): `edtf_valid()`, `edtf_level()`, `edtf_canonical()`, `edtf_min()`, `edtf_max()`, `edtf_relation()` as SQL functions. |
 | **`edtf-cli`** | The `edtf` command-line tool: `validate` / `canonical` / `level` / `info` over arguments or stdin. Installable anywhere via `cargo install edtf-cli` (or pin it with mise: `"cargo:edtf-cli"`). |
 
 [pgrx]: https://github.com/pgcentralfoundation/pgrx
@@ -35,6 +35,10 @@ that is valid in your application is valid in your database — always:
   in 900 is a leap year.
 - **Bounds**: every expression maps to earliest/latest calendar days
   (`156X` → 1560-01-01…1569-12-31), the primitive for range queries.
+- **Relations**: three-valued comparison under uncertainty — is `1985~`
+  before `199X`? Definitely; is `198X` before `1985`? Possibly. Six
+  coarsened Allen relations, each impossible / possible / definite, never
+  over-asserting (semantics: D23 in the spec notes).
 - **Canonical formatting**: `Display` renders the spec-preferred form
   (ISO 8601-2 §8.2.4) — `?2004-?06-?11` normalizes to `2004-06-11?`.
 - **Strict profile boundaries**: everything Annex A excludes is rejected —
@@ -42,8 +46,8 @@ that is valid in your application is valid in your database — always:
   explicit-form designator system are not EDTF and do not parse.
 
 Every grammar production and every judgment call is documented with ISO
-section citations in [docs/spec-notes.md](docs/spec-notes.md), including 20
-resolved ambiguities (D1–D20) and one identified erratum in the ISO text
+section citations in [docs/spec-notes.md](docs/spec-notes.md), including 23
+resolved decisions (D1–D23) and one identified erratum in the ISO text
 itself (Annex A.6.3 Example 2, which contradicts its own normative clause).
 
 ## Usage
@@ -58,6 +62,11 @@ let d = Edtf::parse("156X-12-25").unwrap();
 assert_eq!(d.level(), 2);
 assert!(d.has_unspecified());
 let b = d.bounds();                                // 1560-12-25 ..= 1569-12-25
+
+use edtf_core::Relation;
+let a = Edtf::parse("1985~").unwrap();
+assert_eq!(a.relation(&Edtf::parse("199X").unwrap()).definite(),
+           Some(Relation::Before));                // ~ never moves bounds
 ```
 
 SQL, after `CREATE EXTENSION edtf_postgres`:
@@ -65,6 +74,9 @@ SQL, after `CREATE EXTENSION edtf_postgres`:
 ```sql
 SELECT edtf_valid('1985-24');                        -- true (winter 1985)
 SELECT edtf_min('156X'), edtf_max('156X');           -- 1560-01-01, 1569-12-31
+SELECT edtf_relation('1985~', '199X');               -- {definitely_before}
+-- e.g. as a consistency rule: born must not be after died
+-- CHECK (NOT ('definitely_after' = ANY(edtf_relation(born, died))))
 SELECT daterange(edtf_min(production_date),
                  edtf_max(production_date), '[]') @> DATE '1965-06-15'
 FROM artworks;

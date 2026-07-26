@@ -1,0 +1,336 @@
+//! Three-valued temporal relations between EDTF expressions.
+//!
+//! [`Edtf::relation`] answers "how does A relate to B in time?" honestly
+//! under uncertainty: each of the six coarsened Allen relations (*before /
+//! after / overlaps / contains / within / equal*) is reported as
+//! [`Modality::Impossible`], [`Modality::Possible`] (holds for some
+//! completion) or [`Modality::Definite`] (holds for every completion).
+//!
+//! Semantics (decision D23 in `docs/spec-notes.md`): an expression denotes
+//! some nonempty day-interval lying within its [`Edtf::bounds`] region —
+//! the "sometime during" reading. `1985` is a value falling somewhere
+//! within the calendar year, not necessarily spanning the whole of it.
+//! Consequences, documented rather than hidden:
+//!
+//! - Qualification (`?~%`) never moves bounds (ISO 8601-2 §8.4.2 NOTE), so
+//!   `1985?` relates exactly as `1985`.
+//! - Only *before*, *after* and *equal* can ever be Definite: any region
+//!   wider than one day admits single-day completions, so containment or
+//!   overlap can never be forced.
+//! - Interval endpoint linkage is coarsened away: `2004/2005` vs `2004-06`
+//!   reports possibly-before, although every true completion of the
+//!   interval straddles June 2004. Everything flows through the bounds
+//!   region.
+//! - Unknown bounds propagate as possible-everything, never Definite —
+//!   even where the other endpoint could in principle constrain them.
+//! - Bounds are day-granular (time of day refines within a day), so
+//!   same-day datetimes are definitely equal.
+
+use crate::bounds::{is_leap, last_day, Bound, BoundDate};
+use crate::types::Edtf;
+
+/// One of the six coarsened Allen relations between two time regions.
+///
+/// The six are exhaustive and mutually exclusive over concrete
+/// day-intervals: disjoint pairs are `Before`/`After`, coincident pairs are
+/// `Equal`, proper containment (including a shared endpoint) is
+/// `Contains`/`Within`, and partial overlap is `Overlaps`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum Relation {
+    /// A ends before B starts (no shared day).
+    Before,
+    /// A starts after B ends (no shared day).
+    After,
+    /// A and B share days but each also has days the other lacks on
+    /// opposite sides (partial overlap).
+    Overlaps,
+    /// B lies within A without being equal to it.
+    Contains,
+    /// A lies within B without being equal to it.
+    Within,
+    /// A and B cover exactly the same days.
+    Equal,
+}
+
+impl Relation {
+    /// All six relations, in canonical order.
+    pub const ALL: [Relation; 6] = [
+        Relation::Before,
+        Relation::After,
+        Relation::Overlaps,
+        Relation::Contains,
+        Relation::Within,
+        Relation::Equal,
+    ];
+
+    /// The relation that holds of (B, A) whenever `self` holds of (A, B).
+    pub fn converse(self) -> Relation {
+        match self {
+            Relation::Before => Relation::After,
+            Relation::After => Relation::Before,
+            Relation::Contains => Relation::Within,
+            Relation::Within => Relation::Contains,
+            Relation::Overlaps | Relation::Equal => self,
+        }
+    }
+
+    /// Lower-case name: `"before"`, `"after"`, `"overlaps"`, `"contains"`,
+    /// `"within"` or `"equal"`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Relation::Before => "before",
+            Relation::After => "after",
+            Relation::Overlaps => "overlaps",
+            Relation::Contains => "contains",
+            Relation::Within => "within",
+            Relation::Equal => "equal",
+        }
+    }
+
+    fn idx(self) -> usize {
+        match self {
+            Relation::Before => 0,
+            Relation::After => 1,
+            Relation::Overlaps => 2,
+            Relation::Contains => 3,
+            Relation::Within => 4,
+            Relation::Equal => 5,
+        }
+    }
+}
+
+/// How firmly a relation holds across the completions of two expressions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum Modality {
+    /// Holds for no pair of completions.
+    Impossible,
+    /// Holds for some pair of completions, but not all.
+    Possible,
+    /// Holds for every pair of completions.
+    Definite,
+}
+
+impl Modality {
+    /// Lower-case name: `"impossible"`, `"possible"` or `"definite"`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Modality::Impossible => "impossible",
+            Modality::Possible => "possible",
+            Modality::Definite => "definite",
+        }
+    }
+}
+
+/// The modality of every [`Relation`] between one pair of expressions, as
+/// computed by [`Edtf::relation`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Relations {
+    modalities: [Modality; 6],
+}
+
+impl Relations {
+    /// Every relation possible, none definite — the honest answer when a
+    /// bound is unknown.
+    const ALL_POSSIBLE: Relations = Relations {
+        modalities: [Modality::Possible; 6],
+    };
+
+    /// A possible-set becomes modalities: the sole possible relation (when
+    /// there is exactly one) holds for *every* completion pair, because the
+    /// six relations are exhaustive and mutually exclusive.
+    fn from_possible(possible: [bool; 6]) -> Relations {
+        let count = possible.iter().filter(|p| **p).count();
+        let mut modalities = [Modality::Impossible; 6];
+        for (m, p) in modalities.iter_mut().zip(possible) {
+            if p {
+                *m = if count == 1 {
+                    Modality::Definite
+                } else {
+                    Modality::Possible
+                };
+            }
+        }
+        Relations { modalities }
+    }
+
+    /// The modality of one relation.
+    pub fn modality(self, r: Relation) -> Modality {
+        self.modalities[r.idx()]
+    }
+
+    /// True if the relation holds for at least one completion pair
+    /// (i.e. its modality is `Possible` or `Definite`).
+    pub fn is_possible(self, r: Relation) -> bool {
+        self.modality(r) != Modality::Impossible
+    }
+
+    /// True if the relation holds for every completion pair.
+    pub fn is_definite(self, r: Relation) -> bool {
+        self.modality(r) == Modality::Definite
+    }
+
+    /// True if the relation holds for no completion pair.
+    pub fn is_impossible(self, r: Relation) -> bool {
+        self.modality(r) == Modality::Impossible
+    }
+
+    /// The one relation that definitely holds, if any. At most one relation
+    /// can be definite; only `Before`, `After` and `Equal` ever are.
+    pub fn definite(self) -> Option<Relation> {
+        Relation::ALL.into_iter().find(|r| self.is_definite(*r))
+    }
+
+    /// The relations that hold for at least one completion pair, in
+    /// canonical order. Never empty.
+    pub fn possible(self) -> impl Iterator<Item = Relation> {
+        Relation::ALL
+            .into_iter()
+            .filter(move |r| self.is_possible(*r))
+    }
+}
+
+impl core::fmt::Display for Relations {
+    /// Comma-separated non-impossible relations, e.g. `definitely before`
+    /// or `possibly before, possibly overlaps, possibly within`.
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut first = true;
+        for r in self.possible() {
+            if !first {
+                write!(f, ", ")?;
+            }
+            first = false;
+            let adverb = match self.modality(r) {
+                Modality::Definite => "definitely",
+                _ => "possibly",
+            };
+            write!(f, "{adverb} {}", r.as_str())?;
+        }
+        Ok(())
+    }
+}
+
+/// A bound on the day axis with infinities ordered around concrete days.
+/// `Unknown` is handled before conversion, so no variant is needed for it.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum Ext {
+    NegInf,
+    Day(BoundDate),
+    PosInf,
+}
+
+fn ext(b: Bound) -> Option<Ext> {
+    match b {
+        Bound::NegativeInfinity => Some(Ext::NegInf),
+        Bound::Date(d) => Some(Ext::Day(d)),
+        Bound::PositiveInfinity => Some(Ext::PosInf),
+        Bound::Unknown => None,
+    }
+}
+
+/// The calendar day after `e`; year overflow saturates to `PosInf`, which
+/// only under-reports overlap feasibility at the edge of representable time.
+fn succ(e: Ext) -> Ext {
+    let Ext::Day(d) = e else { return e };
+    if d.day < last_day(d.month, is_leap(d.year)) {
+        Ext::Day(BoundDate {
+            day: d.day + 1,
+            ..d
+        })
+    } else if d.month < 12 {
+        Ext::Day(BoundDate {
+            year: d.year,
+            month: d.month + 1,
+            day: 1,
+        })
+    } else {
+        match d.year.checked_add(1) {
+            Some(year) => Ext::Day(BoundDate {
+                year,
+                month: 1,
+                day: 1,
+            }),
+            None => Ext::PosInf,
+        }
+    }
+}
+
+/// The calendar day before `e`; year underflow saturates to `NegInf`.
+fn pred(e: Ext) -> Ext {
+    let Ext::Day(d) = e else { return e };
+    if d.day > 1 {
+        Ext::Day(BoundDate {
+            day: d.day - 1,
+            ..d
+        })
+    } else if d.month > 1 {
+        let month = d.month - 1;
+        Ext::Day(BoundDate {
+            year: d.year,
+            month,
+            day: last_day(month, is_leap(d.year)),
+        })
+    } else {
+        match d.year.checked_sub(1) {
+            Some(year) => Ext::Day(BoundDate {
+                year,
+                month: 12,
+                day: 31,
+            }),
+            None => Ext::NegInf,
+        }
+    }
+}
+
+/// Can some completion of A start strictly before some completion of B and
+/// end inside it (`a1 < b1 <= a2 < b2`)? Setting `p` to the shared boundary
+/// day (A's end, B's start), feasibility is exactly
+/// `∃p: lo_a < p <= hi_a ∧ lo_b <= p < hi_b`.
+fn half_overlap(lo_a: Ext, hi_a: Ext, lo_b: Ext, hi_b: Ext) -> bool {
+    succ(lo_a).max(lo_b) <= hi_a.min(pred(hi_b))
+}
+
+impl Edtf {
+    /// The three-valued temporal relation between this expression and
+    /// `other`, computed over the two [`Edtf::bounds`] regions (see the
+    /// semantics note in this module's documentation).
+    ///
+    /// ```
+    /// use edtf_core::{Edtf, Modality, Relation};
+    ///
+    /// let a = Edtf::parse("1985~").unwrap();
+    /// let b = Edtf::parse("199X").unwrap();
+    /// assert_eq!(a.relation(&b).definite(), Some(Relation::Before));
+    ///
+    /// let c = Edtf::parse("198X").unwrap();
+    /// let d = Edtf::parse("1985").unwrap();
+    /// // 198X may fall before, on, after or around 1985 — nothing asserted.
+    /// assert_eq!(c.relation(&d).definite(), None);
+    /// assert!(c.relation(&d).is_possible(Relation::Before));
+    /// assert!(c.relation(&d).is_possible(Relation::After));
+    /// assert!(c.relation(&d).is_possible(Relation::Contains));
+    /// ```
+    pub fn relation(&self, other: &Edtf) -> Relations {
+        let a = self.bounds();
+        let b = other.bounds();
+        let (Some(a1), Some(a2), Some(b1), Some(b2)) = (
+            ext(a.earliest),
+            ext(a.latest),
+            ext(b.earliest),
+            ext(b.latest),
+        ) else {
+            return Relations::ALL_POSSIBLE;
+        };
+        let intersects = a1 <= b2 && b1 <= a2;
+        Relations::from_possible([
+            a1 < b2, // Before: some a ends before some b starts.
+            b1 < a2, // After, mirrored.
+            half_overlap(a1, a2, b1, b2) || half_overlap(b1, b2, a1, a2), // Overlaps.
+            intersects && a1 < a2, // Contains: a day of B inside a wider A.
+            intersects && b1 < b2, // Within, mirrored.
+            intersects, // Equal: a shared day serves both.
+        ])
+    }
+}

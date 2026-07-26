@@ -92,7 +92,14 @@ pub(crate) fn date_bounds(d: &Date) -> Bounds {
                 latest: Bound::Unknown,
             };
         };
-        let (lo, hi) = significant_range(value, d.year.significant_digits, big_width(&d.year.kind));
+        let Some((lo, hi)) =
+            significant_range(value, d.year.significant_digits, big_width(&d.year.kind))
+        else {
+            return Bounds {
+                earliest: Bound::Unknown,
+                latest: Bound::Unknown,
+            };
+        };
         return Bounds {
             earliest: Bound::Date(BoundDate {
                 year: lo,
@@ -110,7 +117,9 @@ pub(crate) fn date_bounds(d: &Date) -> Bounds {
     // Standard year with significant digits is year-precision only.
     if d.year.significant_digits.is_some() {
         let value = d.year.value().expect("S excludes X digits");
-        let (lo, hi) = significant_range(value, d.year.significant_digits, 4);
+        // Four-digit years can never overflow the sweep.
+        let (lo, hi) = significant_range(value, d.year.significant_digits, 4)
+            .expect("four-digit sweep fits in i64");
         return Bounds {
             earliest: Bound::Date(BoundDate {
                 year: lo,
@@ -171,23 +180,25 @@ fn decimal_digits(mut v: u64) -> u32 {
 
 /// The year range denoted by a value with `S<precision>` significant digits
 /// over a `width`-digit form (ISO 8601-2 §4.4.3): keep the leading
-/// `precision` digits, sweep the rest 0..9.
-fn significant_range(value: i64, precision: Option<u32>, width: u32) -> (i64, i64) {
+/// `precision` digits, sweep the rest 0..9. `None` when the top of the swept
+/// range exceeds the numeric range this library computes with (e.g.
+/// `Y9E18S1`), mirroring how un-valuable years bound to `Unknown`.
+fn significant_range(value: i64, precision: Option<u32>, width: u32) -> Option<(i64, i64)> {
     let Some(p) = precision else {
-        return (value, value);
+        return Some((value, value));
     };
     let sweep = width.saturating_sub(p);
     let Some(modulus) = 10i64.checked_pow(sweep) else {
-        return (value, value);
+        return Some((value, value));
     };
     let mag = value.unsigned_abs() as i64;
     let lo_mag = mag - mag.rem_euclid(modulus);
-    let hi_mag = lo_mag + (modulus - 1);
-    if value < 0 {
+    let hi_mag = lo_mag.checked_add(modulus - 1)?;
+    Some(if value < 0 {
         (-hi_mag, -lo_mag)
     } else {
         (lo_mag, hi_mag)
-    }
+    })
 }
 
 /// First and last month of each sub-year grouping code (docs/spec-notes.md

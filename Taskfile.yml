@@ -31,6 +31,11 @@ tasks:
       - task: lint
       - task: test
 
+  bench:
+    desc: Run the criterion benchmarks (numbers published in the README)
+    cmds:
+      - cargo bench -p edtf-core --bench core
+
   wasm:
     desc: Build the WebAssembly artifact
     cmds:

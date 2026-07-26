@@ -455,6 +455,15 @@ fn parse_prefixed_year(s: &str, base: usize) -> Result<Date, ParseError> {
     if mantissa_len == 0 {
         return Err(c.fail("expected digits after 'Y'"));
     }
+    // Leading zeros are only meaningful in four-digit years (P1 4.5); in a
+    // Y-year they would also desynchronize the S-digit budget from the
+    // canonical (zero-stripped) rendering (decision D20).
+    if mantissa > 0 && mantissa_len as u32 != mantissa.ilog10() + 1 {
+        return Err(err(
+            value_off,
+            "leading zeros are not allowed in Y-prefixed years",
+        ));
+    }
     let kind;
     let digit_count: u64;
     if c.eat(b'E') {

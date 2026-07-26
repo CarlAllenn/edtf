@@ -90,6 +90,12 @@ fn significant_digit_bounds() {
     assert_bounds("Y171010000S3", "171000000-01-01", "171999999-12-31");
     assert_bounds("Y3388E2S3", "338000-01-01", "338999-12-31");
     assert_bounds("Y17E7", "170000000-01-01", "170000000-12-31");
+    // Found by cargo-fuzz: 9e18 fits in i64 but the S1 sweep's upper end
+    // (9999999999999999999) does not — must degrade to unknown, not panic.
+    assert_bounds("Y9E18S1", "unknown", "unknown");
+    // Parsing computes bounds for interval ordering (D18); huge exponents on
+    // both ends must stay total there too.
+    assert!(edtf_core::Edtf::parse("Y8E20202/Y9E18S1").is_ok());
 }
 
 #[test]

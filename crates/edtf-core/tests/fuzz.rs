@@ -45,6 +45,8 @@ const ALPHABET: &[u8] = b"0123456789XYESTZ?~%-+:./,{}[]";
 fn check(input: &str) {
     // Any panic aborts the test; any Ok must round-trip semantically.
     if let Ok(parsed) = Edtf::parse(input) {
+        // Bounds must be total too (found overflowing on Y9E18S1 by fuzzing).
+        let _ = parsed.bounds();
         let rendered = parsed.to_string();
         let reparsed = Edtf::parse(&rendered).unwrap_or_else(|e| {
             panic!("accepted {input:?}, but canonical form {rendered:?} fails to reparse: {e}")

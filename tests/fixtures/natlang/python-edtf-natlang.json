@@ -1,0 +1,358 @@
+{
+  "source": {
+    "impl": "python-edtf",
+    "url": "https://github.com/ixc/python-edtf",
+    "file": "tests/test_natlang.py",
+    "commit": "cd67a9d6b558e3328d8d80d65716d0e319c97807",
+    "fetched": "2026-07-26",
+    "license": "MIT",
+    "note": "Oracle corpus harvested from python-edtf's natural-language tests, same ceremony as the interop corpus (issue #12). Inputs are theirs; expectations are bucketed."
+  },
+  "note": "Buckets: 'agreements' — our output matches python-edtf exactly (enforced). 'divergences' — we deliberately produce something different; every entry cites the N-decision in docs/normalize-notes.md and records their output as an ism we do not adopt (enforced against OUR expected output). 'not_adopted' — python-edtf extracts a date from freeform prose or guesses; we return NoMatch by policy N11/N5 (enforced as NoMatch). ours_kind is 'normalized' (ours = string), 'ambiguous' (ours_interpretations = list), or 'noMatch'.",
+  "agreements": [
+    { "input": "1860", "edtf": "1860" },
+    { "input": "the year 1800", "edtf": "1800" },
+    { "input": "the year 1897", "edtf": "1897" },
+    { "input": "January 2008", "edtf": "2008-01" },
+    { "input": "January 12, 1940", "edtf": "1940-01-12" },
+    { "input": "1860?", "edtf": "1860?" },
+    { "input": "maybe 1862", "edtf": "1862?" },
+    { "input": "1862 maybe", "edtf": "1862?" },
+    { "input": "1862 guess", "edtf": "1862?" },
+    { "input": "uncertain: 1862", "edtf": "1862?" },
+    { "input": "uncertain: Jan 18 1862", "edtf": "1862-01-18?" },
+    { "input": "~ Feb 1812", "edtf": "1812-02~" },
+    { "input": "circa Feb 1812", "edtf": "1812-02~" },
+    { "input": "Feb 1812 approx", "edtf": "1812-02~" },
+    { "input": "c1860", "edtf": "1860~" },
+    { "input": "c.1860", "edtf": "1860~" },
+    { "input": "ca1860", "edtf": "1860~" },
+    { "input": "ca.1860", "edtf": "1860~" },
+    { "input": "c 1860", "edtf": "1860~" },
+    { "input": "c. 1860", "edtf": "1860~" },
+    { "input": "ca. 1860", "edtf": "1860~" },
+    { "input": "approx 1860", "edtf": "1860~" },
+    { "input": "1860 approx", "edtf": "1860~" },
+    { "input": "1860 approximately", "edtf": "1860~" },
+    { "input": "approximately 1860", "edtf": "1860~" },
+    { "input": "about 1860", "edtf": "1860~" },
+    { "input": "about Spring 1849", "edtf": "1849-21~" },
+    { "input": "1860s", "edtf": "186X" },
+    { "input": "ca. 1860s", "edtf": "186X~" },
+    { "input": "c. 1860s", "edtf": "186X~" },
+    { "input": "Circa 1840s", "edtf": "184X~" },
+    { "input": "circa 1840s", "edtf": "184X~" },
+    { "input": "ca. 1860s?", "edtf": "186X%" },
+    { "input": "uncertain: approx 1862", "edtf": "1862%" },
+    { "input": "January 12", "edtf": "XXXX-01-12" },
+    { "input": "January", "edtf": "XXXX-01" },
+    { "input": "7/2008", "edtf": "2008-07" },
+    { "input": "Spring 1872", "edtf": "1872-21" },
+    { "input": "Summer 1872", "edtf": "1872-22" },
+    { "input": "Autumn 1872", "edtf": "1872-23" },
+    { "input": "Fall 1872", "edtf": "1872-23" },
+    { "input": "Winter 1872", "edtf": "1872-24" },
+    { "input": "1st century", "edtf": "00XX" },
+    { "input": "10c", "edtf": "09XX" },
+    { "input": "19th century", "edtf": "18XX" },
+    { "input": "19th century?", "edtf": "18XX?" },
+    { "input": "19c", "edtf": "18XX" },
+    { "input": "15c.", "edtf": "14XX" },
+    { "input": "ca. 19c", "edtf": "18XX~" },
+    { "input": "~19c", "edtf": "18XX~" },
+    { "input": "about 19c", "edtf": "18XX~" },
+    { "input": "19c?", "edtf": "18XX?" },
+    { "input": "c.19c?", "edtf": "18XX%" },
+    { "input": "1 AD", "edtf": "0001" },
+    { "input": "17 CE", "edtf": "0017" },
+    { "input": "127 CE", "edtf": "0127" },
+    { "input": "1270 CE", "edtf": "1270" },
+    { "input": "c1 AD", "edtf": "0001~" },
+    { "input": "c17 CE", "edtf": "0017~" },
+    { "input": "c127 CE", "edtf": "0127~" },
+    { "input": "c1270 CE", "edtf": "1270~" },
+    { "input": "2nd century ad", "edtf": "01XX" },
+    { "input": "2nd century ce", "edtf": "01XX" },
+    { "input": "1851-1852", "edtf": "1851/1852" },
+    { "input": "1851-52", "edtf": "1851/1852" },
+    { "input": "1852 - 1860", "edtf": "1852/1860" },
+    { "input": "1856-ca. 1865", "edtf": "1856/1865~" },
+    { "input": "1857-mid 1860s", "edtf": "1857/186X" },
+    { "input": "1860s-1870s", "edtf": "186X/187X" },
+    { "input": "1861-67", "edtf": "1861/1867" },
+    { "input": "1869-70", "edtf": "1869/1870" },
+    { "input": "1920s -early 1930s", "edtf": "192X/193X" },
+    { "input": "active 17-19th Centuries", "edtf": "16XX/18XX" },
+    { "input": "year in the 1860s", "edtf": "186X" }
+  ],
+  "agreements_no_match": [
+    { "input": "", "note": "empty input" },
+    { "input": "this isn't a date", "note": "free text" },
+    { "input": "23rd Dynasty", "note": "explicitly rejected by both" }
+  ],
+  "divergences": [
+    {
+      "input": "before 1928",
+      "theirs": "/1928",
+      "ours_kind": "normalized",
+      "ours": "../1928",
+      "decision": "N8",
+      "ism": "old-draft EDTF open-interval syntax; current ISO 8601-2 uses '..'"
+    },
+    {
+      "input": "earlier than 1928",
+      "theirs": "/1928",
+      "ours_kind": "normalized",
+      "ours": "../1928",
+      "decision": "N8",
+      "ism": "old-draft open-interval syntax"
+    },
+    {
+      "input": "after 1928",
+      "theirs": "1928/",
+      "ours_kind": "normalized",
+      "ours": "1928/..",
+      "decision": "N8",
+      "ism": "old-draft open-interval syntax"
+    },
+    {
+      "input": "later than 1928",
+      "theirs": "1928/",
+      "ours_kind": "normalized",
+      "ours": "1928/..",
+      "decision": "N8",
+      "ism": "old-draft open-interval syntax"
+    },
+    {
+      "input": "before January 1928",
+      "theirs": "/1928-01",
+      "ours_kind": "normalized",
+      "ours": "../1928-01",
+      "decision": "N8",
+      "ism": "old-draft open-interval syntax"
+    },
+    {
+      "input": "before 18 January 1928",
+      "theirs": "/1928-01-18",
+      "ours_kind": "normalized",
+      "ours": "../1928-01-18",
+      "decision": "N8",
+      "ism": "old-draft open-interval syntax"
+    },
+    {
+      "input": "before approx January 18 1928",
+      "theirs": "/1928-01-18~",
+      "ours_kind": "normalized",
+      "ours": "../1928-01-18~",
+      "decision": "N8",
+      "ism": "old-draft open-interval syntax"
+    },
+    {
+      "input": "before approx January 1928",
+      "theirs": "/1928-01~",
+      "ours_kind": "normalized",
+      "ours": "../1928-01~",
+      "decision": "N8",
+      "ism": "old-draft open-interval syntax"
+    },
+    {
+      "input": "after approx January 1928",
+      "theirs": "1928-01~/",
+      "ours_kind": "normalized",
+      "ours": "1928-01~/..",
+      "decision": "N8",
+      "ism": "old-draft open-interval syntax"
+    },
+    {
+      "input": "after approx Summer 1928",
+      "theirs": "1928-22~/",
+      "ours_kind": "normalized",
+      "ours": "1928-22~/..",
+      "decision": "N8",
+      "ism": "old-draft open-interval syntax"
+    },
+    {
+      "input": "after about the 1920s",
+      "theirs": "192X~/",
+      "ours_kind": "normalized",
+      "ours": "192X~/..",
+      "decision": "N8",
+      "ism": "old-draft open-interval syntax"
+    },
+    {
+      "input": "before 19th century",
+      "theirs": "/18XX",
+      "ours_kind": "normalized",
+      "ours": "../18XX",
+      "decision": "N8",
+      "ism": "old-draft open-interval syntax"
+    },
+    {
+      "input": "1800s",
+      "theirs": "18XX",
+      "ours_kind": "ambiguous",
+      "ours_interpretations": ["180X", "18XX"],
+      "decision": "N6",
+      "ism": "silently picks the century reading; 'the 1800s' is also the 1800–1809 decade"
+    },
+    {
+      "input": "2000s",
+      "theirs": "20XX",
+      "ours_kind": "ambiguous",
+      "ours_interpretations": ["200X", "20XX"],
+      "decision": "N6",
+      "ism": "silently picks the century reading"
+    },
+    {
+      "input": "c1900s",
+      "theirs": "190X~",
+      "ours_kind": "ambiguous",
+      "ours_interpretations": ["190X~", "19XX~"],
+      "decision": "N6",
+      "ism": "internally inconsistent oracle: bare '1800s' becomes the century 18XX but 'c1900s' becomes the decade 190X~"
+    },
+    {
+      "input": "c1800s?",
+      "theirs": "180X%",
+      "ours_kind": "ambiguous",
+      "ours_interpretations": ["180X%", "18XX%"],
+      "decision": "N6",
+      "ism": "same decade/century inconsistency as c1900s"
+    },
+    {
+      "input": "year in about the 1800s",
+      "theirs": "180X~",
+      "ours_kind": "ambiguous",
+      "ours_interpretations": ["180X~", "18XX~"],
+      "decision": "N6",
+      "ism": "silently picks the decade reading"
+    },
+    {
+      "input": "before the 1900s",
+      "theirs": "/19XX",
+      "ours_kind": "ambiguous",
+      "ours_interpretations": ["../190X", "../19XX"],
+      "decision": "N6",
+      "ism": "old-draft syntax and a silently picked century reading"
+    },
+    {
+      "input": "before about the 1900s",
+      "theirs": "/190X~",
+      "ours_kind": "ambiguous",
+      "ours_interpretations": ["../190X~", "../19XX~"],
+      "decision": "N6",
+      "ism": "old-draft syntax and a silently picked decade reading"
+    },
+    {
+      "input": "10/7/2008",
+      "theirs": "2008-10-07",
+      "ours_kind": "ambiguous",
+      "ours_interpretations": ["2008-07-10", "2008-10-07"],
+      "decision": "N5",
+      "ism": "silent MDY guess (dateutil dayfirst=False default); both fields are <= 12 so the order is unknowable without context"
+    },
+    {
+      "input": "1863 or 1864",
+      "theirs": "1863",
+      "ours_kind": "ambiguous",
+      "ours_interpretations": ["1863", "1864"],
+      "decision": "N14",
+      "ism": "silently discards the second alternative"
+    },
+    {
+      "input": "1864 or 1866",
+      "theirs": "1864",
+      "ours_kind": "ambiguous",
+      "ours_interpretations": ["1864", "1866"],
+      "decision": "N14",
+      "ism": "silently discards the second alternative"
+    },
+    {
+      "input": "1858/1860",
+      "theirs": "[1858, 1860]",
+      "ours_kind": "normalized",
+      "ours": "1858/1860",
+      "decision": "N11",
+      "ism": "rewrites already-valid EDTF (an interval) into a one-of set, changing its meaning"
+    },
+    {
+      "input": "c64 BCE",
+      "theirs": "-0064~",
+      "ours_kind": "normalized",
+      "ours": "-0063~",
+      "decision": "N3",
+      "ism": "applies the year-0 offset to centuries ('2nd century bc' -> -01XX) but not to years; 64 BCE is astronomical -0063"
+    },
+    {
+      "input": "2nd century bc",
+      "theirs": "-01XX",
+      "ours_kind": "normalized",
+      "ours": "-0199/-0100",
+      "decision": "N2",
+      "ism": "negative masked years are rejected by edtf-core (Annex A mask shapes are positive-only); the exact interval carries the same meaning"
+    },
+    {
+      "input": "2nd century bce",
+      "theirs": "-01XX",
+      "ours_kind": "normalized",
+      "ours": "-0199/-0100",
+      "decision": "N2",
+      "ism": "negative masked years are rejected by edtf-core"
+    },
+    {
+      "input": "1868-1871?",
+      "theirs": "1868/1871?",
+      "ours_kind": "normalized",
+      "ours": "1868?/1871?",
+      "decision": "N10",
+      "ism": "attaches the trailing qualifier to the end year only; the prose scopes the uncertainty over the whole range"
+    },
+    {
+      "input": "1910-30",
+      "theirs": "1910/1930",
+      "ours_kind": "ambiguous",
+      "ours_interpretations": ["1910-30", "1910/1930"],
+      "decision": "N13",
+      "ism": "1910-30 is also valid EDTF (sub-year grouping code 30); the collision is surfaced, not swallowed"
+    },
+    {
+      "input": "active 1910-30",
+      "theirs": "1910/1930",
+      "ours_kind": "ambiguous",
+      "ours_interpretations": ["1910-30", "1910/1930"],
+      "decision": "N13",
+      "ism": "same sub-year-code collision after the leading noise word is stripped"
+    }
+  ],
+  "not_adopted": [
+    { "input": "90", "theirs": "1990", "ism": "implied current century (N5); the century of a bare two-digit year is unknowable" },
+    { "input": "1851-1852; printed 1853-1854", "theirs": "1851/1852", "ism": "substring extraction (N11)" },
+    { "input": "1861-67 (later print)", "theirs": "1861/1867", "ism": "substring extraction (N11)" },
+    { "input": "1863, printed 1870", "theirs": "1863", "ism": "substring extraction (N11)" },
+    { "input": "1863, printed ca. 1866", "theirs": "1863", "ism": "substring extraction (N11)" },
+    { "input": "1864, printed ca. 1864", "theirs": "1864", "ism": "substring extraction (N11)" },
+    { "input": "1864-1872, printed 1870s", "theirs": "1864/1872", "ism": "substring extraction (N11)" },
+    { "input": "1870s, printed ca. 1880s", "theirs": "187X", "ism": "substring extraction (N11)" },
+    { "input": "1900-1903, cast before 1929", "theirs": "1900/1903", "ism": "substring extraction (N11)" },
+    { "input": "1900; 1973", "theirs": "1900", "ism": "substring extraction (N11); should arguably be a set" },
+    { "input": "1900; printed 1912", "theirs": "1900", "ism": "substring extraction (N11)" },
+    { "input": "1915, from Camerawork, October 1916", "theirs": "1915", "ism": "substring extraction (N11)" },
+    { "input": "1930s, printed early 1960s", "theirs": "193X", "ism": "substring extraction (N11)" },
+    { "input": "1932, printed 1976 by Gunther Sander", "theirs": "1932", "ism": "substring extraction (N11)" },
+    { "input": "1938, printed 1940s-1950s", "theirs": "1938", "ism": "substring extraction (N11)" },
+    { "input": "notcirca 1860", "theirs": "1860", "ism": "substring extraction (N11); their test exists to prove 'circa' isn't falsely matched, ours proves the whole input must parse" },
+    { "input": "attica 1802", "theirs": "1802", "ism": "substring extraction (N11)" },
+    { "input": "attic. 1802", "theirs": "1802", "ism": "substring extraction (N11)" },
+    { "input": "birthday in 1872", "theirs": "1872", "ism": "substring extraction (N11)" },
+    { "input": "1862 (uncertain)", "theirs": "1862?", "ism": "parenthetical qualifiers not adopted; freeform annotation parsing is out of scope (N11)" },
+    { "input": "decade in 1800s", "theirs": "18XX", "ism": "masked-precision prose ('decade in', 'month in') not adopted (N9 scope)" },
+    { "input": "decade somewhere during the 1800s", "theirs": "18XX", "ism": "masked-precision prose not adopted" },
+    { "input": "month in 1872", "theirs": "1872-XX", "ism": "masked-precision prose not adopted" },
+    { "input": "day in Spring 1849", "theirs": "1849-21-XX", "ism": "masked-precision prose not adopted" },
+    { "input": "day in January 1872", "theirs": "1872-01-XX", "ism": "masked-precision prose not adopted" },
+    { "input": "day in 1872", "theirs": "1872-XX-XX", "ism": "masked-precision prose not adopted" },
+    { "input": "a day in about Spring 1849?", "theirs": "1849-21-XX%", "ism": "masked-precision prose not adopted" },
+    { "input": "1915 late - autumn 1916", "theirs": "1915/1916-23", "ism": "trailing part-of-year modifier prose not adopted (N1 scope)" },
+    { "input": "active late 17th-19th centuries", "theirs": "16XX/18XX", "ism": "modifier inside a plural-century range-left not adopted (N1 scope)" }
+  ]
+}

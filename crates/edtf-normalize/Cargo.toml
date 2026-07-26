@@ -1,0 +1,21 @@
+[package]
+name = "edtf-normalize"
+version = "0.1.0"
+description = "Deterministic English prose-date to EDTF normalizer: '1980s' -> 198X, 'circa 1920' -> 1920~. Honest ambiguity, no silent guesses. no_std, zero dependencies."
+keywords = ["edtf", "date", "iso8601", "natural-language", "no-std"]
+categories = ["date-and-time", "parser-implementations", "no-std"]
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+edtf-core = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+proptest = { workspace = true }

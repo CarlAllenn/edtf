@@ -7,9 +7,15 @@
 //! - `canonical(input)` → `string | undefined` (spec-preferred form)
 //! - `parse(input)` → JSON string of a [`Summary`] or `undefined`
 //! - `relation(a, b)` → JSON string of a [`RelationSummary`] or `undefined`
+//! - `normalize(input, options?)` → JSON string of a [`NormalizeSummary`]
+//!   (always returns; `{"kind":"noMatch"}` when the prose is outside the
+//!   grammar). `options` is a JSON string:
+//!   `{"language": "en"|"ru", "numericOrder": "dayFirst"|"monthFirst",
+//!   "defaultCentury": 1900}` — all fields optional.
 
 use edtf_core::{Bound, Edtf, Relation};
-use serde::Serialize;
+use edtf_normalize::{normalize_with, Language, NumericOrder, Options, Outcome};
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 /// The JSON shape `parse` returns; one object per valid expression.
@@ -112,6 +118,135 @@ pub fn relate(a: &str, b: &str) -> Option<RelationSummary> {
     })
 }
 
+/// The JSON shape `normalize` returns, discriminated by `kind`:
+/// `"normalized"` | `"ambiguous"` | `"noMatch"`. Semantics and the N-decision
+/// ids inside notes: `docs/normalize-notes.md`.
+#[derive(Debug, Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum NormalizeSummary {
+    /// One deterministic answer.
+    #[serde(rename_all = "camelCase")]
+    Normalized {
+        /// Canonical EDTF, guaranteed valid.
+        edtf: String,
+        /// Its conformance level (0, 1 or 2).
+        level: u8,
+        /// Why the output looks the way it does.
+        notes: Vec<NoteJson>,
+    },
+    /// More than one plausible reading; the form should ask, not pick.
+    #[serde(rename_all = "camelCase")]
+    Ambiguous {
+        /// Every plausible reading, in table order.
+        interpretations: Vec<InterpretationJson>,
+    },
+    /// Outside the grammar; escalate to a human.
+    #[serde(rename_all = "camelCase")]
+    NoMatch {},
+}
+
+/// One note: the governing N-decision (or null) and a human-readable message.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NoteJson {
+    /// N-decision id in docs/normalize-notes.md, e.g. "N3".
+    pub decision: Option<&'static str>,
+    /// Short explanation of the mapping.
+    pub message: &'static str,
+}
+
+/// One reading of an ambiguous input.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InterpretationJson {
+    /// Canonical EDTF for this reading.
+    pub edtf: String,
+    /// Its conformance level.
+    pub level: u8,
+    /// Which reading this is ("day-month-year", "century (19XX)", …).
+    pub reading: String,
+    /// Why this reading exists.
+    pub notes: Vec<NoteJson>,
+}
+
+/// JSON options accepted by `normalize` (all fields optional).
+#[derive(Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct NormalizeOptionsJson {
+    language: Option<String>,
+    numeric_order: Option<String>,
+    default_century: Option<u16>,
+}
+
+fn parse_options(options: Option<&str>) -> Option<Options> {
+    let Some(raw) = options.filter(|s| !s.trim().is_empty()) else {
+        return Some(Options::default());
+    };
+    let parsed: NormalizeOptionsJson = serde_json::from_str(raw).ok()?;
+    let language = match parsed.language.as_deref() {
+        None | Some("en") => Language::English,
+        Some("ru") => Language::Russian,
+        Some(_) => return None,
+    };
+    let numeric_order = match parsed.numeric_order.as_deref() {
+        None => None,
+        Some("dayFirst") => Some(NumericOrder::DayFirst),
+        Some("monthFirst") => Some(NumericOrder::MonthFirst),
+        Some(_) => return None,
+    };
+    Some(Options {
+        language,
+        numeric_order,
+        default_century: parsed.default_century,
+    })
+}
+
+fn notes_json(notes: &[edtf_normalize::Note]) -> Vec<NoteJson> {
+    notes
+        .iter()
+        .map(|n| NoteJson {
+            decision: n.decision(),
+            message: n.message(),
+        })
+        .collect()
+}
+
+/// Build the [`NormalizeSummary`] for an input. `None` only for invalid
+/// options JSON.
+pub fn normalize_summary(input: &str, options: Option<&str>) -> Option<NormalizeSummary> {
+    let opts = parse_options(options)?;
+    Some(match normalize_with(input, &opts) {
+        Outcome::Normalized(n) => NormalizeSummary::Normalized {
+            level: n.value.level(),
+            notes: notes_json(&n.notes),
+            edtf: n.edtf,
+        },
+        Outcome::Ambiguous(a) => NormalizeSummary::Ambiguous {
+            interpretations: a
+                .interpretations
+                .into_iter()
+                .map(|i| InterpretationJson {
+                    level: i.value.level(),
+                    notes: notes_json(&i.notes),
+                    edtf: i.edtf,
+                    reading: i.reading,
+                })
+                .collect(),
+        },
+        Outcome::NoMatch => NormalizeSummary::NoMatch {},
+    })
+}
+
+/// Deterministic prose-date normalization ("1980s" → 198X) as a JSON string.
+/// Always returns a value for valid options (`{"kind":"noMatch"}` when the
+/// prose is outside the grammar); `undefined` only for invalid options JSON.
+/// See [`NormalizeSummary`] for the object shape.
+#[wasm_bindgen]
+pub fn normalize(input: &str, options: Option<String>) -> Option<String> {
+    let summary = normalize_summary(input, options.as_deref())?;
+    serde_json::to_string(&summary).ok()
+}
+
 /// True if `input` is valid EDTF (levels 0–2).
 #[wasm_bindgen(js_name = isValid)]
 pub fn is_valid(input: &str) -> bool {
@@ -200,6 +335,44 @@ mod tests {
         );
         assert!(relation("junk", "1985").is_none());
         assert!(relation("1985", "junk").is_none());
+    }
+
+    #[test]
+    fn normalize_shapes() {
+        let j = normalize("circa 1920", None).unwrap();
+        assert!(j.contains("\"kind\":\"normalized\""), "{j}");
+        assert!(j.contains("\"edtf\":\"1920~\""), "{j}");
+        assert!(j.contains("\"level\":1"), "{j}");
+
+        let j = normalize("12/04/1985", None).unwrap();
+        assert!(j.contains("\"kind\":\"ambiguous\""), "{j}");
+        assert!(
+            j.contains("\"1985-04-12\"") && j.contains("\"1985-12-04\""),
+            "{j}"
+        );
+        assert!(j.contains("\"decision\":\"N5\""), "{j}");
+
+        let j = normalize("no idea", None).unwrap();
+        assert_eq!(j, "{\"kind\":\"noMatch\"}");
+    }
+
+    #[test]
+    fn normalize_options() {
+        let ru = Some(String::from("{\"language\":\"ru\"}"));
+        let j = normalize("около 1920 г.", ru).unwrap();
+        assert!(j.contains("\"edtf\":\"1920~\""), "{j}");
+
+        let df = Some(String::from("{\"numericOrder\":\"dayFirst\"}"));
+        let j = normalize("12/04/1985", df).unwrap();
+        assert!(j.contains("\"kind\":\"normalized\""), "{j}");
+        assert!(j.contains("\"edtf\":\"1985-04-12\""), "{j}");
+
+        let dc = Some(String::from("{\"defaultCentury\":1900}"));
+        let j = normalize("the 80s", dc).unwrap();
+        assert!(j.contains("\"edtf\":\"198X\""), "{j}");
+
+        assert!(normalize("1985", Some(String::from("{\"language\":\"tlh\"}"))).is_none());
+        assert!(normalize("1985", Some(String::from("not json"))).is_none());
     }
 
     #[test]

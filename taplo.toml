@@ -3,7 +3,10 @@
 # its own repo's settings, so VCS internals must be excluded or
 # `taplo fmt --check` fails on files that aren't ours. .claude/ is
 # machine-local session state (worktrees of other checkouts included).
-exclude = [".git/**", ".claude/**"]
+# Likewise target/ (including crates/*/target for the out-of-workspace pgrx
+# crate): cargo package emits generated Cargo.toml copies there that aren't
+# ours to format.
+exclude = [".git/**", ".claude/**", "**/target/**"]
 
 [formatting]
 # Align the array-expansion threshold with the repo-wide 120-column canon

@@ -1,6 +1,7 @@
+---
 name: CI
 
-on:
+"on":
   push:
     # renovate/**: branch-automerge needs the CI check on the branch itself
     # (no PR is opened unless the branch goes red).
@@ -15,40 +16,65 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  # renovate: datasource=crate depName=cargo-pgrx
-  PGRX_VERSION: 0.19.1
-
 jobs:
   check:
     name: Lint + test (workspace)
     runs-on: ubuntu-latest
+    env:
+      # Heavy source-built tools this job never invokes.
+      MISE_DISABLE_TOOLS: "cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
-      - run: task check
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.7.12
+      - env:
+          # zizmor: enables online audits (known-vulnerable-actions etc.)
+          GH_TOKEN: ${{ github.token }}
+        run: task check
 
   msrv:
     # Stable job name: it is a required status check on main, and a name
     # that embeds the version would break branch protection on MSRV bumps.
+    #
+    # The MSRV toolchain is a sanctioned exception to the everything-via-mise
+    # rule: it is deliberately a second rustup toolchain, bumped manually.
+    # The version lives only in Cargo.toml rust-version — derived below,
+    # never duplicated.
     name: MSRV check
     runs-on: ubuntu-latest
     env:
-      # Keep in sync with rust-version in Cargo.toml
-      MSRV: "1.82"
+      MISE_DISABLE_TOOLS: "cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.7.12
+      - name: Derive MSRV from Cargo.toml
+        run: echo "MSRV=$(taplo get -f Cargo.toml 'workspace.package.rust-version')" >> "$GITHUB_ENV"
       - run: rustup toolchain install "$MSRV" --profile minimal
       - run: rustup run "$MSRV" cargo check --workspace --all-features
 
   wasm:
     name: WebAssembly build + native tests
     runs-on: ubuntu-latest
+    env:
+      MISE_DISABLE_TOOLS: "cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      # wasm32-unknown-unknown rides the rust pin in mise.toml (targets=).
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
-      - run: rustup target add wasm32-unknown-unknown
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.7.12
       - run: cargo test -p edtf-wasm
       - run: cargo build -p edtf-wasm --target wasm32-unknown-unknown --release
 
@@ -59,17 +85,31 @@ jobs:
       fail-fast: false
       matrix:
         pg: [14, 15, 16, 17, 18]
+    env:
+      # cargo-pgrx is pinned in mise.toml (cargo backend, compiled from
+      # source); this job carries its own mise cache so the compile is
+      # amortized separately from the lint jobs' cache.
+      MISE_DISABLE_TOOLS: "cargo:cargo-fuzz,aqua:rustwasm/wasm-pack"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.7.12
+          cache_key_prefix: mise-pgrx-v1
+      - name: Resolve pinned cargo-pgrx version
+        run: echo "PGRX_VERSION=$(cargo pgrx --version | awk '{print $2}')" >> "$GITHUB_ENV"
       - name: Cache pgrx-managed Postgres
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: |
-            ~/.pgrx
-            ~/.cargo/bin/cargo-pgrx
+          path: ~/.pgrx
           key: pgrx-${{ env.PGRX_VERSION }}-pg${{ matrix.pg }}-${{ runner.os }}
       - run: sudo apt-get update && sudo apt-get install -y pkg-config libreadline-dev zlib1g-dev
-      - run: command -v cargo-pgrx || cargo install cargo-pgrx --version "$PGRX_VERSION" --locked
-      - run: grep -q "pg${{ matrix.pg }}" ~/.pgrx/config.toml 2>/dev/null || cargo pgrx init --pg${{ matrix.pg }} download
-      - run: cd crates/edtf-postgres && cargo pgrx test pg${{ matrix.pg }} --no-default-features --features pg${{ matrix.pg }}
+      - run: >
+          grep -q "pg${{ matrix.pg }}" ~/.pgrx/config.toml 2>/dev/null ||
+          cargo pgrx init --pg${{ matrix.pg }} download
+      - run: >
+          cd crates/edtf-postgres && cargo pgrx test pg${{ matrix.pg }}
+          --no-default-features --features pg${{ matrix.pg }}

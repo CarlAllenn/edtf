@@ -1,11 +1,14 @@
+---
 name: Fuzz
 
 # Coverage-guided deep fuzzing (cargo-fuzz/libFuzzer), per issue #1. Not a
 # push gate: the deterministic harness in crates/edtf-core/tests/fuzz.rs
 # already runs on every push; this job digs deeper on a nightly schedule or
-# on demand. Nightly toolchain is confined to this workflow.
+# on demand. Nightly toolchain is confined to this workflow (a sanctioned
+# exception to the everything-via-mise rule; cargo-fuzz itself is pinned in
+# mise.toml).
 
-on:
+"on":
   schedule:
     - cron: "41 5 * * *"
   workflow_dispatch:
@@ -25,21 +28,27 @@ jobs:
       fail-fast: false
       matrix:
         target: [parse, roundtrip]
+    env:
+      MISE_DISABLE_TOOLS: "cargo:cargo-pgrx,aqua:rustwasm/wasm-pack"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - run: rustup toolchain install nightly --profile minimal
-      - name: Cache cargo-fuzz
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: ~/.cargo/bin/cargo-fuzz
-          key: cargo-fuzz-0.13.2-${{ runner.os }}
-      - run: command -v cargo-fuzz || cargo install cargo-fuzz --version 0.13.2 --locked
+          persist-credentials: false
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.7.12
+          cache_key_prefix: mise-fuzz-v1
+      - run: rustup toolchain install nightly --profile minimal
       - name: Seed corpus from fixtures
         run: ./fuzz/seed.sh
       - name: Fuzz
+        env:
+          FUZZ_TARGET: ${{ matrix.target }}
+          MAX_TOTAL_TIME: ${{ github.event.inputs.max_total_time || 1200 }}
         run: |
-          cargo +nightly fuzz run ${{ matrix.target }} -- \
-            -max_total_time=${{ github.event.inputs.max_total_time || 1200 }} \
+          cargo +nightly fuzz run "$FUZZ_TARGET" -- \
+            -max_total_time="$MAX_TOTAL_TIME" \
             -timeout=5
       - name: Upload crash artifacts
         if: failure()

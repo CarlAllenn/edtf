@@ -1,3 +1,4 @@
+---
 version: "3"
 
 tasks:
@@ -11,6 +12,7 @@ tasks:
     cmds:
       - cargo fmt --all
       - taplo fmt
+      - shfmt -w .
 
   lint:
     desc: All linters, warnings as errors
@@ -19,8 +21,16 @@ tasks:
       - cargo deny check
       - taplo fmt --check
       - taplo lint
+      - yamllint --strict .
+      - markdownlint-cli2
       - ec
       - codespell
+      - actionlint
+      - zizmor --min-severity low .github/workflows/
+      - shfmt -d .
+      - |
+        files=$(shfmt --find .)
+        [ -z "$files" ] || shellcheck $files
       # edtf-postgres is outside the workspace (pgrx); at least keep fmt honest.
       - cargo fmt --check --manifest-path crates/edtf-postgres/Cargo.toml
 

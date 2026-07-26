@@ -12,5 +12,6 @@ cross-checking, not authorities** — where they disagree with `docs/spec-notes.
   (63 entries with min/max epoch-ms, type, qualification flags).
 
 Known edtf.js-isms already spotted (do NOT carry over):
+
 - `"198"` bare decade is valid in edtf-golden.json; bare decades are not in
   Annex A and we reject them (spec-notes §5).

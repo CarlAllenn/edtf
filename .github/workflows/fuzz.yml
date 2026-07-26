@@ -10,7 +10,7 @@ name: Fuzz
 
 "on":
   schedule:
-    - cron: "41 5 * * *"
+    - cron: 41 5 * * *
   workflow_dispatch:
     inputs:
       max_total_time:
@@ -19,6 +19,12 @@ name: Fuzz
 
 permissions:
   contents: read
+
+# One fuzz run per ref at a time; an in-progress run is doing useful work,
+# so a newer trigger queues rather than cancels.
+concurrency:
+  group: fuzz-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   fuzz:
@@ -29,7 +35,7 @@ jobs:
       matrix:
         target: [parse, roundtrip]
     env:
-      MISE_DISABLE_TOOLS: "cargo:cargo-pgrx,aqua:rustwasm/wasm-pack"
+      MISE_DISABLE_TOOLS: cargo:cargo-pgrx,aqua:rustwasm/wasm-pack
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

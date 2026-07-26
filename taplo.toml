@@ -3,3 +3,10 @@
 # its own repo's settings, so VCS internals must be excluded or
 # `taplo fmt --check` fails on files that aren't ours.
 exclude = [".git/**"]
+
+[formatting]
+# Align the array-expansion threshold with the repo-wide 120-column canon
+# (yamllint, markdownlint). Everything else stays at defaults; reorder_keys
+# stays off — alphabetical reordering destroys semantic grouping (README.md
+# in templates/linters/).
+column_width = 120

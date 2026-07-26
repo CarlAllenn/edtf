@@ -8,7 +8,7 @@ locked_verify_provenance = true # re-verify provenance on install even when the 
 minimum_release_age = "72h"     # never install a release younger than 3 days (supply-chain cooldown)
 
 [tools]
-rust = "1.97.1"
+rust = { version = "1.97.1", components = "rustfmt,clippy" }
 task = "3.52.0"
 
 # Enforcement layer

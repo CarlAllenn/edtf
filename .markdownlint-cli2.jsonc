@@ -18,6 +18,6 @@
   "gitignore": true,
   // .git/**: the glob engine traverses VCS internals, and the lefthook
   // remote cache (.git/info/lefthook-remotes/) contains markdown that isn't
-  // ours to lint.
-  "ignores": [".git/**"]
+  // ours to lint; .claude/** is machine-local session state.
+  "ignores": [".git/**", ".claude/**"]
 }

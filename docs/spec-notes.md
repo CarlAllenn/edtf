@@ -244,15 +244,20 @@ of this implementation. Each is enforced by tests in `crates/edtf-core/tests/`.
   seconds (P1 4.3.10). Options: (a) accept `60` always, (b) reject always,
   (c) validate against the real leap-second table (unmaintainable). LoC EDTF L0
   inherits 8601-1. Proposal: accept `ss=60` syntactically, don't verify against
-  the leap-second table; document.
+  the leap-second table; document. Interop: edtf.js rejects `:60` outright;
+  recorded as a documented divergence in the interop corpus.
 - **D4 — `-00`/`-00:00` shift:** P1 4.3.13 defines `+` for "ahead or equal";
   RFC 3339 gives `-00:00` special meaning but ISO doesn't. Proposal: reject
   negative zero shifts.
 - **D5 — `XXXX` and `2XXX` level:** 9.2.1.2 c 3–4 define them; Annex A L1 lists
   only c 1–2; L2 "unspecified digit anywhere" (9.2.2) covers them via examples
-  (`XXXX-12-XX`). Proposal: valid at L2, not L1 (matches LoC).
+  (`XXXX-12-XX`). Proposal: valid at L2, not L1 (matches LoC). Interop:
+  edtf.js classifies `XXXX`, `XXXX-XX` and `XXXX-XX-XX` at L1; the corpus
+  records its claims as `their_level` and asserts ours.
 - **D6 — degenerate intervals `../..`, `/`, `../`, `/..`:** no example allows
-  them. Proposal: reject all four (an interval needs at least one dated endpoint).
+  them. Proposal: reject all four (an interval needs at least one dated
+  endpoint). Interop: edtf.js accepts `/` and `../..`; must-rejects in the
+  interop corpus.
 - **D7 — significant digits bounds:** e.g. `1950S5` (precision > digit count) or
   `1950S0`. Spec silent. Proposal: require 1 ≤ S ≤ digits(value).
 - **D8 — bare `..`-lists without braces:** A.6.5 Example 6 shows
@@ -284,12 +289,18 @@ of this implementation. Each is enforced by tests in `crates/edtf-core/tests/`.
   is invalid (no calendar month matches).
 - **D15 — time-shift bound:** |shift| ≤ 14:00, minutes ≤ 59 (adopted from the
   legacy conformance corpus, which rejects `+15:00`; ISO gives no bound).
+  Interop: edtf.js bounds shifts to the real-world range [-12:00, +14:00];
+  we keep the symmetric documented bound (ISO is silent), so `-13:00` and
+  `-14:00` are documented divergences in the interop corpus.
 - **D16 — unspecified digits inside interval endpoints are Level 2:** §10.4
   is listed in neither A.5 nor A.6; LoC EDTF places interval-with-unspecified
   at L2, so `2004-06-XX/2004-07-03` classifies as L2.
 - **D17 — negative years may carry month/day:** `-1985-04-12` is accepted
   (4.4.1.2 extends the year component generally), classified L1. LoC examples
-  show year-only negatives; revisit if interop testing disagrees.
+  show year-only negatives. Interop evidence (2026-07-26): python-edtf
+  accepts `-2005/-1999-02` — a negative year-month endpoint — confirming
+  negative years compose with lower-order components in the ecosystem;
+  edtf.js has no test either way. Decision stands.
 - **D18 — intervals and set ranges must be ordered:** an interval (or `a..b`
   range) whose end cannot possibly reach its start — start's earliest
   completion later than end's latest — is invalid (`2004/2003`,
@@ -299,7 +310,9 @@ of this implementation. Each is enforced by tests in `crates/edtf-core/tests/`.
   "between 171010000 and 171010999", contradicting the normative rule in
   §4.4.3 (precision counts significant digits *from the left*: its own
   Example 2 gives `3141592653S4` → 3141000000–3141999999) and the LoC EDTF
-  original. We follow §4.4.3: `Y171010000S3` → 171000000–171999999.
+  original. We follow §4.4.3: `Y171010000S3` → 171000000–171999999. Interop:
+  python-edtf's expected estimate range for `Y171010000S3` is
+  171000000–171999999 — independent agreement with this reading.
 - **D20 — no leading zeros in Y-year significands:** `Y018470` and
   `Y08470847E1` are invalid. Leading zeros are mandatory padding for
   four-digit years (P1 4.5) but carry no information after `Y`, and they
@@ -308,6 +321,19 @@ of this implementation. Each is enforced by tests in `crates/edtf-core/tests/`.
   value of only 8 digits and failed to reparse (round-trip violation, found
   by coverage-guided fuzzing). Significant digits count digits of the value
   (§4.4.3), so the written form must not inflate them.
+- **D21 — masked years must be non-negative:** `-01XX` is invalid. Every
+  unspecified-digit example in 9.2.1.2, 9.2.2 and Annex A is non-negative,
+  and completions of a negative mask would include `-0000`, which does not
+  exist (4.4.1.2, D2). python-edtf accepts `-01XX`; recorded as a
+  python-edtf-ism (must-reject) in the interop corpus.
+- **D22 — seasons are ordinary year-month expressions wherever a date may
+  appear:** sub-year codes occupy the month slot (4.8.1), so season dates
+  qualify like year-month expressions (`2001-33?`, 8.4.2), serve as interval
+  endpoints (`2012-21/2012-22`, 10.2 endpoints are date expressions), and
+  combine with masked years (`20XX-41`). ISO neither exemplifies nor forbids
+  any of these; edtf.js gates them all behind its non-standard "level 3"
+  (rejecting them at spec levels). We accept at the level the parts imply;
+  documented divergences in the interop corpus.
 
 ## 10. Test-suite sources
 
@@ -321,3 +347,11 @@ of this implementation. Each is enforced by tests in `crates/edtf-core/tests/`.
    original the ISO profile codifies. ISO Annex A wins on disagreement.
 4. The old monument JS engine's test suite as behavioral oracle (read-only).
 5. Adversarial negatives from §5's reject list and every D-decision.
+6. The test suites of the reference implementations the ecosystem runs —
+   edtf.js (test/parser.js and companions) and python-edtf
+   (tests/test_parser.py) — harvested verbatim into
+   `tests/fixtures/interop/reference-impl-corpus.json` and enforced by
+   `crates/edtf-core/tests/interop.rs`. Four buckets: shared accepts (with
+   ISO-derived levels), shared rejects, implementation-isms (must-reject),
+   and documented divergences where we accept with ISO backing (D3, D15,
+   D22). ISO Annex A wins every disagreement.

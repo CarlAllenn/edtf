@@ -28,7 +28,7 @@ edtf-core = { path = "../edtf-core", version = "0.2.0" }
 pgrx = "0.19.1"
 
 [dev-dependencies]
-pgrx-tests = "0.19.1"
+pgrx-tests = "=0.19.1"
 
 [profile.dev]
 panic = "unwind"

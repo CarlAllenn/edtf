@@ -6,7 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-python3 - <<'EOF'
+python3 - << 'EOF'
 import hashlib
 import json
 import pathlib

@@ -6,3 +6,6 @@ target/
 
 # go-task fingerprint cache
 .task/
+
+# personal lefthook overrides — never committed
+lefthook-local.yml

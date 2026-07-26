@@ -31,11 +31,27 @@ jobs:
       MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
       # First step of every job, before checkout: runtime egress audit —
-      # derives the allowlist, then flips to block mode (issue #6 canon,
+      # enforcement per issue #6 canon (allowlist derived from audit run;
       # templates/ci/ in renovate-config).
       - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
-          egress-policy: audit
+          egress-policy: block
+          disable-sudo: true
+          # Derived from the audit run plus the GitHub-owned
+          # cold-cache set (mise tool installs on cache miss).
+          allowed-endpoints: >
+            api.github.com:443
+            codeload.github.com:443
+            crates.io:443
+            github.com:443
+            index.crates.io:443
+            mise-versions.jdx.dev:443
+            mise.jdx.dev:443
+            objects.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            static.crates.io:443
+            static.rust-lang.org:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -73,11 +89,27 @@ jobs:
       MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
       # First step of every job, before checkout: runtime egress audit —
-      # derives the allowlist, then flips to block mode (issue #6 canon,
+      # enforcement per issue #6 canon (allowlist derived from audit run;
       # templates/ci/ in renovate-config).
       - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
-          egress-policy: audit
+          egress-policy: block
+          disable-sudo: true
+          # Derived from the audit run plus the GitHub-owned
+          # cold-cache set (mise tool installs on cache miss).
+          allowed-endpoints: >
+            api.github.com:443
+            codeload.github.com:443
+            crates.io:443
+            github.com:443
+            index.crates.io:443
+            mise-versions.jdx.dev:443
+            mise.jdx.dev:443
+            objects.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            static.crates.io:443
+            static.rust-lang.org:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -97,11 +129,27 @@ jobs:
       MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
       # First step of every job, before checkout: runtime egress audit —
-      # derives the allowlist, then flips to block mode (issue #6 canon,
+      # enforcement per issue #6 canon (allowlist derived from audit run;
       # templates/ci/ in renovate-config).
       - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
-          egress-policy: audit
+          egress-policy: block
+          disable-sudo: true
+          # Derived from the audit run plus the GitHub-owned
+          # cold-cache set (mise tool installs on cache miss).
+          allowed-endpoints: >
+            api.github.com:443
+            codeload.github.com:443
+            crates.io:443
+            github.com:443
+            index.crates.io:443
+            mise-versions.jdx.dev:443
+            mise.jdx.dev:443
+            objects.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            static.crates.io:443
+            static.rust-lang.org:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -130,11 +178,34 @@ jobs:
       PG: ${{ matrix.pg }}
     steps:
       # First step of every job, before checkout: runtime egress audit —
-      # derives the allowlist, then flips to block mode (issue #6 canon,
+      # enforcement per issue #6 canon (allowlist derived from audit run;
       # templates/ci/ in renovate-config).
       - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
-          egress-policy: audit
+          egress-policy: block
+          # Derived from the audit run plus the GitHub-owned
+          # cold-cache set (mise tool installs on cache miss).
+          # sudo stays on: cargo pgrx init needs apt packages.
+          allowed-endpoints: >
+            api.github.com:443
+            archive.ubuntu.com:80
+            azure.archive.ubuntu.com:443
+            azure.archive.ubuntu.com:80
+            codeload.github.com:443
+            crates.io:443
+            dl.google.com:443
+            esm.ubuntu.com:443
+            github.com:443
+            index.crates.io:443
+            mise-versions.jdx.dev:443
+            mise.jdx.dev:443
+            objects.githubusercontent.com:443
+            packages.microsoft.com:443
+            raw.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            security.ubuntu.com:80
+            static.crates.io:443
+            static.rust-lang.org:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false

@@ -8,6 +8,15 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same branch supersedes any run still in progress.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # renovate: datasource=crate depName=cargo-pgrx
+  PGRX_VERSION: 0.19.1
+
 jobs:
   check:
     name: Lint + test (workspace)
@@ -52,8 +61,8 @@ jobs:
           path: |
             ~/.pgrx
             ~/.cargo/bin/cargo-pgrx
-          key: pgrx-0.19.1-pg${{ matrix.pg }}-${{ runner.os }}
+          key: pgrx-${{ env.PGRX_VERSION }}-pg${{ matrix.pg }}-${{ runner.os }}
       - run: sudo apt-get update && sudo apt-get install -y pkg-config libreadline-dev zlib1g-dev
-      - run: command -v cargo-pgrx || cargo install cargo-pgrx --version 0.19.1 --locked
+      - run: command -v cargo-pgrx || cargo install cargo-pgrx --version "$PGRX_VERSION" --locked
       - run: grep -q "pg${{ matrix.pg }}" ~/.pgrx/config.toml 2>/dev/null || cargo pgrx init --pg${{ matrix.pg }} download
       - run: cd crates/edtf-postgres && cargo pgrx test pg${{ matrix.pg }} --no-default-features --features pg${{ matrix.pg }}

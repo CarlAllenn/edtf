@@ -1,3 +1,4 @@
+---
 pre-commit:
   parallel: true
   commands:
@@ -17,9 +18,21 @@ pre-commit:
       run: ec
     codespell:
       run: codespell
+    yamllint:
+      glob: "*.{yml,yaml}"
+      run: yamllint --strict .
+    markdownlint:
+      glob: "*.md"
+      run: markdownlint-cli2
     actionlint:
       glob: ".github/workflows/*.yml"
       run: actionlint
+    zizmor:
+      glob: ".github/workflows/*.yml"
+      run: zizmor --min-severity low .github/workflows/
+    shell:
+      glob: "*.sh"
+      run: shfmt -d . && shellcheck {staged_files}
 
 pre-push:
   commands:

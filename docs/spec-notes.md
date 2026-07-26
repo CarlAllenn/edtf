@@ -29,11 +29,13 @@ Conformance claims are per level, cumulative: L1 ⊃ L0, L2 ⊃ L1 (A.2).
 ## 2. Level 0 (A.4)
 
 ### 2.1 Date (A.4.2)
+
 - `[year]-[month]-[day]` → `1985-04-12` (P1 5.2.2.1 b)
 - `[year]-[month]` → `1985-04` (P1 5.2.2.2 a)
 - `[year]` → `1985` (P1 5.2.2.2 b)
 
 Rules inherited from Part 1:
+
 - Year: exactly 4 digits `0000`–`9999` at L0; leading zeros mandatory (P1 4.5).
   Year 0000 exists (proleptic; P1 4.3.2).
 - Month `01`–`12`; day `01`–`28/29/30/31` per month lengths in P1 4.2.1 Table 1.
@@ -43,13 +45,16 @@ Rules inherited from Part 1:
 - No space characters anywhere (P1 3.2.1).
 
 ### 2.2 Date and time (A.4.3)
+
 `[date]T[hh]:[mm]:[ss]` with optional shift; date part must be complete (P1 5.4.1):
+
 - `1985-04-12T23:20:30` (local)
 - `1985-04-12T23:20:30Z` (UTC)
 - `1985-04-12T23:20:30+04:30` / `-05:00` (hours+minutes shift, P1 4.3.13 c)
 - `1985-04-12T23:20:30+04` (hour-only shift, P1 4.3.13 b)
 
 Rules:
+
 - Hour `00`–`23` — **`24:00` is explicitly disallowed** (P1 5.3.2); minute `00`–`59`;
   second `00`–`60` where `60` exists only for positive leap seconds (P1 4.3.10) —
   see decision D3 in §9.
@@ -60,7 +65,9 @@ Rules:
   not given meaning by the spec — see D4.
 
 ### 2.3 Time interval (A.4.4)
+
 `start/end` where **both sides are dates only** (no times, no durations):
+
 - `1964/2008`, `2004-06/2006-08`, `2004-02-01/2005-02-08`
 - Mixed precision endpoints allowed: `2004-02-01/2005`, `2005/2006-02` (A.4.4
   Examples 4–6; the interval's overall precision is then "undefined").
@@ -73,24 +80,29 @@ Rules:
 ## 3. Level 1 (A.5)
 
 ### 3.1 Letter-prefixed ("extended") year (A.5.2, 4.7.2)
+
 `Y[-]digits` — `Y170000002`, `Y-170000002`. For years beyond ±9999. 4.7.2 says it
 "should be used only" outside the 4-digit range → we reject `Y1985` (see D1).
 Year-only precision (4.7.2: "only for dates that include the calendar year only") —
 no month/day may follow a Y-year.
 
 ### 3.2 Negative calendar year (A.5.2, 4.4.1.2)
+
 `-1985` (4 digits). `-0000` is not a thing: negative years count *before year 0*,
 so the year before `0000` is `-0001` (4.4.1.2 Example 3). Reject `-0000` (D2).
 
 ### 3.3 Seasons (A.5.3, 4.8.1, 4.8.3 a)
+
 Year + season code in the month slot: `2001-21`. L1 codes are **21–24**
 (Spring/Summer/Autumn/Winter, location-independent). Season may not carry a
 day component (`2001-21-05` invalid — 4.8.3 applies to year-and-month
 expressions only).
 
 ### 3.4 Qualification — whole-expression only (A.5.4)
+
 Qualifier symbols (3.2.6): `?` uncertain, `~` approximate, `%` both.
 At L1 a single qualifier may appear **only at the rightmost end** of:
+
 - complete date: `1985-04-12?` (8.4.1 a)
 - year-month: `1985-04?` (8.4.2 a)
 - year: `1985~` (8.4.2 b)
@@ -99,7 +111,9 @@ qualification means "the decade might be a different decade," not "fuzzy edges."
 (Decades/centuries as bare `198`/`19` are NOT EDTF — not listed in Annex A.)
 
 ### 3.5 Unspecified digits — restricted right-to-left set (A.5.5)
+
 `X` replaces digits. L1 allows exactly these shapes:
+
 - `1985-04-XX` (day unspecified, 9.2.1.1 a)
 - `1985-XX-XX` (month+day unspecified, 9.2.1.1 b)
 - `2004-XX` (month unspecified, reduced precision, 9.2.1.2 a)
@@ -111,7 +125,9 @@ Semantics note (9.2.1.2 NOTE): `1985-XX-XX` has *day precision* (some day in 198
 `1985` has year precision. Different meanings.
 
 ### 3.6 Extended intervals (A.5.6, 10.2, 10.3.2)
+
 Interval endpoints gain two special values:
+
 - `..` = **open** (unbounded): `1985-04-12/..`, `../1985-04-12` (10.2 a–b)
 - empty = **unknown**: `1985-04/`, `/1985` (10.2 c–d)
 - `/..`, `../`, and both-sides cases: `../..` and `/` are not exemplified anywhere —
@@ -123,11 +139,14 @@ Endpoint dates may carry L1 whole-date qualification: `1984?/2004%`,
 ## 4. Level 2 (A.6)
 
 ### 4.1 Exponential year (A.6.2, 4.7.3)
+
 `Y[-]significandE[exponent]`: `Y17E7` = 170 000 000; `Y-17E7`. Exponent is a
 positive integer power of 10 (4.4.2). Year-only precision.
 
 ### 4.2 Significant digits on years (A.6.3, 4.4.3, 4.7.4)
+
 `S[precision]` suffix, three forms:
+
 - `1950S2` — plain 4-digit year: some year 1900–1999, estimated 1950
 - `Y171010000S3` — prefixed year: some year 171010000–171010999
 - `Y3388E2S3` — exponential year: some year 338000–338999, estimated 338800
@@ -135,11 +154,13 @@ Precision counts significant digits **from the left** of the resolved value (4.4
 Precision must be ≥1 and ≤ number of digits of the value (D7).
 
 ### 4.3 Extended sub-year groupings (A.6.4, 4.8.1)
+
 Month-slot codes **25–41**: hemispheric seasons 25–32 (N-Spring…S-Winter),
 quarters 33–36, quadrimesters 37–39, semestrals 40–41. So at L2 the month slot
 accepts 01–12 and 21–41.
 
 ### 4.4 Sets (A.6.5, Clause 6)
+
 - `{a,b,…}` = "all members" (6.1); `[a,b,…]` = "one member" (6.2).
 - Elements are date expressions, may differ in precision: `{1960, 1961-12}`.
 - `..` inside sets (6.3): prefix `..1984` (on or before), suffix `1984..` (on or
@@ -152,7 +173,9 @@ accepts 01–12 and 21–41.
   dates inside sets: LoC allows them; Annex A silent (D9).
 
 ### 4.5 Group + individual qualification (A.6.6, 8.2–8.4)
+
 Three placements now:
+
 - **Complete** (L1): trailing `?~%` qualifies everything (8.2.1).
 - **Group** (8.2.2): qualifier immediately *right* of a component qualifies that
   component **and everything to its left**: `2004-06~-11` (year+month approx),
@@ -171,6 +194,7 @@ Three placements now:
   misprints this as `..2004-06-01/~2004-06-20` — see D10.
 
 ### 4.6 Unspecified digit anywhere (A.6.7, 9.2.2, 4.6.3)
+
 `X` may replace **any** digit in year, month, or day: `156X-12-25`, `15XX-12-25`,
 `XXXX-12-XX`, `1XXX-XX`, `1XXX-12`, `1XX3`, `1560-XX-25`, `1560-X2` (= Feb or Dec —
 partially-specified components constrain the value set, 9.2.2 Example 6).

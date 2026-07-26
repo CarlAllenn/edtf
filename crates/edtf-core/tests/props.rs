@@ -14,7 +14,7 @@
 
 use edtf_core::{
     Bound, Date, DateField, DateTime, Edtf, Interval, IntervalEndpoint, Modality, Qualifier,
-    Relation, Set, SetElement, SetKind, Time, TimeShift, Year, YearKind,
+    Relation, Set, SetElement, SetKind, Time, TimeShift, Unenumerable, Year, YearKind,
 };
 use proptest::prelude::*;
 
@@ -326,16 +326,69 @@ fn interval() -> impl Strategy<Value = Interval> {
         })
 }
 
+/// A concrete, unqualified, unmasked date at the given precision
+/// (0 = year, 1 = month, 2 = day) — the only shape D27 admits as a `..`
+/// range endpoint. Years may be negative (never -0000).
+fn plain_date(y: i64, m: u8, d: u8, precision: u8) -> Date {
+    Date {
+        year: Year {
+            kind: YearKind::Standard {
+                negative: y < 0,
+                digits: year_digits(y.unsigned_abs() as u16),
+            },
+            significant_digits: None,
+            qualifier: Qualifier::default(),
+        },
+        month: (precision >= 1).then_some(DateField {
+            digits: field_digits(m),
+            qualifier: Qualifier::default(),
+        }),
+        day: (precision >= 2).then_some(DateField {
+            digits: field_digits(d),
+            qualifier: Qualifier::default(),
+        }),
+    }
+}
+
+/// D27 range elements: both endpoints concrete, unqualified, non-season,
+/// same-precision, compare-and-swapped into order at that precision.
+fn range_element() -> impl Strategy<Value = SetElement> {
+    (ymd(), ymd(), any::<[bool; 2]>(), 0u8..=2).prop_map(
+        |((y1, m1, d1), (y2, m2, d2), neg, precision)| {
+            let sy1 = if neg[0] && y1 != 0 {
+                -i64::from(y1)
+            } else {
+                i64::from(y1)
+            };
+            let sy2 = if neg[1] && y2 != 0 {
+                -i64::from(y2)
+            } else {
+                i64::from(y2)
+            };
+            let key = |y: i64, m: u8, d: u8| match precision {
+                0 => (y, 0, 0),
+                1 => (y, m, 0),
+                _ => (y, m, d),
+            };
+            let (a, b) = if key(sy1, m1, d1) <= key(sy2, m2, d2) {
+                ((sy1, m1, d1), (sy2, m2, d2))
+            } else {
+                ((sy2, m2, d2), (sy1, m1, d1))
+            };
+            SetElement::Range(
+                plain_date(a.0, a.1, a.2, precision),
+                plain_date(b.0, b.1, b.2, precision),
+            )
+        },
+    )
+}
+
 fn set_element() -> impl Strategy<Value = SetElement> {
     prop_oneof![
         5 => date().prop_map(SetElement::Date),
         1 => date().prop_map(SetElement::OnOrBefore),
         1 => date().prop_map(SetElement::OnOrAfter),
-        3 => (date(), date()).prop_map(|(a, b)| if dates_out_of_order(&a, &b) {
-            SetElement::Range(b, a)
-        } else {
-            SetElement::Range(a, b)
-        }),
+        3 => range_element(),
     ]
 }
 
@@ -503,5 +556,234 @@ proptest! {
                 prop_assert_eq!(rel.definite(), Some(Relation::Equal), "{}", v);
             }
         }
+    }
+}
+
+// ------------------------------------------------- values() (D24-D29)
+
+/// Independent restatement of when a significant-digit sweep overflows:
+/// the swept upper magnitude exceeds i64 (computed in i128, so the check
+/// does not share the implementation's checked arithmetic).
+fn sweep_overflows(value: i64, precision: u32, width: u32) -> bool {
+    let sweep = width.saturating_sub(precision).min(38);
+    let modulus = 10i128.pow(sweep);
+    let mag = i128::from(value.unsigned_abs());
+    let lo = mag - mag.rem_euclid(modulus);
+    lo + (modulus - 1) > i128::from(i64::MAX)
+}
+
+/// The digit width of a year form, restated from public model fields.
+fn year_width(kind: &YearKind) -> u32 {
+    match kind {
+        YearKind::Standard { .. } => 4,
+        YearKind::Big { value } => value.unsigned_abs().to_string().len() as u32,
+        YearKind::Exponential {
+            significand,
+            exponent,
+        } => significand.unsigned_abs().to_string().len() as u32 + exponent,
+    }
+}
+
+fn date_unenumerable(d: &Date) -> Option<Unenumerable> {
+    if let Some(p) = d.year.significant_digits {
+        let Some(value) = d.year.value() else {
+            return Some(Unenumerable::YearRangeOverflow);
+        };
+        if sweep_overflows(value, p, year_width(&d.year.kind)) {
+            return Some(Unenumerable::YearRangeOverflow);
+        }
+    }
+    None
+}
+
+/// The structural rule for when `values()` must fail, scanning set
+/// elements in written order exactly as construction does.
+fn expected_unenumerable(v: &Edtf) -> Option<Unenumerable> {
+    match v {
+        Edtf::Interval(_) => Some(Unenumerable::Interval),
+        Edtf::DateTime(_) => None,
+        Edtf::Date(d) => date_unenumerable(d),
+        Edtf::Set(s) => {
+            for e in &s.elements {
+                let err = match e {
+                    SetElement::OnOrBefore(_) | SetElement::OnOrAfter(_) => {
+                        Some(Unenumerable::UnboundedSetElement)
+                    }
+                    SetElement::Date(d) => date_unenumerable(d),
+                    SetElement::Range(a, b) => {
+                        if a.year.value().is_none() || b.year.value().is_none() {
+                            Some(Unenumerable::YearRangeOverflow)
+                        } else {
+                            None
+                        }
+                    }
+                };
+                if err.is_some() {
+                    return err;
+                }
+            }
+            None
+        }
+    }
+}
+
+/// Cap on how much of a (possibly astronomically large) value stream a
+/// property consumes per case.
+const VALUES_CAP: usize = 600;
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(512))]
+
+    /// `values()` errs exactly when the structural rule of D24-D25 says so
+    /// - total agreement, no other failure mode.
+    #[test]
+    fn values_err_matches_structure(v in edtf()) {
+        prop_assert_eq!(v.values().err(), expected_unenumerable(&v), "{}", v);
+    }
+
+    /// Every yielded value round-trips through Display identically, is
+    /// concrete (no X digits), and its bounds lie within the input's.
+    #[test]
+    fn values_are_valid_concrete_and_within_bounds(v in edtf()) {
+        let Ok(vals) = v.values() else { return Ok(()); };
+        let outer = v.bounds();
+        for item in vals.take(VALUES_CAP) {
+            let s = item.to_string();
+            let reparsed = Edtf::parse(&s);
+            prop_assert_eq!(reparsed.as_ref(), Ok(&item), "{} yielded {}", v, s);
+            prop_assert!(!item.has_unspecified(), "{} yielded masked {}", v, s);
+            let b = item.bounds();
+            if let (Bound::Date(olo), Bound::Date(ilo)) = (outer.earliest, b.earliest) {
+                prop_assert!(olo <= ilo, "{} yielded {} before earliest bound", v, s);
+            }
+            if let (Bound::Date(ohi), Bound::Date(ihi)) = (outer.latest, b.latest) {
+                prop_assert!(ihi <= ohi, "{} yielded {} after latest bound", v, s);
+            }
+        }
+    }
+
+    /// A single date's values ascend strictly, start exactly at the
+    /// expression's earliest bound, and (when the stream is exhausted
+    /// within the cap) end exactly at its latest bound.
+    #[test]
+    fn single_date_values_ascend_and_agree_with_bounds(d in date()) {
+        let v = Edtf::Date(d);
+        let Ok(mut vals) = v.values() else { return Ok(()); };
+        let first = vals.next().expect("D11 guarantees a completion");
+        prop_assert_eq!(first.bounds().earliest, v.bounds().earliest, "{}", v);
+        let mut last = first;
+        let mut exhausted = true;
+        for _ in 0..VALUES_CAP {
+            match vals.next() {
+                None => break,
+                Some(item) => {
+                    if let (Bound::Date(p), Bound::Date(c)) =
+                        (last.bounds().earliest, item.bounds().earliest)
+                    {
+                        prop_assert!(p < c, "{}: {} not after {}", v, item, last);
+                    }
+                    last = item;
+                }
+            }
+        }
+        if vals.next().is_some() {
+            exhausted = false;
+        }
+        if exhausted {
+            prop_assert_eq!(last.bounds().latest, v.bounds().latest, "{}", v);
+        }
+    }
+
+    /// A set of concrete singleton elements enumerates exactly those
+    /// elements, verbatim, in written order (D29).
+    #[test]
+    fn set_of_singletons_yields_elements_in_order(
+        parts in proptest::collection::vec((ymd(), 0u8..=2), 1..=4),
+        all in any::<bool>(),
+    ) {
+        let dates: Vec<Date> = parts
+            .iter()
+            .map(|((y, m, d), p)| plain_date(i64::from(*y), *m, *d, *p))
+            .collect();
+        let set = Edtf::Set(Set {
+            kind: if all { SetKind::AllMembers } else { SetKind::OneMember },
+            elements: dates.iter().copied().map(SetElement::Date).collect(),
+        });
+        let got: Vec<Edtf> = set.values().unwrap().collect();
+        let want: Vec<Edtf> = dates.into_iter().map(Edtf::Date).collect();
+        prop_assert_eq!(got, want, "{}", set);
+    }
+
+    /// Mask completions equal brute-force enumeration of the whole digit
+    /// domain (restricted to <= 2 masked year digits to keep the oracle
+    /// small), including qualifier copy-through (D28).
+    #[test]
+    fn masked_date_values_equal_brute_force(d in month_day_date()) {
+        let YearKind::Standard { negative, digits } = d.year.kind else {
+            unreachable!("month_day_date generates standard years")
+        };
+        prop_assume!(digits.iter().filter(|x| x.is_none()).count() <= 2);
+        let field_admits = |f: &DateField, v: u8| {
+            f.digits[0].is_none_or(|p| p == v / 10) && f.digits[1].is_none_or(|p| p == v % 10)
+        };
+        let years: Vec<i64> = match d.year.value() {
+            Some(v) => vec![v],
+            None => (0i64..=9999)
+                .filter(|y| {
+                    let ds = year_digits(*y as u16);
+                    (0..4).all(|i| digits[i].is_none() || digits[i] == ds[i])
+                })
+                .collect(),
+        };
+        let month = d.month.expect("month_day_date always has a month");
+        let mut want: Vec<Edtf> = Vec::new();
+        for y in years {
+            for m in (1..=12u8).filter(|m| field_admits(&month, *m)) {
+                match d.day {
+                    None => want.push(Edtf::Date(Date {
+                        year: Year {
+                            kind: YearKind::Standard {
+                                negative: negative && d.year.value().is_some(),
+                                digits: year_digits(y.unsigned_abs() as u16),
+                            },
+                            significant_digits: None,
+                            qualifier: d.year.qualifier,
+                        },
+                        month: Some(DateField {
+                            digits: field_digits(m),
+                            qualifier: month.qualifier,
+                        }),
+                        day: None,
+                    })),
+                    Some(day) => {
+                        for dd in (1..=31u8).filter(|x| field_admits(&day, *x)) {
+                            if dd > last_day(m, is_leap(y)) {
+                                continue;
+                            }
+                            want.push(Edtf::Date(Date {
+                                year: Year {
+                                    kind: YearKind::Standard {
+                                        negative: negative && d.year.value().is_some(),
+                                        digits: year_digits(y.unsigned_abs() as u16),
+                                    },
+                                    significant_digits: None,
+                                    qualifier: d.year.qualifier,
+                                },
+                                month: Some(DateField {
+                                    digits: field_digits(m),
+                                    qualifier: month.qualifier,
+                                }),
+                                day: Some(DateField {
+                                    digits: field_digits(dd),
+                                    qualifier: day.qualifier,
+                                }),
+                            }));
+                        }
+                    }
+                }
+            }
+        }
+        let got: Vec<Edtf> = Edtf::Date(d).values().unwrap().collect();
+        prop_assert_eq!(got, want, "input {}", Edtf::Date(d));
     }
 }

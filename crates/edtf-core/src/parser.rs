@@ -1,8 +1,8 @@
 //! Hand-written recursive-descent parser and validator for EDTF levels 0–2.
 //!
 //! Grammar and validation rules follow docs/spec-notes.md, which cites the
-//! ISO 8601-1/-2:2019 sections for every production. Open decisions D1–D19
-//! are implemented as proposed there.
+//! ISO 8601-1/-2:2019 sections for every production. The D-decisions are
+//! implemented as resolved there.
 //!
 //! Every error carries the byte offset (into the original input) where the
 //! problem was detected; sub-parsers receive a `base` offset so positions
@@ -798,10 +798,46 @@ fn parse_set_element(p: &str, base: usize) -> Result<SetElement, ParseError> {
         }
         let from = parse_date_at(a, base)?;
         let to = parse_date_at(b, base + idx + 2)?;
+        check_range_endpoint(&from, base)?;
+        check_range_endpoint(&to, base + idx + 2)?;
+        if from.precision() != to.precision() {
+            return Err(err(
+                base + idx + 2,
+                "set range endpoints must share precision",
+            ));
+        }
         if dates_out_of_order(&from, &to) {
             return Err(err(base + idx + 2, "set range end precedes range start"));
         }
         return Ok(SetElement::Range(from, to));
     }
     Ok(SetElement::Date(parse_date_at(p, base)?))
+}
+
+/// A `..` range endpoint must denote a single concrete calendar value at
+/// year, month or day precision (decision D27): every expansion example in
+/// ISO 8601-2 §6.3 c/§6.4 uses plain dates, both sides "should be of the
+/// same precision", a mask-carrying endpoint would make the range a relation
+/// between value *sets*, seasons have no spec-defined successor, and a
+/// qualifier on an endpoint has no defined spread over the expanded members.
+fn check_range_endpoint(d: &Date, off: usize) -> Result<(), ParseError> {
+    if d.has_unspecified() {
+        return Err(err(
+            off,
+            "set range endpoints cannot contain unspecified digits",
+        ));
+    }
+    if d.is_uncertain() || d.is_approximate() {
+        return Err(err(off, "set range endpoints cannot be qualified"));
+    }
+    if d.precision() == Precision::Season {
+        return Err(err(off, "set range endpoints cannot be seasons"));
+    }
+    if d.year.significant_digits.is_some() {
+        return Err(err(
+            off,
+            "set range endpoints cannot carry significant digits",
+        ));
+    }
+    Ok(())
 }

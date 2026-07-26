@@ -381,6 +381,64 @@ of this implementation. Each is enforced by tests in `crates/edtf-core/tests/`.
   day-granular, so same-day datetimes are definitely equal. Enforced by
   `tests/relation.rs` (pinned table) and `tests/props.rs` (converse
   symmetry, soundness, D18 agreement).
+- **D24 — enumeration domain (`values()`):** the spec grounds exactly three
+  value-set constructions — set range expansion (6.3 c, 6.4),
+  unspecified-digit completions (9.2.2 reads `1560-X2` as "either February
+  or December"), and significant-digit year sweeps (4.4.3) — and
+  `values()` enumerates those and nothing else. Every other date
+  expression is a singleton yielding itself verbatim. Intervals are never
+  enumerable: Clause 10 contains no enumeration language — an interval
+  denotes one continuous extent, and "the days inside it" is invented
+  semantics of the Clause-14 kind this profile rejects (`bounds()` serves
+  that consumer). Sweeps or range endpoints beyond computable years fail
+  at the same boundary where `bounds()` reports Unknown. Interop: edtf.js
+  iterates intervals at the lower bound's precision and yields the upper
+  bound verbatim (a precision-inhomogeneous sequence), and steps masks as
+  opaque blocks (`201X` → `202X`); both recorded as edtf.js-isms, not
+  adopted.
+- **D25 — unbounded set elements are not enumerable:** 6.3 calls only the
+  infix form c) an "expansion"; a) `..1984` and b) `1984..` are
+  "indication" of on-or-before/on-or-after, and 6.4 Example 2 leaves
+  `1760-12..` unexpanded ("or a later calendar month"). A set containing
+  either form is `Unenumerable::UnboundedSetElement` — no ad-hoc infinite
+  iteration on the bounded side.
+- **D26 — masks and S-years enumerate ascending at their own precision:**
+  `156X` yields 1560..=1569; `1985-0X-31` yields the five 31-day months
+  among 01–09 (only valid completions, D11); `XXXX-XX-XX` streams all
+  ~3.65M proleptic-Gregorian days lazily; `1950S2` yields 1900..=1999
+  (4.4.3, D19 reading). Masked months draw from 01–12 (D14), masked years
+  are non-negative (D21) — edtf.js's issue #19 (sign lost stepping
+  `-22XX`) is the failure mode D21 forecloses.
+- **D27 — set range endpoints must denote single concrete calendar
+  values:** an `a..b` endpoint shall be unmasked, unqualified, non-season,
+  without significant digits, and both endpoints shall share precision —
+  enforced at parse time (like D18), not enumeration time. Grounds:
+  6.3 c says both sides "should be of the same precision" (read strictly,
+  as D1 reads 4.7.2's "should"); every 6.3/6.4/LoC example is a plain
+  year/month/day date; a masked endpoint makes the range a relation
+  between value *sets* (undefined); seasons have no spec-defined
+  successor (edtf.js invents cyclic season arithmetic behind its
+  non-standard level 3, cf. D22); a qualifier on an endpoint has two
+  coherent expansion readings (spreads to all members vs. attaches to
+  that endpoint's member) and the spec chooses neither — reject the
+  undefined, as D6/D8 do. Negative and `Y`-prefixed years remain valid
+  endpoints: each denotes a single concrete year value with a
+  well-defined successor.
+- **D28 — qualifiers copy through enumeration unchanged:** qualification
+  never moves the value set (8.4.2 NOTE, the D23 principle), so expansion
+  fills masked digits and sweeps ranges while copying every component
+  qualifier verbatim onto each yielded value: `156X~` yields `1560~` …
+  `1569~` (under one-member semantics each candidate genuinely is
+  approximate), and singleton elements pass through as pure identity.
+  Stripping would destroy information the input carries.
+- **D29 — enumeration order is written element order, ascending within
+  each element, no cross-element dedup:** 6.1 gives sets "no specified
+  order", so written order is the only non-inventing choice; 6.4
+  Example 1 expands elementwise. A value written twice is yielded twice;
+  within a single element values are strictly increasing and pairwise
+  distinct. `[…]` one-member sets enumerate identically to `{…}` — the
+  members are the candidates; the set kind states which apply, not what
+  they are.
 
 ## 10. Test-suite sources
 

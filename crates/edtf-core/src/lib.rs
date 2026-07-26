@@ -1,6 +1,7 @@
 //! EDTF (Extended Date/Time Format, ISO 8601-2:2019 Annex A) parsing,
 //! validation, level classification, calendar bounds, three-valued temporal
-//! relations, and canonical formatting — conformance levels 0–2, complete.
+//! relations, value enumeration, and canonical formatting — conformance
+//! levels 0–2, complete.
 //!
 //! `#![no_std]` (requires `alloc`), zero runtime dependencies; JSON support
 //! behind the optional `serde` feature.
@@ -30,6 +31,11 @@
 //! let a = Edtf::parse("1985~").unwrap();
 //! let b = Edtf::parse("199X").unwrap();
 //! assert_eq!(a.relation(&b).definite(), Some(Relation::Before));
+//!
+//! // Enumerate the values an expression denotes (see D24-D29):
+//! let set = Edtf::parse("{1667,1668,1670..1672}").unwrap();
+//! let years: Vec<String> = set.values().unwrap().map(|v| v.to_string()).collect();
+//! assert_eq!(years, ["1667", "1668", "1670", "1671", "1672"]);
 //! ```
 //!
 //! The grammar and every validation decision are documented with ISO section
@@ -40,11 +46,13 @@ extern crate alloc;
 
 mod bounds;
 mod display;
+mod enumerate;
 mod parser;
 mod relation;
 mod types;
 
 pub use bounds::{Bound, BoundDate, Bounds};
+pub use enumerate::{Unenumerable, Values};
 pub use relation::{Modality, Relation, Relations};
 pub use types::{
     Date, DateField, DateTime, Edtf, Interval, IntervalEndpoint, ParseError, Precision, Qualifier,

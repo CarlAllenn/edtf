@@ -15,7 +15,7 @@ that is valid in your application is valid in your database — always:
 | **`edtf-calendars`** | Proleptic Julian (Old Style) → Gregorian conversion at the ingest boundary: day precision converts exactly, year/month precision returns honest earliest/latest spans. `#![no_std]`, zero dependencies. |
 | **`edtf-wasm`** | WebAssembly bindings for JavaScript (~61 KB): `isValid`, `level`, `canonical`, `parse` (JSON summary), `relation`. |
 | **`edtf-postgres`** | Postgres extension (via [pgrx], Postgres 14–18): `edtf_valid()`, `edtf_level()`, `edtf_canonical()`, `edtf_min()`, `edtf_max()`, `edtf_relation()` as SQL functions. |
-| **`edtf-cli`** | The `edtf` command-line tool: `validate` / `canonical` / `level` / `info` over arguments or stdin. Installable anywhere via `cargo install edtf-cli` (or pin it with mise: `"cargo:edtf-cli"`). |
+| **`edtf-cli`** | The `edtf` command-line tool: `validate` / `canonical` / `level` / `info` over arguments or stdin, plus `relation` (three-valued comparison of two expressions) and `from-julian` (Old Style → Gregorian EDTF). Installable anywhere via `cargo install edtf-cli` (or pin it with mise: `"cargo:edtf-cli"`). |
 
 [pgrx]: https://github.com/pgcentralfoundation/pgrx
 

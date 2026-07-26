@@ -30,6 +30,12 @@ jobs:
       # Heavy source-built tools this job never invokes.
       MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
+      # First step of every job, before checkout: runtime egress audit —
+      # derives the allowlist, then flips to block mode (issue #6 canon,
+      # templates/ci/ in renovate-config).
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -66,6 +72,12 @@ jobs:
     env:
       MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
+      # First step of every job, before checkout: runtime egress audit —
+      # derives the allowlist, then flips to block mode (issue #6 canon,
+      # templates/ci/ in renovate-config).
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -84,6 +96,12 @@ jobs:
     env:
       MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
+      # First step of every job, before checkout: runtime egress audit —
+      # derives the allowlist, then flips to block mode (issue #6 canon,
+      # templates/ci/ in renovate-config).
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -111,6 +129,12 @@ jobs:
       # (zizmor template-injection, pedantic tier).
       PG: ${{ matrix.pg }}
     steps:
+      # First step of every job, before checkout: runtime egress audit —
+      # derives the allowlist, then flips to block mode (issue #6 canon,
+      # templates/ci/ in renovate-config).
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false

@@ -2,17 +2,23 @@
 //! to get right, pinned. Historically attested O.S./N.S. pairs live in
 //! `tests/oracle.rs`; generative invariants in `tests/props.rs`.
 
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
+
 use edtf_calendars::{
     CalendarError, Converted, JulianDate, convert, gregorian_to_julian, is_julian_leap,
     julian_to_gregorian,
 };
 use edtf_core::BoundDate;
 
-fn j(year: i64, month: u8, day: u8) -> JulianDate {
+const fn j(year: i64, month: u8, day: u8) -> JulianDate {
     JulianDate { year, month, day }
 }
 
-fn g(year: i64, month: u8, day: u8) -> BoundDate {
+const fn g(year: i64, month: u8, day: u8) -> BoundDate {
     BoundDate { year, month, day }
 }
 

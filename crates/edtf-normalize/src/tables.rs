@@ -84,7 +84,7 @@ pub(crate) fn lang_for(language: crate::Language) -> &'static Lang {
 }
 
 /// Human-readable name for a sub-year grouping code, for ambiguity readings.
-pub(crate) fn season_name(code: u8) -> &'static str {
+pub(crate) const fn season_name(code: u8) -> &'static str {
     match code {
         21 => "spring",
         22 => "summer",

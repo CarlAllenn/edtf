@@ -8,6 +8,12 @@
 //! non-goal), and these rows pin what the arithmetic must do *after* that
 //! resolution.
 
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
+
 use edtf_calendars::{JulianDate, gregorian_to_julian, julian_to_gregorian};
 use edtf_core::BoundDate;
 

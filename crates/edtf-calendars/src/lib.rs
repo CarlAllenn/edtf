@@ -79,8 +79,8 @@ pub enum CalendarError {
 impl core::fmt::Display for CalendarError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(match self {
-            CalendarError::InvalidDate => "not a valid calendar date",
-            CalendarError::OutOfRange => "converted year out of range",
+            Self::InvalidDate => "not a valid calendar date",
+            Self::OutOfRange => "converted year out of range",
         })
     }
 }
@@ -133,12 +133,13 @@ pub enum Converted {
 
 /// Proleptic Julian leap rule: every fourth year, no century exception,
 /// astronomical numbering (year 0 is a leap year, so are -4, -8, …).
-pub fn is_julian_leap(year: i64) -> bool {
+#[must_use]
+pub const fn is_julian_leap(year: i64) -> bool {
     year.rem_euclid(4) == 0
 }
 
 /// Proleptic Gregorian leap rule on the astronomical year number.
-fn is_gregorian_leap(year: i64) -> bool {
+const fn is_gregorian_leap(year: i64) -> bool {
     year.rem_euclid(4) == 0 && (year.rem_euclid(100) != 0 || year.rem_euclid(400) == 0)
 }
 
@@ -169,14 +170,14 @@ fn check(month: u8, day: u8, leap: bool) -> Result<(), CalendarError> {
 // floor division), computed in i128 so any i64 year is safe, valid for all
 // proleptic dates in both calendars.
 
-fn julian_jdn(y: i128, m: i128, d: i128) -> i128 {
+const fn julian_jdn(y: i128, m: i128, d: i128) -> i128 {
     let a = (14 - m).div_euclid(12);
     let y = y + 4800 - a;
     let m = m + 12 * a - 3;
     d + (153 * m + 2).div_euclid(5) + 365 * y + y.div_euclid(4) - 32083
 }
 
-fn gregorian_jdn(y: i128, m: i128, d: i128) -> i128 {
+const fn gregorian_jdn(y: i128, m: i128, d: i128) -> i128 {
     let a = (14 - m).div_euclid(12);
     let y = y + 4800 - a;
     let m = m + 12 * a - 3;
@@ -187,24 +188,31 @@ fn gregorian_jdn(y: i128, m: i128, d: i128) -> i128 {
 
 /// Split the era-day count `e` (per 4-year cycle) into (year-in-era, month,
 /// day) — the shared tail of both JDN inversions.
-fn split(c: i128) -> (i128, u8, u8) {
+const fn split(c: i128) -> (i128, u8, u8) {
     let d = (4 * c + 3).div_euclid(1461);
     let e = c - (1461 * d).div_euclid(4);
     let m = (5 * e + 2).div_euclid(153);
     let day = e - (153 * m + 2).div_euclid(5) + 1;
     let month = m + 3 - 12 * m.div_euclid(10);
+    // month ∈ 3..=14 → 1..=12 after the +3-12·q fold; day ∈ 1..=31: both
+    // are single-byte by construction of the civil-from-days algorithm.
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "month in 1..=12 and day in 1..=31 by the algorithm's arithmetic"
+    )]
     (d + m.div_euclid(10), month as u8, day as u8)
 }
 
-fn jdn_to_gregorian(jdn: i128) -> (i128, u8, u8) {
+const fn jdn_to_gregorian(jdn: i128) -> (i128, u8, u8) {
     let a = jdn + 32044;
-    let b = (4 * a + 3).div_euclid(146097);
-    let c = a - (146097 * b).div_euclid(4);
+    let b = (4 * a + 3).div_euclid(146_097);
+    let c = a - (146_097 * b).div_euclid(4);
     let (y, month, day) = split(c);
     (100 * b + y - 4800, month, day)
 }
 
-fn jdn_to_julian(jdn: i128) -> (i128, u8, u8) {
+const fn jdn_to_julian(jdn: i128) -> (i128, u8, u8) {
     let (y, month, day) = split(jdn + 32082);
     (y - 4800, month, day)
 }
@@ -222,6 +230,12 @@ fn to_bound_date(ymd: (i128, u8, u8)) -> Result<BoundDate, CalendarError> {
 /// Rejects inputs that are not real Julian calendar days — but note that
 /// Julian February 29 exists in *every* fourth year: `1900-02-29` (O.S.)
 /// is valid here and converts to Gregorian `1900-03-13`.
+///
+/// # Errors
+///
+/// [`CalendarError::InvalidDate`] when the input is not a real Julian
+/// calendar day; [`CalendarError::OutOfRange`] when the converted year
+/// exceeds the numeric range this library computes with.
 pub fn julian_to_gregorian(date: JulianDate) -> Result<BoundDate, CalendarError> {
     check(date.month, date.day, is_julian_leap(date.year))?;
     let jdn = julian_jdn(
@@ -237,6 +251,12 @@ pub fn julian_to_gregorian(date: JulianDate) -> Result<BoundDate, CalendarError>
 ///
 /// Rejects inputs that are not real Gregorian calendar days: Gregorian
 /// `1900-02-29` never existed and stays invalid, exactly as in `edtf-core`.
+///
+/// # Errors
+///
+/// [`CalendarError::InvalidDate`] when the input is not a real Gregorian
+/// calendar day; [`CalendarError::OutOfRange`] when the converted year
+/// exceeds the numeric range this library computes with.
 pub fn gregorian_to_julian(date: BoundDate) -> Result<JulianDate, CalendarError> {
     check(date.month, date.day, is_gregorian_leap(date.year))?;
     let jdn = gregorian_jdn(
@@ -263,6 +283,12 @@ pub fn gregorian_to_julian(date: BoundDate) -> Result<JulianDate, CalendarError>
 /// 1917-01-14..1918-01-13, and Julian February 1900 covers Gregorian
 /// 1900-02-13..1900-03-13 (the offset changes *inside* the month). This
 /// function never pretends a Julian year or month is a Gregorian one.
+///
+/// # Errors
+///
+/// [`CalendarError::InvalidDate`] when the parts are not a real Julian
+/// calendar day; [`CalendarError::OutOfRange`] when the converted year
+/// exceeds the numeric range this library computes with.
 pub fn convert(year: i64, month: Option<u8>, day: Option<u8>) -> Result<Converted, CalendarError> {
     let leap = is_julian_leap(year);
     match (month, day) {

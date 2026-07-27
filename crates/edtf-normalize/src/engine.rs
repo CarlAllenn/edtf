@@ -27,7 +27,7 @@ use crate::{
 // Internal shapes
 
 /// A matched expression before qualification and rendering.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 enum Expr {
     Date(Date),
     Interval(Interval),
@@ -51,9 +51,18 @@ enum Single {
 // ---------------------------------------------------------------------------
 // Construction helpers (core's fields are public; there are no constructors)
 
+/// Single decimal digit as `u8`.
+#[allow(
+    clippy::cast_possible_truncation,
+    reason = "callers reduce mod 10 (or divide down to one digit): always < 10"
+)]
+const fn digit(v: u32) -> u8 {
+    (v % 10) as u8
+}
+
 fn quiet(v: u8) -> DateField {
     DateField {
-        digits: [Some(v / 10), Some(v % 10)],
+        digits: [Some(digit(u32::from(v) / 10)), Some(digit(u32::from(v)))],
         qualifier: Qualifier::default(),
     }
 }
@@ -67,10 +76,10 @@ fn year_of(y: i32) -> Option<Year> {
         kind: YearKind::Standard {
             negative: y < 0,
             digits: [
-                Some((a / 1000) as u8),
-                Some((a / 100 % 10) as u8),
-                Some((a / 10 % 10) as u8),
-                Some((a % 10) as u8),
+                Some(digit(a / 1000)),
+                Some(digit(a / 100)),
+                Some(digit(a / 10)),
+                Some(digit(a)),
             ],
         },
         significant_digits: None,
@@ -119,9 +128,9 @@ fn decade_date(prefix3: u16) -> Date {
             kind: YearKind::Standard {
                 negative: false,
                 digits: [
-                    Some((prefix3 / 100) as u8),
-                    Some((prefix3 / 10 % 10) as u8),
-                    Some((prefix3 % 10) as u8),
+                    Some(digit(u32::from(prefix3) / 100)),
+                    Some(digit(u32::from(prefix3) / 10)),
+                    Some(digit(u32::from(prefix3))),
                     None,
                 ],
             },
@@ -149,7 +158,7 @@ fn century_date(prefix2: u8, negative: bool) -> Date {
     }
 }
 
-fn interval(a: Date, b: Date) -> Expr {
+const fn interval(a: Date, b: Date) -> Expr {
     Expr::Interval(Interval {
         start: IntervalEndpoint::Date(a),
         end: IntervalEndpoint::Date(b),
@@ -232,7 +241,7 @@ fn roman_num(t: &str) -> Option<u32> {
             total += i64::from(v);
         }
     }
-    (1..=99).contains(&total).then_some(total as u32)
+    u32::try_from(total).ok().filter(|t| (1..=99).contains(t))
 }
 
 /// Ordinal in century position: digits, suffixed digits, ordinal words, and
@@ -259,7 +268,7 @@ fn day_num(t: &str, lang: &Lang) -> Option<u8> {
         return None;
     }
     let v = num(digits)?;
-    (1..=31).contains(&v).then_some(v as u8)
+    u8::try_from(v).ok().filter(|d| (1..=31).contains(d))
 }
 
 /// Year token: 3–4 digits, nonzero.
@@ -268,7 +277,7 @@ fn year_num(t: &str) -> Option<i32> {
         return None;
     }
     let v = num(t)?;
-    (v >= 1).then_some(v as i32)
+    (v >= 1).then(|| i32::try_from(v).ok())?
 }
 
 // ---------------------------------------------------------------------------
@@ -374,6 +383,7 @@ fn split_era<'a>(toks: &[&'a str], lang: &Lang) -> Option<(bool, Vec<&'a str>)> 
 // ---------------------------------------------------------------------------
 // Decades
 
+#[derive(Clone, Copy)]
 enum DecadeParse {
     /// "1860s", "1980-е" — three leading digits fixed.
     Exact(u16),
@@ -395,19 +405,22 @@ fn decade_tok(t: &str, lang: &Lang) -> Option<DecadeParse> {
     }
     match digits.len() {
         4 => {
-            let prefix3 = (v / 10) as u16;
+            let prefix3 = u16::try_from(v / 10).ok()?;
             if v % 100 == 0 {
-                Some(DecadeParse::CenturyAmbig(prefix3, (v / 100) as u8))
+                Some(DecadeParse::CenturyAmbig(
+                    prefix3,
+                    u8::try_from(v / 100).ok()?,
+                ))
             } else {
                 Some(DecadeParse::Exact(prefix3))
             }
         },
-        2 => Some(DecadeParse::Bare((v / 10) as u8)),
+        2 => Some(DecadeParse::Bare(u8::try_from(v / 10).ok()?)),
         _ => None,
     }
 }
 
-fn decade_single(parse: DecadeParse, opts: &Options) -> Single {
+fn decade_single(parse: DecadeParse, opts: Options) -> Single {
     match parse {
         DecadeParse::Exact(p3) => Single::One(Expr::Date(decade_date(p3)), Vec::new()),
         DecadeParse::CenturyAmbig(p3, p2) => Single::Many(vec![
@@ -425,20 +438,23 @@ fn decade_single(parse: DecadeParse, opts: &Options) -> Single {
         DecadeParse::Bare(tens) => {
             // Domain 0..=9999 (documented on Options); larger values would
             // build unrenderable years, so they are ignored as if unset.
-            if let Some(century) = opts.default_century.filter(|c| *c <= 9999) {
-                let p3 = century / 100 * 10 + u16::from(tens);
-                Single::One(
-                    Expr::Date(decade_date(p3)),
-                    vec![Note::DefaultCenturyApplied],
-                )
-            } else {
-                let mk = |p3: u16| Candidate {
-                    expr: Expr::Date(decade_date(p3)),
-                    reading: format!("the {p3}0s"),
-                    notes: vec![Note::DecadeAmbiguity],
-                };
-                Single::Many(vec![mk(180 + u16::from(tens)), mk(190 + u16::from(tens))])
-            }
+            opts.default_century.filter(|c| *c <= 9999).map_or_else(
+                || {
+                    let mk = |p3: u16| Candidate {
+                        expr: Expr::Date(decade_date(p3)),
+                        reading: format!("the {p3}0s"),
+                        notes: vec![Note::DecadeAmbiguity],
+                    };
+                    Single::Many(vec![mk(180 + u16::from(tens)), mk(190 + u16::from(tens))])
+                },
+                |century| {
+                    let p3 = century / 100 * 10 + u16::from(tens);
+                    Single::One(
+                        Expr::Date(decade_date(p3)),
+                        vec![Note::DefaultCenturyApplied],
+                    )
+                },
+            )
         },
     }
 }
@@ -478,7 +494,11 @@ fn century_toks(toks: &[&str], lang: &Lang) -> Option<(u32, bool)> {
 
 /// Astronomical year span of century `n`: 19th CE = 1801..=1900,
 /// 2nd BC = -0199..=-0100, 1st BC = -0099..=0000 (year 0 exists; N2/N3).
-fn century_span(n: u32, bc: bool) -> (i32, i32) {
+#[allow(
+    clippy::cast_possible_wrap,
+    reason = "n <= 99 (century_ordinal range filter); i32::try_from is not usable in const fn"
+)]
+const fn century_span(n: u32, bc: bool) -> (i32, i32) {
     let n = n as i32;
     if bc {
         (-(100 * n - 1), -(100 * (n - 1)))
@@ -506,6 +526,10 @@ fn century_expr(n: u32, bc: bool) -> Option<(Expr, Vec<Note>)> {
 }
 
 /// Early/mid/late/half of a century as a decade-rounded interval (N1).
+#[allow(
+    clippy::many_single_char_names,
+    reason = "s/e/a/b are interval-endpoint arithmetic; longer names obscure the span algebra"
+)]
 fn century_part_expr(span: Span, n: u32, bc: bool) -> Option<(Expr, Vec<Note>)> {
     let (s, e) = century_span(n, bc);
     let (a, b) = match span {
@@ -542,22 +566,28 @@ fn dmy(d: u32, m: u32, y: i32) -> Option<Expr> {
     if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
         return None;
     }
-    Some(Expr::Date(date_ymd(y, m as u8, d as u8)?))
+    let (m, d) = (u8::try_from(m).ok()?, u8::try_from(d).ok()?);
+    Some(Expr::Date(date_ymd(y, m, d)?))
 }
 
-fn numeric_token(t: &str, opts: &Options, lang: &Lang) -> Option<Single> {
+#[allow(
+    clippy::many_single_char_names,
+    clippy::too_many_lines,
+    reason = "y/m/d/a/b are date-field names; the arms ARE the grammar"
+)]
+fn numeric_token(t: &str, opts: Options, lang: &Lang) -> Option<Single> {
     let sep = numeric_sep(t)?;
     let parts: Vec<&str> = t.split(sep).collect();
     let vals: Vec<u32> = parts.iter().map(|p| num(p)).collect::<Option<_>>()?;
     match (parts.as_slice(), vals.as_slice()) {
         // Year first is order-unambiguous: 1985/04/12.
         ([py, _, _], &[y, m, d]) if py.len() == 4 => Some(Single::One(
-            dmy(d, m, y as i32)?,
+            dmy(d, m, i32::try_from(y).ok()?)?,
             vec![Note::NumericUnambiguous],
         )),
         // Two small fields then a 4-digit year: the DMY/MDY minefield (N5).
         ([pa, pb, py], &[a, b, y]) if py.len() == 4 && pa.len() <= 2 && pb.len() <= 2 => {
-            let y = y as i32;
+            let y = i32::try_from(y).ok()?;
             let day_first = dmy(a, b, y);
             let month_first = dmy(b, a, y);
             match (a > 12, b > 12) {
@@ -600,21 +630,23 @@ fn numeric_token(t: &str, opts: &Options, lang: &Lang) -> Option<Single> {
             }
         },
         // Month and year: 7/2008, 04.1985.
-        ([pa, py], &[m, y]) if pa.len() <= 2 && py.len() == 4 && (1..=12).contains(&m) => Some(
-            Single::One(Expr::Date(date_ym(y as i32, m as u8)?), Vec::new()),
-        ),
+        ([pa, py], &[m, y]) if pa.len() <= 2 && py.len() == 4 && (1..=12).contains(&m) => {
+            let (y, m) = (i32::try_from(y).ok()?, u8::try_from(m).ok()?);
+            Some(Single::One(Expr::Date(date_ym(y, m)?), Vec::new()))
+        },
         // Year then small field: 1985/4, 1985-4 (a full "1985-04" is already
         // valid EDTF and never reaches the grammar).
-        ([py, pb], &[y, m]) if py.len() == 4 && pb.len() <= 2 && (1..=12).contains(&m) => Some(
-            Single::One(Expr::Date(date_ym(y as i32, m as u8)?), Vec::new()),
-        ),
+        ([py, pb], &[y, m]) if py.len() == 4 && pb.len() <= 2 && (1..=12).contains(&m) => {
+            let (y, m) = (i32::try_from(y).ok()?, u8::try_from(m).ok()?);
+            Some(Single::One(Expr::Date(date_ym(y, m)?), Vec::new()))
+        },
         // Hyphenated year pair or elided end year: 1914-1918, 1914-18 (N4).
         // 21..=41 collides with EDTF sub-year codes: honest ambiguity (N13).
         ([py, pb], &[y, b]) if py.len() == 4 && sep == '-' => {
-            let y = y as i32;
+            let y = i32::try_from(y).ok()?;
             match pb.len() {
                 4 => {
-                    let e = b as i32;
+                    let e = i32::try_from(b).ok()?;
                     if e > y {
                         Some(Single::One(interval(date_y(y)?, date_y(e)?), Vec::new()))
                     } else {
@@ -622,7 +654,8 @@ fn numeric_token(t: &str, opts: &Options, lang: &Lang) -> Option<Single> {
                     }
                 },
                 2 => {
-                    let elided = y / 100 * 100 + b as i32;
+                    let b_u8 = u8::try_from(b).ok()?;
+                    let elided = y / 100 * 100 + i32::from(b_u8);
                     if elided <= y || b <= 12 {
                         return None;
                     }
@@ -630,10 +663,10 @@ fn numeric_token(t: &str, opts: &Options, lang: &Lang) -> Option<Single> {
                         Some(Single::Many(vec![
                             Candidate {
                                 expr: Expr::Date(Date {
-                                    month: Some(quiet(b as u8)),
+                                    month: Some(quiet(b_u8)),
                                     ..date_y(y)?
                                 }),
-                                reading: format!("sub-year code {b} ({})", season_name(b as u8)),
+                                reading: format!("sub-year code {b} ({})", season_name(b_u8)),
                                 notes: vec![Note::SeasonRangeCollision],
                             },
                             Candidate {
@@ -661,7 +694,11 @@ fn numeric_token(t: &str, opts: &Options, lang: &Lang) -> Option<Single> {
 
 /// Match one date-ish expression. `in_range` suppresses interval-producing
 /// forms (century parts) so range endpoints stay dates (N1 scope).
-fn parse_single(s: &str, opts: &Options, lang: &Lang, in_range: bool) -> Option<Single> {
+#[allow(
+    clippy::too_many_lines,
+    reason = "the ordered arms ARE the grammar (N11); order carries meaning"
+)]
+fn parse_single(s: &str, opts: Options, lang: &Lang, in_range: bool) -> Option<Single> {
     let toks: Vec<&str> = s.split(' ').filter(|t| !t.is_empty()).collect();
     if toks.is_empty() {
         return None;
@@ -726,7 +763,7 @@ fn parse_single(s: &str, opts: &Options, lang: &Lang, in_range: bool) -> Option<
                 rest.remove(0);
             }
             if let Some((n, roman)) = century_toks(&rest, lang) {
-                let prefix3 = (n as u16 - 1) * 10 + u16::from(tens);
+                let prefix3 = (u16::try_from(n).ok()? - 1) * 10 + u16::from(tens);
                 let mut notes = vec![Note::DecadeOfCentury];
                 if roman {
                     notes.push(Note::RomanCentury);
@@ -881,7 +918,7 @@ fn match_head<'a>(toks: &[&'a str], phrases: &[&[&str]]) -> Option<Vec<&'a str>>
 }
 
 /// "before X" → `../X`, "after X" → `X/..` (interval reading, N8).
-fn parse_open(toks: &[&str], opts: &Options, lang: &Lang) -> Option<Single> {
+fn parse_open(toks: &[&str], opts: Options, lang: &Lang) -> Option<Single> {
     let (before, rest) = match_head(toks, lang.before_phrases)
         .map(|rest| (true, rest))
         .or_else(|| match_head(toks, lang.after_phrases).map(|rest| (false, rest)))?;
@@ -901,14 +938,14 @@ fn parse_open(toks: &[&str], opts: &Options, lang: &Lang) -> Option<Single> {
 }
 
 /// "1863 or 1864" → honest ambiguity (N14).
-fn parse_or(toks: &[&str], opts: &Options, lang: &Lang) -> Option<Single> {
+fn parse_or(toks: &[&str], opts: Options, lang: &Lang) -> Option<Single> {
     let pos = toks.iter().position(|t| lang.or_words.contains(t))?;
     if pos == 0 || pos == toks.len() - 1 {
         return None;
     }
-    let (left, right) = (toks[..pos].join(" "), toks[pos + 1..].join(" "));
+    let sides = [toks[..pos].join(" "), toks[pos + 1..].join(" ")];
     let mut cands = Vec::new();
-    for side in [left, right] {
+    for side in sides {
         let (inner, q) = strip_qualifiers(&side, lang);
         match parse_single(&inner, opts, lang, true)? {
             Single::One(mut expr, mut notes) => {
@@ -927,7 +964,7 @@ fn parse_or(toks: &[&str], opts: &Options, lang: &Lang) -> Option<Single> {
 }
 
 /// Two-sided ranges: "from X to Y", "с X по Y", "X to Y", "X-Y".
-fn parse_range(s: &str, toks: &[&str], opts: &Options, lang: &Lang) -> Option<Single> {
+fn parse_range(s: &str, toks: &[&str], opts: Options, lang: &Lang) -> Option<Single> {
     let word_split = |toks: &[&str], sep: &str| -> Option<(String, String)> {
         let pos = toks.iter().position(|t| *t == sep)?;
         (pos > 0 && pos < toks.len() - 1)
@@ -964,7 +1001,12 @@ fn parse_range(s: &str, toks: &[&str], opts: &Options, lang: &Lang) -> Option<Si
 /// Parse both endpoints of a range, with per-endpoint qualifiers
 /// ("1856-ca. 1865" → `1856/1865~`), elided end years ("1914-18", N4), and
 /// bare-ordinal left centuries ("17-19th centuries" → `16XX/18XX`).
-fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option<Single> {
+#[allow(
+    clippy::too_many_lines,
+    clippy::many_single_char_names,
+    reason = "endpoint pairing is one decision table; l/r/a/b/e its algebra"
+)]
+fn endpoint_pair(left: &str, right: &str, opts: Options, lang: &Lang) -> Option<Single> {
     let (ls, lq) = strip_qualifiers(left, lang);
     let (rs, rq) = strip_qualifiers(right, lang);
     let lres = parse_single(&ls, opts, lang, true);
@@ -1002,7 +1044,8 @@ fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option
                 return None;
             }
             let v = num(&rs).filter(|_| rs.len() <= 2)?;
-            let elided = y / 100 * 100 + v as i32;
+            let v_u8 = u8::try_from(v).ok()?;
+            let elided = y / 100 * 100 + i32::from(v_u8);
             // Mirror the unspaced NNNN-NN limits: 01–12 read as months and
             // are never ranges (N4); 21–41 collide with sub-year codes (N13).
             if elided <= y || v <= 12 {
@@ -1010,7 +1053,7 @@ fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option
             }
             if (21..=41).contains(&v) && ld.month.is_none() && ld.day.is_none() {
                 let mut season = *ld;
-                season.month = Some(quiet(v as u8));
+                season.month = Some(quiet(v_u8));
                 qualify_date(&mut season, lq);
                 let (mut a, mut b) = (*ld, date_y(elided)?);
                 qualify_date(&mut a, lq);
@@ -1018,7 +1061,7 @@ fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option
                 return Some(Single::Many(vec![
                     Candidate {
                         expr: Expr::Date(season),
-                        reading: format!("sub-year code {v} ({})", season_name(v as u8)),
+                        reading: format!("sub-year code {v} ({})", season_name(v_u8)),
                         notes: vec![Note::SeasonRangeCollision],
                     },
                     Candidate {
@@ -1144,7 +1187,8 @@ fn cross_year_season(
     build: &impl Fn(&Date, &Date) -> Option<Expr>,
 ) -> Option<Single> {
     const WINTER: u8 = 24;
-    if ld.month.and_then(|m| m.value()) != Some(WINTER) || rd.month.is_some() || rd.day.is_some() {
+    if ld.month.and_then(DateField::value) != Some(WINTER) || rd.month.is_some() || rd.day.is_some()
+    {
         return None;
     }
     let (a, b) = (ld.year.value()?, rd.year.value()?);
@@ -1247,7 +1291,7 @@ fn render(expr: Expr) -> Option<(Edtf, String)> {
     Some((reparsed, s))
 }
 
-fn no_match(reason: NoMatchReason) -> Outcome {
+const fn no_match(reason: NoMatchReason) -> Outcome {
     Outcome::NoMatch { reason }
 }
 
@@ -1317,7 +1361,7 @@ fn outcome_from(single: Single, q: Qualifier, base_notes: Vec<Note>) -> Outcome 
 // ---------------------------------------------------------------------------
 // Entry point
 
-pub(crate) fn run(input: &str, opts: &Options) -> Outcome {
+pub(crate) fn run(input: &str, opts: Options) -> Outcome {
     let lang = lang_for(opts.language);
     let trimmed = input.trim();
     if trimmed.is_empty() {
@@ -1386,7 +1430,7 @@ pub(crate) fn run(input: &str, opts: &Options) -> Outcome {
 }
 
 /// `NNNN-NN` with a sub-year code 21–41 and a plausible elided range (N13).
-fn collision_check(s: &str, opts: &Options, lang: &Lang) -> Option<Outcome> {
+fn collision_check(s: &str, opts: Options, lang: &Lang) -> Option<Outcome> {
     let b = s.as_bytes();
     if b.len() != 7 || b[4] != b'-' {
         return None;
@@ -1396,7 +1440,7 @@ fn collision_check(s: &str, opts: &Options, lang: &Lang) -> Option<Outcome> {
     }
     let code: u32 = s[5..].parse().ok()?;
     let year: i32 = s[..4].parse().ok()?;
-    if !(21..=41).contains(&code) || year / 100 * 100 + code as i32 <= year {
+    if !(21..=41).contains(&code) || year / 100 * 100 + i32::try_from(code).ok()? <= year {
         return None;
     }
     match numeric_token(s, opts, lang)? {

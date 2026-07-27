@@ -4,6 +4,12 @@
 //! that belongs to the database wrapper, not the core — those are skipped
 //! here and covered by the explicit cases below.)
 
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
+
 use edtf_core::{Bound, Edtf};
 use serde_json::Value;
 
@@ -95,7 +101,7 @@ fn significant_digit_bounds() {
     assert_bounds("Y9E18S1", "unknown", "unknown");
     // Parsing computes bounds for interval ordering (D18); huge exponents on
     // both ends must stay total there too.
-    assert!(edtf_core::Edtf::parse("Y8E20202/Y9E18S1").is_ok());
+    assert!(Edtf::parse("Y8E20202/Y9E18S1").is_ok());
 }
 
 #[test]

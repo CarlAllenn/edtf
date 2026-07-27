@@ -12,6 +12,18 @@
 //! bounds comparison the parser applies (decision D18), and time shifts are
 //! only generated in shapes `Display` can spell.
 
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss,
+    reason = "generator and oracle ranges are bounded by construction"
+)]
+
 use edtf_core::{
     Bound, Date, DateField, DateTime, Edtf, Interval, IntervalEndpoint, Modality, Qualifier,
     Relation, Set, SetElement, SetKind, Time, TimeShift, Unenumerable, Year, YearKind,
@@ -20,7 +32,7 @@ use proptest::prelude::*;
 
 // ------------------------------------------------------------ calendar
 
-fn is_leap(y: i64) -> bool {
+const fn is_leap(y: i64) -> bool {
     y.rem_euclid(4) == 0 && (y.rem_euclid(100) != 0 || y.rem_euclid(400) == 0)
 }
 
@@ -39,7 +51,7 @@ fn last_day(month: u8, leap: bool) -> u8 {
     }
 }
 
-fn year_digits(y: u16) -> [Option<u8>; 4] {
+const fn year_digits(y: u16) -> [Option<u8>; 4] {
     [
         Some((y / 1000 % 10) as u8),
         Some((y / 100 % 10) as u8),
@@ -48,7 +60,7 @@ fn year_digits(y: u16) -> [Option<u8>; 4] {
     ]
 }
 
-fn field_digits(v: u8) -> [Option<u8>; 2] {
+const fn field_digits(v: u8) -> [Option<u8>; 2] {
     [Some(v / 10), Some(v % 10)]
 }
 
@@ -726,15 +738,17 @@ proptest! {
         let field_admits = |f: &DateField, v: u8| {
             f.digits[0].is_none_or(|p| p == v / 10) && f.digits[1].is_none_or(|p| p == v % 10)
         };
-        let years: Vec<i64> = match d.year.value() {
-            Some(v) => vec![v],
-            None => (0i64..=9999)
-                .filter(|y| {
-                    let ds = year_digits(*y as u16);
-                    (0..4).all(|i| digits[i].is_none() || digits[i] == ds[i])
-                })
-                .collect(),
-        };
+        let years: Vec<i64> = d.year.value().map_or_else(
+            || {
+                (0i64..=9999)
+                    .filter(|y| {
+                        let ds = year_digits(*y as u16);
+                        (0..4).all(|i| digits[i].is_none() || digits[i] == ds[i])
+                    })
+                    .collect()
+            },
+            |v| vec![v],
+        );
         let month = d.month.expect("month_day_date always has a month");
         let mut want: Vec<Edtf> = Vec::new();
         for y in years {

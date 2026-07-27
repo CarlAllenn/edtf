@@ -2,6 +2,12 @@
 //! Annex A example + adversarial cases). The corpus is the cross-check
 //! oracle; docs/spec-notes.md is the authority on any disagreement.
 
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
+
 use edtf_core::Edtf;
 use serde_json::Value;
 

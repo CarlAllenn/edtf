@@ -8,6 +8,12 @@
 //! scale only, so a bug in the crate's Julian arithmetic cannot cancel
 //! itself out.
 
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
+
 use edtf_calendars::{
     Converted, JulianDate, convert, gregorian_to_julian, is_julian_leap, julian_to_gregorian,
 };
@@ -68,7 +74,7 @@ fn julian_date() -> impl Strategy<Value = JulianDate> {
     })
 }
 
-fn is_gregorian_leap(y: i64) -> bool {
+const fn is_gregorian_leap(y: i64) -> bool {
     y.rem_euclid(4) == 0 && (y.rem_euclid(100) != 0 || y.rem_euclid(400) == 0)
 }
 

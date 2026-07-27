@@ -92,6 +92,12 @@ fn edtf_relation(a: &str, b: &str) -> Option<Vec<String>> {
 #[cfg(any(test, feature = "pg_test"))]
 #[pg_schema]
 mod tests {
+    #![allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        reason = "test code: a panic here is the failure signal, not a crash path"
+    )]
+
     use pgrx::prelude::*;
 
     fn q_bool(sql: &str) -> bool {

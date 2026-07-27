@@ -78,12 +78,14 @@ pub use types::{
 };
 
 /// Returns true if `input` is a valid EDTF string (levels 0–2).
+#[must_use]
 pub fn is_valid(input: &str) -> bool {
     Edtf::parse(input).is_ok()
 }
 
 /// Parse `input` and return its minimum EDTF conformance level (0, 1 or 2),
 /// or `None` if it is not valid EDTF.
+#[must_use]
 pub fn level(input: &str) -> Option<u8> {
     Edtf::parse(input).ok().map(|e| e.level())
 }

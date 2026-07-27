@@ -56,47 +56,49 @@ pub enum Relation {
 
 impl Relation {
     /// All six relations, in canonical order.
-    pub const ALL: [Relation; 6] = [
-        Relation::Before,
-        Relation::After,
-        Relation::Overlaps,
-        Relation::Contains,
-        Relation::Within,
-        Relation::Equal,
+    pub const ALL: [Self; 6] = [
+        Self::Before,
+        Self::After,
+        Self::Overlaps,
+        Self::Contains,
+        Self::Within,
+        Self::Equal,
     ];
 
     /// The relation that holds of (B, A) whenever `self` holds of (A, B).
-    pub fn converse(self) -> Relation {
+    #[must_use]
+    pub const fn converse(self) -> Self {
         match self {
-            Relation::Before => Relation::After,
-            Relation::After => Relation::Before,
-            Relation::Contains => Relation::Within,
-            Relation::Within => Relation::Contains,
-            Relation::Overlaps | Relation::Equal => self,
+            Self::Before => Self::After,
+            Self::After => Self::Before,
+            Self::Contains => Self::Within,
+            Self::Within => Self::Contains,
+            Self::Overlaps | Self::Equal => self,
         }
     }
 
     /// Lower-case name: `"before"`, `"after"`, `"overlaps"`, `"contains"`,
     /// `"within"` or `"equal"`.
-    pub fn as_str(self) -> &'static str {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
         match self {
-            Relation::Before => "before",
-            Relation::After => "after",
-            Relation::Overlaps => "overlaps",
-            Relation::Contains => "contains",
-            Relation::Within => "within",
-            Relation::Equal => "equal",
+            Self::Before => "before",
+            Self::After => "after",
+            Self::Overlaps => "overlaps",
+            Self::Contains => "contains",
+            Self::Within => "within",
+            Self::Equal => "equal",
         }
     }
 
-    fn idx(self) -> usize {
+    const fn idx(self) -> usize {
         match self {
-            Relation::Before => 0,
-            Relation::After => 1,
-            Relation::Overlaps => 2,
-            Relation::Contains => 3,
-            Relation::Within => 4,
-            Relation::Equal => 5,
+            Self::Before => 0,
+            Self::After => 1,
+            Self::Overlaps => 2,
+            Self::Contains => 3,
+            Self::Within => 4,
+            Self::Equal => 5,
         }
     }
 }
@@ -115,11 +117,12 @@ pub enum Modality {
 
 impl Modality {
     /// Lower-case name: `"impossible"`, `"possible"` or `"definite"`.
-    pub fn as_str(self) -> &'static str {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
         match self {
-            Modality::Impossible => "impossible",
-            Modality::Possible => "possible",
-            Modality::Definite => "definite",
+            Self::Impossible => "impossible",
+            Self::Possible => "possible",
+            Self::Definite => "definite",
         }
     }
 }
@@ -135,14 +138,14 @@ pub struct Relations {
 impl Relations {
     /// Every relation possible, none definite — the honest answer when a
     /// bound is unknown.
-    const ALL_POSSIBLE: Relations = Relations {
+    const ALL_POSSIBLE: Self = Self {
         modalities: [Modality::Possible; 6],
     };
 
     /// A possible-set becomes modalities: the sole possible relation (when
     /// there is exactly one) holds for *every* completion pair, because the
     /// six relations are exhaustive and mutually exclusive.
-    fn from_possible(possible: [bool; 6]) -> Relations {
+    fn from_possible(possible: [bool; 6]) -> Self {
         let count = possible.iter().filter(|p| **p).count();
         let mut modalities = [Modality::Impossible; 6];
         for (m, p) in modalities.iter_mut().zip(possible) {
@@ -154,32 +157,37 @@ impl Relations {
                 };
             }
         }
-        Relations { modalities }
+        Self { modalities }
     }
 
     /// The modality of one relation.
-    pub fn modality(self, r: Relation) -> Modality {
+    #[must_use]
+    pub const fn modality(self, r: Relation) -> Modality {
         self.modalities[r.idx()]
     }
 
     /// True if the relation holds for at least one completion pair
     /// (i.e. its modality is `Possible` or `Definite`).
+    #[must_use]
     pub fn is_possible(self, r: Relation) -> bool {
         self.modality(r) != Modality::Impossible
     }
 
     /// True if the relation holds for every completion pair.
+    #[must_use]
     pub fn is_definite(self, r: Relation) -> bool {
         self.modality(r) == Modality::Definite
     }
 
     /// True if the relation holds for no completion pair.
+    #[must_use]
     pub fn is_impossible(self, r: Relation) -> bool {
         self.modality(r) == Modality::Impossible
     }
 
     /// The one relation that definitely holds, if any. At most one relation
     /// can be definite; only `Before`, `After` and `Equal` ever are.
+    #[must_use]
     pub fn definite(self) -> Option<Relation> {
         Relation::ALL.into_iter().find(|r| self.is_definite(*r))
     }
@@ -222,7 +230,7 @@ enum Ext {
     PosInf,
 }
 
-fn ext(b: Bound) -> Option<Ext> {
+const fn ext(b: Bound) -> Option<Ext> {
     match b {
         Bound::NegativeInfinity => Some(Ext::NegInf),
         Bound::Date(d) => Some(Ext::Day(d)),
@@ -247,14 +255,13 @@ fn succ(e: Ext) -> Ext {
             day: 1,
         })
     } else {
-        match d.year.checked_add(1) {
-            Some(year) => Ext::Day(BoundDate {
+        d.year.checked_add(1).map_or(Ext::PosInf, |year| {
+            Ext::Day(BoundDate {
                 year,
                 month: 1,
                 day: 1,
-            }),
-            None => Ext::PosInf,
-        }
+            })
+        })
     }
 }
 
@@ -274,14 +281,13 @@ fn pred(e: Ext) -> Ext {
             day: last_day(month, is_leap(d.year)),
         })
     } else {
-        match d.year.checked_sub(1) {
-            Some(year) => Ext::Day(BoundDate {
+        d.year.checked_sub(1).map_or(Ext::NegInf, |year| {
+            Ext::Day(BoundDate {
                 year,
                 month: 12,
                 day: 31,
-            }),
-            None => Ext::NegInf,
-        }
+            })
+        })
     }
 }
 
@@ -313,7 +319,8 @@ impl Edtf {
     /// assert!(c.relation(&d).is_possible(Relation::After));
     /// assert!(c.relation(&d).is_possible(Relation::Contains));
     /// ```
-    pub fn relation(&self, other: &Edtf) -> Relations {
+    #[must_use]
+    pub fn relation(&self, other: &Self) -> Relations {
         let a = self.bounds();
         let b = other.bounds();
         let (Some(a1), Some(a2), Some(b1), Some(b2)) = (

@@ -6,9 +6,9 @@ Command-line EDTF (ISO 8601-2:2019 Annex A) toolbox over `edtf-core`:
   positioned errors.
 - `canonical` — spec-preferred rendering.
 - `level` — minimum conformance level (0/1/2).
-- `bounds` — earliest/latest calendar day of an expression.
+- `info` — JSON summary of each input (kind, precision, bounds, flags).
 - `relation` — three-valued temporal relations between two expressions.
-- `julian` — proleptic Julian (Old Style) → Gregorian conversion via
+- `from-julian` — proleptic Julian (Old Style) → Gregorian conversion via
   `edtf-calendars`.
 
 Run `edtf --help` for usage. Part of the

@@ -1,9 +1,15 @@
 //! Interop cross-check against the test suites of the reference
-//! implementations the ecosystem runs: edtf.js (LoC's de facto reference)
-//! and python-edtf. Rules, same as the LoC corpus: ISO 8601-2:2019 Annex A
+//! implementations the ecosystem runs: edtf.js (`LoC`'s de facto reference)
+//! and python-edtf. Rules, same as the `LoC` corpus: ISO 8601-2:2019 Annex A
 //! wins on any disagreement; every divergence is a D-decision in
 //! docs/spec-notes.md (D3, D5, D6, D15, D17, D21, D22); implementation
 //! extensions are recorded as must-rejects, not adopted.
+
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
 
 use edtf_core::Edtf;
 use serde_json::Value;

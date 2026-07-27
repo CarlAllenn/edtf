@@ -19,7 +19,7 @@
 //! - Open interval ends (`..`) are infinite; unknown ends (empty) are
 //!   [`Bound::Unknown`].
 
-use crate::types::*;
+use crate::types::{Date, DateField, Edtf, Interval, IntervalEndpoint, Set, SetElement, YearKind};
 
 /// A concrete proleptic-Gregorian calendar day used as a bound.
 ///
@@ -73,12 +73,13 @@ pub struct Bounds {
 
 impl Edtf {
     /// Compute the earliest/latest calendar-day bounds of this expression.
+    #[must_use]
     pub fn bounds(&self) -> Bounds {
         match self {
-            Edtf::Date(d) => date_bounds(d),
-            Edtf::DateTime(dt) => date_bounds(&dt.date),
-            Edtf::Interval(iv) => interval_bounds(iv),
-            Edtf::Set(s) => set_bounds(s),
+            Self::Date(d) => date_bounds(d),
+            Self::DateTime(dt) => date_bounds(&dt.date),
+            Self::Interval(iv) => interval_bounds(iv),
+            Self::Set(s) => set_bounds(s),
         }
     }
 }
@@ -116,10 +117,18 @@ pub(crate) fn date_bounds(d: &Date) -> Bounds {
 
     // Standard year with significant digits is year-precision only.
     if d.year.significant_digits.is_some() {
-        let value = d.year.value().expect("S excludes X digits");
-        // Four-digit years can never overflow the sweep.
-        let (lo, hi) = significant_range(value, d.year.significant_digits, 4)
-            .expect("four-digit sweep fits in i64");
+        // S excludes X digits, and a four-digit sweep cannot overflow; if
+        // either invariant ever broke, bound to Unknown rather than panic.
+        let Some((lo, hi)) = d
+            .year
+            .value()
+            .and_then(|value| significant_range(value, d.year.significant_digits, 4))
+        else {
+            return Bounds {
+                earliest: Bound::Unknown,
+                latest: Bound::Unknown,
+            };
+        };
         return Bounds {
             earliest: Bound::Date(BoundDate {
                 year: lo,
@@ -135,7 +144,7 @@ pub(crate) fn date_bounds(d: &Date) -> Bounds {
     }
 
     // Season / sub-year grouping in the month slot.
-    if let Some(code) = d.month.as_ref().and_then(DateField::value) {
+    if let Some(code) = d.month.and_then(DateField::value) {
         if (21..=41).contains(&code) {
             return season_bounds(d, code);
         }
@@ -169,7 +178,7 @@ pub(crate) fn big_width(kind: &YearKind) -> u32 {
     }
 }
 
-fn decimal_digits(mut v: u64) -> u32 {
+const fn decimal_digits(mut v: u64) -> u32 {
     let mut n = 1;
     while v >= 10 {
         v /= 10;
@@ -195,7 +204,7 @@ pub(crate) fn significant_range(
     let Some(modulus) = 10i64.checked_pow(sweep) else {
         return Some((value, value));
     };
-    let mag = value.unsigned_abs() as i64;
+    let mag = i64::try_from(value.unsigned_abs()).ok()?;
     let lo_mag = mag - mag.rem_euclid(modulus);
     let hi_mag = lo_mag.checked_add(modulus - 1)?;
     Some(if value < 0 {
@@ -249,14 +258,13 @@ fn season_bounds(d: &Date, code: u8) -> Bounds {
 /// the extremes are independent per digit).
 fn year_range(d: &Date) -> (i64, i64) {
     match d.year.kind {
-        YearKind::Standard { negative, digits } => {
-            if let Some(v) = d.year.value() {
-                (v, v)
-            } else {
+        YearKind::Standard { negative, digits } => d.year.value().map_or_else(
+            || {
                 debug_assert!(!negative);
                 (year_value(digits, 0), year_value(digits, 9))
-            }
-        },
+            },
+            |v| (v, v),
+        ),
         _ => unreachable!("caller checked Standard"),
     }
 }
@@ -273,18 +281,18 @@ fn year_value(digits: [Option<u8>; 4], fill: u8) -> i64 {
 /// counter values yield consecutive matching years in order.
 fn year_completions(digits: [Option<u8>; 4], ascending: bool) -> impl Iterator<Item = i64> {
     let mut masked = [0usize; 4];
-    let mut n = 0;
+    let mut n: u32 = 0;
     for (i, d) in digits.iter().enumerate() {
         if d.is_none() {
-            masked[n] = i;
+            masked[n as usize] = i;
             n += 1;
         }
     }
-    let count = 10u32.pow(n as u32);
+    let count = 10u32.pow(n);
     (0..count).map(move |i| {
         let mut rem = if ascending { i } else { count - 1 - i };
         let mut filled = digits.map(|d| d.unwrap_or(0));
-        for pos in masked[..n].iter().rev() {
+        for pos in masked[..n as usize].iter().rev() {
             filled[*pos] = (rem % 10) as u8;
             rem /= 10;
         }
@@ -327,7 +335,7 @@ fn extremum_in_year(d: &Date, y: i64, ascending: bool) -> Option<BoundDate> {
             }
         });
     };
-    let mut months = month_candidates_of(month);
+    let mut months = month_candidates_of(*month);
     if !ascending {
         months.reverse();
     }
@@ -347,7 +355,7 @@ fn extremum_in_year(d: &Date, y: i64, ascending: bool) -> Option<BoundDate> {
                 }
             });
         };
-        let mut days = day_candidates_of(day);
+        let mut days = day_candidates_of(*day);
         if !ascending {
             days.reverse();
         }
@@ -364,26 +372,26 @@ fn extremum_in_year(d: &Date, y: i64, ascending: bool) -> Option<BoundDate> {
     None
 }
 
-pub(crate) fn month_candidates_of(f: &DateField) -> alloc::vec::Vec<u8> {
-    match f.value() {
-        Some(v) => alloc::vec![v],
-        None => (1..=12).filter(|v| field_matches(f, *v)).collect(),
-    }
+pub(crate) fn month_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
+    f.value().map_or_else(
+        || (1..=12).filter(|v| field_matches(f, *v)).collect(),
+        |v| alloc::vec![v],
+    )
 }
 
-pub(crate) fn day_candidates_of(f: &DateField) -> alloc::vec::Vec<u8> {
-    match f.value() {
-        Some(v) => alloc::vec![v],
-        None => (1..=31).filter(|v| field_matches(f, *v)).collect(),
-    }
+pub(crate) fn day_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
+    f.value().map_or_else(
+        || (1..=31).filter(|v| field_matches(f, *v)).collect(),
+        |v| alloc::vec![v],
+    )
 }
 
-fn field_matches(f: &DateField, v: u8) -> bool {
+fn field_matches(f: DateField, v: u8) -> bool {
     f.digits[0].is_none_or(|p| p == v / 10) && f.digits[1].is_none_or(|p| p == v % 10)
 }
 
 /// Proleptic Gregorian leap rule on the astronomical year number.
-pub(crate) fn is_leap(y: i64) -> bool {
+pub(crate) const fn is_leap(y: i64) -> bool {
     y.rem_euclid(4) == 0 && (y.rem_euclid(100) != 0 || y.rem_euclid(400) == 0)
 }
 
@@ -429,14 +437,8 @@ fn set_bounds(s: &Set) -> Bounds {
             SetElement::OnOrAfter(d) => (date_bounds(d).earliest, Bound::PositiveInfinity),
             SetElement::Range(a, b) => (date_bounds(a).earliest, date_bounds(b).latest),
         };
-        earliest = Some(match earliest {
-            None => e,
-            Some(cur) => min_bound(cur, e),
-        });
-        latest = Some(match latest {
-            None => l,
-            Some(cur) => max_bound(cur, l),
-        });
+        earliest = Some(earliest.map_or(e, |cur| min_bound(cur, e)));
+        latest = Some(latest.map_or(l, |cur| max_bound(cur, l)));
     }
     Bounds {
         earliest: earliest.unwrap_or(Bound::Unknown),

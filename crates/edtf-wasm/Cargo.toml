@@ -1,6 +1,7 @@
 [package]
 name = "edtf-wasm"
-version = "0.2.0"
+version = "0.3.0"
+readme = "README.md"
 description = "WebAssembly bindings for edtf-core: EDTF (ISO 8601-2) validation for JavaScript."
 keywords = ["edtf", "date", "iso8601", "wasm", "javascript"]
 categories = ["date-and-time", "wasm", "web-programming"]

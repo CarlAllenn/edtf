@@ -1,6 +1,7 @@
 [package]
 name = "edtf-calendars"
 version = "0.1.0"
+readme = "README.md"
 description = "Proleptic Julian (Old Style) to Gregorian conversion at the EDTF ingest boundary. Deterministic arithmetic, no_std, zero dependencies."
 keywords = ["edtf", "julian", "gregorian", "calendar", "no-std"]
 categories = ["date-and-time", "no-std"]

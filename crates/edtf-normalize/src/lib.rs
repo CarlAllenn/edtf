@@ -140,76 +140,78 @@ pub enum Note {
 
 impl Note {
     /// The N-decision in `docs/normalize-notes.md` this note cites, if any.
-    pub fn decision(self) -> Option<&'static str> {
+    #[must_use]
+    pub const fn decision(self) -> Option<&'static str> {
         match self {
-            Note::AlreadyValidEdtf => None,
-            Note::CenturyPartInterval | Note::ModifierDropped => Some("N1"),
-            Note::CenturyMask | Note::BcCenturyInterval => Some("N2"),
-            Note::AstronomicalYear => Some("N3"),
-            Note::ElidedEndYear => Some("N4"),
-            Note::NumericUnambiguous
-            | Note::NumericResolvedByOption
-            | Note::NumericResolvedByLocale
-            | Note::NumericOrderIrrelevant
-            | Note::NumericOrderAmbiguous => Some("N5"),
-            Note::DecadeAmbiguity | Note::DefaultCenturyApplied | Note::DecadeOfCentury => {
+            Self::AlreadyValidEdtf => None,
+            Self::CenturyPartInterval | Self::ModifierDropped => Some("N1"),
+            Self::CenturyMask | Self::BcCenturyInterval => Some("N2"),
+            Self::AstronomicalYear => Some("N3"),
+            Self::ElidedEndYear => Some("N4"),
+            Self::NumericUnambiguous
+            | Self::NumericResolvedByOption
+            | Self::NumericResolvedByLocale
+            | Self::NumericOrderIrrelevant
+            | Self::NumericOrderAmbiguous => Some("N5"),
+            Self::DecadeAmbiguity | Self::DefaultCenturyApplied | Self::DecadeOfCentury => {
                 Some("N6")
             },
-            Note::SeasonCode => Some("N7"),
-            Note::OpenInterval => Some("N8"),
-            Note::MissingYearMasked => Some("N9"),
-            Note::QualifierDistributed => Some("N10"),
-            Note::SeasonRangeCollision => Some("N13"),
-            Note::OrAlternatives => Some("N14"),
-            Note::RomanCentury => Some("N15"),
-            Note::EndpointYearDistributed => Some("N16"),
-            Note::CrossYearSeason => Some("N17"),
+            Self::SeasonCode => Some("N7"),
+            Self::OpenInterval => Some("N8"),
+            Self::MissingYearMasked => Some("N9"),
+            Self::QualifierDistributed => Some("N10"),
+            Self::SeasonRangeCollision => Some("N13"),
+            Self::OrAlternatives => Some("N14"),
+            Self::RomanCentury => Some("N15"),
+            Self::EndpointYearDistributed => Some("N16"),
+            Self::CrossYearSeason => Some("N17"),
         }
     }
 
     /// A short human-readable explanation of the note.
-    pub fn message(self) -> &'static str {
+    #[must_use]
+    pub const fn message(self) -> &'static str {
         match self {
-            Note::AlreadyValidEdtf => "input was already valid EDTF; canonicalized",
-            Note::CenturyPartInterval => {
+            Self::AlreadyValidEdtf => "input was already valid EDTF; canonicalized",
+            Self::CenturyPartInterval => {
                 "part-of-century phrase mapped to a decade-rounded year interval"
             },
-            Note::ModifierDropped => {
+            Self::ModifierDropped => {
                 "early/mid/late modifier dropped (sub-decade precision would be false)"
             },
-            Note::CenturyMask => "Nth century runs (N-1)01 to N00, so it masks as (N-1)XX",
-            Note::BcCenturyInterval => {
+            Self::CenturyMask => "Nth century runs (N-1)01 to N00, so it masks as (N-1)XX",
+            Self::BcCenturyInterval => {
                 "BC centuries cannot be digit-masked; emitted as an exact year interval"
             },
-            Note::AstronomicalYear => "BC year converted to astronomical numbering (year 0 exists)",
-            Note::ElidedEndYear => "elided end year inherits the start year's century",
-            Note::NumericUnambiguous => {
+            Self::AstronomicalYear => "BC year converted to astronomical numbering (year 0 exists)",
+            Self::ElidedEndYear => "elided end year inherits the start year's century",
+            Self::NumericUnambiguous => {
                 "field order provable from the input (year-first layout or a value over 12)"
             },
-            Note::NumericResolvedByOption => "field order resolved by caller options",
-            Note::NumericResolvedByLocale => "field order implied by the language's convention",
-            Note::NumericOrderIrrelevant => "day and month are equal; order cannot matter",
-            Note::NumericOrderAmbiguous => "day/month order unknowable from the input",
-            Note::DecadeAmbiguity => "decade form has more than one plausible reading",
-            Note::DefaultCenturyApplied => "bare decade resolved by the configured century",
-            Note::SeasonCode => "season mapped to ISO 8601-2 sub-year grouping code",
-            Note::OpenInterval => "before/after expressed as an open interval",
-            Note::MissingYearMasked => "no year given; year masked as XXXX",
-            Note::QualifierDistributed => {
+            Self::NumericResolvedByOption => "field order resolved by caller options",
+            Self::NumericResolvedByLocale => "field order implied by the language's convention",
+            Self::NumericOrderIrrelevant => "day and month are equal; order cannot matter",
+            Self::NumericOrderAmbiguous => "day/month order unknowable from the input",
+            Self::DecadeAmbiguity => "decade form has more than one plausible reading",
+            Self::DefaultCenturyApplied => "bare decade resolved by the configured century",
+            Self::SeasonCode => "season mapped to ISO 8601-2 sub-year grouping code",
+            Self::OpenInterval => "before/after expressed as an open interval",
+            Self::MissingYearMasked => "no year given; year masked as XXXX",
+            Self::QualifierDistributed => {
                 "whole-expression qualifier applied to every interval endpoint"
             },
-            Note::OrAlternatives => "alternatives reported instead of picking one",
-            Note::SeasonRangeCollision => {
+            Self::OrAlternatives => "alternatives reported instead of picking one",
+            Self::SeasonRangeCollision => {
                 "NNNN-NN is both an EDTF sub-year code and a plausible year range"
             },
-            Note::RomanCentury => {
+            Self::RomanCentury => {
                 "century read from a Roman numeral (Cyrillic lookalike letters tolerated)"
             },
-            Note::DecadeOfCentury => "decade tied to the explicitly named century",
-            Note::EndpointYearDistributed => {
+            Self::DecadeOfCentury => "decade tied to the explicitly named century",
+            Self::EndpointYearDistributed => {
                 "endpoint without a year inherited the other endpoint's stated year"
             },
-            Note::CrossYearSeason => {
+            Self::CrossYearSeason => {
                 "season-year-pair prose may name one boundary-spanning season or a range"
             },
         }
@@ -266,12 +268,13 @@ pub enum NoMatchReason {
 }
 
 impl NoMatchReason {
-    /// The N-decision in `docs/normalize-notes.md` this reason cites, if any.
-    pub fn decision(self) -> Option<&'static str> {
+    /// The N-decision in `docs/normalize-notes.md` this reason cites.
+    #[must_use]
+    pub const fn decision(self) -> &'static str {
         match self {
-            NoMatchReason::OutOfGrammar => Some("N11"),
-            NoMatchReason::ExplicitNoDate => Some("N12"),
-            NoMatchReason::ImpossibleDate => Some("N14"),
+            Self::OutOfGrammar => "N11",
+            Self::ExplicitNoDate => "N12",
+            Self::ImpossibleDate => "N14",
         }
     }
 }
@@ -293,12 +296,14 @@ pub enum Outcome {
 }
 
 /// Normalize English date prose with default options.
+#[must_use]
 pub fn normalize(input: &str) -> Outcome {
-    engine::run(input, &Options::default())
+    engine::run(input, Options::default())
 }
 
 /// Normalize with explicit [`Options`] (language, numeric order, default
 /// century).
-pub fn normalize_with(input: &str, options: &Options) -> Outcome {
+#[must_use]
+pub fn normalize_with(input: &str, options: Options) -> Outcome {
     engine::run(input, options)
 }

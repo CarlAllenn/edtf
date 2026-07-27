@@ -9,7 +9,7 @@
 //! itself out.
 
 use edtf_calendars::{
-    convert, gregorian_to_julian, is_julian_leap, julian_to_gregorian, Converted, JulianDate,
+    Converted, JulianDate, convert, gregorian_to_julian, is_julian_leap, julian_to_gregorian,
 };
 use edtf_core::BoundDate;
 use proptest::prelude::*;
@@ -24,7 +24,7 @@ fn julian_last_day(month: u8, leap: bool) -> u8 {
             } else {
                 28
             }
-        }
+        },
         _ => unreachable!("month is 1-12"),
     }
 }

@@ -3,9 +3,8 @@
 //! ISO 8601-2 grounds exactly three value-set constructions, and
 //! [`Edtf::values`] enumerates those and nothing else:
 //!
-//! - set range elements expand inclusively at their own precision (§6.3 c,
-//!   §6.4 Example 1: `{1667,1668,1670..1672}` *is* `{1667,1668,1670,1671,
-//!   1672}`);
+//! - set range elements expand inclusively at their own precision (§6.3 c, §6.4
+//!   Example 1: `{1667,1668,1670..1672}` *is* `{1667,1668,1670,1671, 1672}`);
 //! - unspecified digits denote their valid completions (§9.2.2 Example 6:
 //!   `1560-X2` is "either February or December");
 //! - significant-digit years denote a swept year range (§4.4.3: `1950S2` is
@@ -24,10 +23,12 @@
 
 use alloc::vec::Vec;
 
-use crate::bounds::{
-    big_width, day_candidates_of, is_leap, last_day, month_candidates_of, significant_range,
+use crate::{
+    bounds::{
+        big_width, day_candidates_of, is_leap, last_day, month_candidates_of, significant_range,
+    },
+    types::*,
 };
-use crate::types::*;
 
 /// Why [`Edtf::values`] cannot enumerate an expression (decisions D24–D25).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -51,7 +52,7 @@ impl core::fmt::Display for Unenumerable {
             Unenumerable::Interval => "intervals denote an extent, not enumerable values",
             Unenumerable::UnboundedSetElement => {
                 "'..'-open set elements denote unbounded value sets"
-            }
+            },
             Unenumerable::YearRangeOverflow => "year range exceeds the computable range",
         })
     }
@@ -82,7 +83,13 @@ impl Edtf {
     /// let months: Vec<String> = masked.values().unwrap().map(|v| v.to_string()).collect();
     /// assert_eq!(
     ///     months,
-    ///     ["1985-01-31", "1985-03-31", "1985-05-31", "1985-07-31", "1985-08-31"]
+    ///     [
+    ///         "1985-01-31",
+    ///         "1985-03-31",
+    ///         "1985-05-31",
+    ///         "1985-07-31",
+    ///         "1985-08-31"
+    ///     ]
     /// );
     ///
     /// // Intervals denote one extent, not a collection:
@@ -101,11 +108,11 @@ impl Edtf {
                         SetElement::Range(a, b) => ElementValues::Range(RangeWalk::new(a, b)?),
                         SetElement::OnOrBefore(_) | SetElement::OnOrAfter(_) => {
                             return Err(Unenumerable::UnboundedSetElement);
-                        }
+                        },
                     });
                 }
                 State::Set { queue, idx: 0 }
-            }
+            },
         };
         Ok(Values { state })
     }
@@ -252,7 +259,7 @@ impl DateValues {
                     month: None,
                     day: None,
                 })
-            }
+            },
             DateValues::Masked(m) => m.next(),
         }
     }
@@ -294,7 +301,7 @@ impl Masked {
             (None, YearKind::Standard { digits, .. }) => {
                 let n = digits.iter().filter(|x| x.is_none()).count() as u32;
                 (MaskedYear::Pattern(digits), 10u32.pow(n))
-            }
+            },
             (None, _) => unreachable!("only standard years carry X digits"),
         };
         Masked {
@@ -324,7 +331,7 @@ impl Masked {
                     }
                 }
                 filled.iter().fold(0, |acc, d| acc * 10 + i64::from(*d))
-            }
+            },
         }
     }
 
@@ -418,7 +425,7 @@ impl RangeWalk {
                     } else {
                         (y, m + 1, 0)
                     }
-                }
+                },
                 Precision::Day => {
                     if d < last_day(m, is_leap(y)) {
                         (y, m, d + 1)
@@ -427,7 +434,7 @@ impl RangeWalk {
                     } else {
                         (y, m + 1, 1)
                     }
-                }
+                },
                 Precision::Season => unreachable!("D27 rejects season range endpoints"),
             };
         }

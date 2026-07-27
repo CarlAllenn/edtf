@@ -114,18 +114,18 @@ fn mutated_valid_inputs_never_panic() {
                     // replace
                     let i = rng.below(bytes.len());
                     bytes[i] = ALPHABET[rng.below(ALPHABET.len())];
-                }
+                },
                 1 => {
                     // insert
                     let i = rng.below(bytes.len() + 1);
                     bytes.insert(i, ALPHABET[rng.below(ALPHABET.len())]);
-                }
+                },
                 _ if !bytes.is_empty() => {
                     // delete
                     let i = rng.below(bytes.len());
                     bytes.remove(i);
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
         if let Ok(s) = core::str::from_utf8(&bytes) {

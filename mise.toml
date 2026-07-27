@@ -56,6 +56,7 @@ gitleaks = "8.30.1"                                # secret scan: staged (univer
 lychee = "0.24.2"                                  # link check, weekly scheduled.yml only
 
 # Build/CI tools (previously ad-hoc `cargo install` in workflows / unpinned)
-"cargo:cargo-pgrx" = "0.19.1"        # postgres extension harness (ci.yml matrix)
-"cargo:cargo-fuzz" = "0.13.2"        # libFuzzer driver (fuzz.yml); runs cargo +nightly itself
-"aqua:rustwasm/wasm-pack" = "0.15.0" # npm-ready wasm package build (task wasm:pack)
+"cargo:cargo-pgrx" = "0.19.1"            # postgres extension harness (ci.yml matrix)
+"aqua:taiki-e/cargo-llvm-cov" = "0.6.21" # per-PR coverage visibility (no threshold gate)
+"cargo:cargo-fuzz" = "0.13.2"            # libFuzzer driver (fuzz.yml); runs cargo +nightly itself
+"aqua:rustwasm/wasm-pack" = "0.15.0"     # npm-ready wasm package build (task wasm:pack)

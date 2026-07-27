@@ -34,7 +34,7 @@ fn last_day(month: u8, leap: bool) -> u8 {
             } else {
                 28
             }
-        }
+        },
         _ => unreachable!("month is 1-12"),
     }
 }
@@ -147,7 +147,7 @@ fn exp_year() -> impl Strategy<Value = Year> {
         proptest::option::of(1u32..=18),
         qualifier(),
     )
-        .prop_filter("|value| must exceed 9999", |(mag, _, exp, _, _)| {
+        .prop_filter("|value| must exceed 9999", |(mag, _, exp, ..)| {
             i128::from(*mag) * 10i128.pow(*exp) > 9999
         })
         .prop_map(|(mag, negative, exponent, sig, qualifier)| {
@@ -608,7 +608,7 @@ fn expected_unenumerable(v: &Edtf) -> Option<Unenumerable> {
                 let err = match e {
                     SetElement::OnOrBefore(_) | SetElement::OnOrAfter(_) => {
                         Some(Unenumerable::UnboundedSetElement)
-                    }
+                    },
                     SetElement::Date(d) => date_unenumerable(d),
                     SetElement::Range(a, b) => {
                         if a.year.value().is_none() || b.year.value().is_none() {
@@ -616,14 +616,14 @@ fn expected_unenumerable(v: &Edtf) -> Option<Unenumerable> {
                         } else {
                             None
                         }
-                    }
+                    },
                 };
                 if err.is_some() {
                     return err;
                 }
             }
             None
-        }
+        },
     }
 }
 

@@ -3,8 +3,8 @@
 //! `tests/oracle.rs`; generative invariants in `tests/props.rs`.
 
 use edtf_calendars::{
-    convert, gregorian_to_julian, is_julian_leap, julian_to_gregorian, CalendarError, Converted,
-    JulianDate,
+    CalendarError, Converted, JulianDate, convert, gregorian_to_julian, is_julian_leap,
+    julian_to_gregorian,
 };
 use edtf_core::BoundDate;
 

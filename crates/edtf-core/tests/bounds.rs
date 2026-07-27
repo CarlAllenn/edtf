@@ -16,7 +16,7 @@ fn bound_str(b: Bound) -> String {
             } else {
                 d.to_string()
             }
-        }
+        },
         Bound::NegativeInfinity => "-infinity".into(),
         Bound::PositiveInfinity => "infinity".into(),
         Bound::Unknown => "unknown".into(),

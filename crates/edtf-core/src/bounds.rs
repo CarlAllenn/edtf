@@ -8,12 +8,12 @@
 //! Conventions (documented, spec-derived where the spec speaks):
 //! - Bounds are day-granular; time-of-day refines within a day and does not
 //!   change them.
-//! - Qualification (`?~%`) does not move bounds: `1985~` still bounds to
-//!   the calendar year 1985 (ISO 8601-2 §8.4.2 NOTE — approximation widens
+//! - Qualification (`?~%`) does not move bounds: `1985~` still bounds to the
+//!   calendar year 1985 (ISO 8601-2 §8.4.2 NOTE — approximation widens
 //!   confidence, not the written value).
-//! - Unspecified digits bound to the full set of matching completions;
-//!   `XXXX` is "a four-digit year" (ISO 8601-2 §9.2.1.2 c 4), so it bounds
-//!   to 0000-01-01..9999-12-31.
+//! - Unspecified digits bound to the full set of matching completions; `XXXX`
+//!   is "a four-digit year" (ISO 8601-2 §9.2.1.2 c 4), so it bounds to
+//!   0000-01-01..9999-12-31.
 //! - Season/sub-year boundaries use the fixed month table in
 //!   `docs/spec-notes.md` D12 (ISO leaves seasons location-dependent).
 //! - Open interval ends (`..`) are infinite; unknown ends (empty) are
@@ -256,7 +256,7 @@ fn year_range(d: &Date) -> (i64, i64) {
                 debug_assert!(!negative);
                 (year_value(digits, 0), year_value(digits, 9))
             }
-        }
+        },
         _ => unreachable!("caller checked Standard"),
     }
 }
@@ -397,7 +397,7 @@ pub(crate) fn last_day(month: u8, leap: bool) -> u8 {
             } else {
                 28
             }
-        }
+        },
         _ => unreachable!("month is 1-12"),
     }
 }
@@ -424,7 +424,7 @@ fn set_bounds(s: &Set) -> Bounds {
             SetElement::Date(d) => {
                 let b = date_bounds(d);
                 (b.earliest, b.latest)
-            }
+            },
             SetElement::OnOrBefore(d) => (Bound::NegativeInfinity, date_bounds(d).latest),
             SetElement::OnOrAfter(d) => (date_bounds(d).earliest, Bound::PositiveInfinity),
             SetElement::Range(a, b) => (date_bounds(a).earliest, date_bounds(b).latest),

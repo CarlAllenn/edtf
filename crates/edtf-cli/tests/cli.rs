@@ -1,7 +1,9 @@
 //! End-to-end tests of the `edtf` binary via std::process.
 
-use std::io::Write;
-use std::process::{Command, Stdio};
+use std::{
+    io::Write,
+    process::{Command, Stdio},
+};
 
 fn edtf(args: &[&str]) -> (String, String, bool) {
     let out = Command::new(env!("CARGO_BIN_EXE_edtf"))

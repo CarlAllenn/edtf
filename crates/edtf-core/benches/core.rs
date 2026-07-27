@@ -3,9 +3,10 @@
 //! `task bench` (or `cargo bench -p edtf-core`) and publish the numbers in
 //! the README on release.
 
-use criterion::{criterion_group, criterion_main, Criterion};
-use edtf_core::Edtf;
 use std::hint::black_box;
+
+use criterion::{Criterion, criterion_group, criterion_main};
+use edtf_core::Edtf;
 
 /// (label, input) pairs chosen to cover the grammar, not to flatter it:
 /// level 0 calendar forms, level 1 qualification/masks, and the level 2

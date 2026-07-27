@@ -9,16 +9,18 @@
 //! check (it rejects e.g. a constructed February 31) and the proof that
 //! every output is valid EDTF.
 
-use alloc::format;
-use alloc::string::{String, ToString};
-use alloc::vec;
-use alloc::vec::Vec;
+use alloc::{
+    format,
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
 
 use edtf_core::{Date, DateField, Edtf, Interval, IntervalEndpoint, Qualifier, Year, YearKind};
 
-use crate::tables::{lang_for, season_name, Lang, Span};
 use crate::{
     Ambiguous, Interpretation, NoMatchReason, Normalized, Note, NumericOrder, Options, Outcome,
+    tables::{Lang, Span, lang_for, season_name},
 };
 
 // ---------------------------------------------------------------------------
@@ -399,7 +401,7 @@ fn decade_tok(t: &str, lang: &Lang) -> Option<DecadeParse> {
             } else {
                 Some(DecadeParse::Exact(prefix3))
             }
-        }
+        },
         2 => Some(DecadeParse::Bare((v / 10) as u8)),
         _ => None,
     }
@@ -437,7 +439,7 @@ fn decade_single(parse: DecadeParse, opts: &Options) -> Single {
                 };
                 Single::Many(vec![mk(180 + u16::from(tens)), mk(190 + u16::from(tens))])
             }
-        }
+        },
     }
 }
 
@@ -564,7 +566,7 @@ fn numeric_token(t: &str, opts: &Options, lang: &Lang) -> Option<Single> {
                 (true, true) => None,
                 (false, false) if a == b => {
                     Some(Single::One(day_first?, vec![Note::NumericOrderIrrelevant]))
-                }
+                },
                 (false, false) => {
                     let (order, note) = match (opts.numeric_order, lang.implied_numeric_order) {
                         (Some(o), _) => (Some(o), Note::NumericResolvedByOption),
@@ -575,7 +577,7 @@ fn numeric_token(t: &str, opts: &Options, lang: &Lang) -> Option<Single> {
                         Some(NumericOrder::DayFirst) => Some(Single::One(day_first?, vec![note])),
                         Some(NumericOrder::MonthFirst) => {
                             Some(Single::One(month_first?, vec![note]))
-                        }
+                        },
                         None => {
                             let cand = |e: Option<Expr>, reading: &str| {
                                 e.map(|expr| Candidate {
@@ -592,11 +594,11 @@ fn numeric_token(t: &str, opts: &Options, lang: &Lang) -> Option<Single> {
                             .flatten()
                             .collect();
                             (!readings.is_empty()).then_some(Single::Many(readings))
-                        }
+                        },
                     }
-                }
+                },
             }
-        }
+        },
         // Month and year: 7/2008, 04.1985.
         ([pa, py], &[m, y]) if pa.len() <= 2 && py.len() == 4 && (1..=12).contains(&m) => Some(
             Single::One(Expr::Date(date_ym(y as i32, m as u8)?), Vec::new()),
@@ -618,7 +620,7 @@ fn numeric_token(t: &str, opts: &Options, lang: &Lang) -> Option<Single> {
                     } else {
                         None
                     }
-                }
+                },
                 2 => {
                     let elided = y / 100 * 100 + b as i32;
                     if elided <= y || b <= 12 {
@@ -646,10 +648,10 @@ fn numeric_token(t: &str, opts: &Options, lang: &Lang) -> Option<Single> {
                             vec![Note::ElidedEndYear],
                         ))
                     }
-                }
+                },
                 _ => None,
             }
-        }
+        },
         _ => None,
     }
 }
@@ -771,7 +773,7 @@ fn parse_single(s: &str, opts: &Options, lang: &Lang, in_range: bool) -> Option<
                 ));
             }
             numeric_token(t, opts, lang)
-        }
+        },
         [a, b] => {
             // "spring 2001" / "весной 2001" / "2001 spring" (N7).
             for (st, yt) in [(a, b), (b, a)] {
@@ -805,7 +807,7 @@ fn parse_single(s: &str, opts: &Options, lang: &Lang, in_range: bool) -> Option<
                 }
             }
             None
-        }
+        },
         [a, b, c] => {
             // "12 April 1985" / "April 12, 1985" / "12-го апреля 1985".
             for (dt, mt) in [(a, b), (b, a)] {
@@ -816,7 +818,7 @@ fn parse_single(s: &str, opts: &Options, lang: &Lang, in_range: bool) -> Option<
                 }
             }
             None
-        }
+        },
         _ => None,
     }
 }
@@ -855,13 +857,13 @@ fn with_note(s: Single, note: Note) -> Single {
         Single::One(e, mut notes) => {
             notes.push(note);
             Single::One(e, notes)
-        }
+        },
         Single::Many(mut cands) => {
             for c in &mut cands {
                 c.notes.push(note);
             }
             Single::Many(cands)
-        }
+        },
     }
 }
 
@@ -917,7 +919,7 @@ fn parse_or(toks: &[&str], opts: &Options, lang: &Lang) -> Option<Single> {
                     reading: String::from("alternative"),
                     notes,
                 });
-            }
+            },
             Single::Many(_) => return None, // nested ambiguity: refuse to guess
         }
     }
@@ -986,7 +988,7 @@ fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option
                 ns.push(Note::RomanCentury);
             }
             (Single::One(expr, ns), r)
-        }
+        },
         // "1914 - 18": the right side elides the left year's century (N4).
         (Some(l), None) => {
             let Single::One(Expr::Date(ld), _) = &l else {
@@ -1028,7 +1030,7 @@ fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option
             }
             let r = Single::One(Expr::Date(date_y(elided)?), vec![Note::ElidedEndYear]);
             (l, r)
-        }
+        },
         (None, None) => return None,
     };
 
@@ -1057,7 +1059,7 @@ fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option
             let mut notes = ln;
             notes.extend(rn);
             Some(Single::One(expr, notes))
-        }
+        },
         (Single::One(Expr::Date(ld), ln), Single::Many(cands)) => {
             // A candidate eliminated here (reversed range) is a prose error
             // poisoning the whole input, not a disambiguation — refuse.
@@ -1077,7 +1079,7 @@ fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option
                 })
                 .collect();
             (out.len() == total && !out.is_empty()).then_some(Single::Many(out))
-        }
+        },
         (Single::Many(cands), Single::One(Expr::Date(rd), rn)) => {
             let total = cands.len();
             let out: Vec<Candidate> = cands
@@ -1095,7 +1097,7 @@ fn endpoint_pair(left: &str, right: &str, opts: &Options, lang: &Lang) -> Option
                 })
                 .collect();
             (out.len() == total && !out.is_empty()).then_some(Single::Many(out))
-        }
+        },
         // A two-sided ambiguity would be a 4-way product — refuse to guess.
         _ => None,
     }
@@ -1178,7 +1180,7 @@ fn map_single(single: Single, wrap: impl Fn(Expr) -> Option<Expr>, note: Note) -
             let expr = wrap(expr)?;
             notes.push(note);
             Some(Single::One(expr, notes))
-        }
+        },
         Single::Many(cands) => {
             let out: Vec<Candidate> = cands
                 .into_iter()
@@ -1189,7 +1191,7 @@ fn map_single(single: Single, wrap: impl Fn(Expr) -> Option<Expr>, note: Note) -
                 })
                 .collect();
             (!out.is_empty()).then_some(Single::Many(out))
-        }
+        },
     }
 }
 
@@ -1229,7 +1231,7 @@ fn qualify_expr(e: &mut Expr, q: Qualifier) {
                     qualify_date(d, q);
                 }
             }
-        }
+        },
     }
 }
 
@@ -1266,10 +1268,10 @@ fn outcome_from(single: Single, q: Qualifier, base_notes: Vec<Note>) -> Outcome 
                         value,
                         notes: all,
                     })
-                }
+                },
                 None => no_match(NoMatchReason::ImpossibleDate),
             }
-        }
+        },
         Single::Many(cands) => {
             // Fail closed: a reading that dies at the calendar check
             // (February 30, a reversed masked range) is a prose error, and
@@ -1303,12 +1305,12 @@ fn outcome_from(single: Single, q: Qualifier, base_notes: Vec<Note>) -> Outcome 
                         value: i.value,
                         notes: i.notes,
                     })
-                }
+                },
                 _ => Outcome::Ambiguous(Ambiguous {
                     interpretations: interps,
                 }),
             }
-        }
+        },
     }
 }
 

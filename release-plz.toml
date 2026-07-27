@@ -1,0 +1,39 @@
+# Release canon: renovate-config templates/release/ — the Release PR is the
+# commitment point (recorded doctrine, 2026-07-27): merging it publishes,
+# tags and creates the GitHub release. Nothing publishes outside that path.
+
+[workspace]
+# Breaking-change detection in the release preview (issue #7 canon).
+semver_check = true
+changelog_update = true
+git_release_enable = true
+git_tag_enable = true
+# Publish only on Release PR merge, never on arbitrary pushes to main.
+release_always = false
+publish_timeout = "30m"
+
+[changelog]
+protect_breaking_commits = true
+
+# Unified version: one number, one tag, all five workspace crates
+# (edtf-postgres rides the same number, bumped in the Release PR by hand —
+# it lives outside this workspace; see .github/workflows/release-plz.yml).
+[[package]]
+name = "edtf-core"
+version_group = "edtf"
+
+[[package]]
+name = "edtf-calendars"
+version_group = "edtf"
+
+[[package]]
+name = "edtf-normalize"
+version_group = "edtf"
+
+[[package]]
+name = "edtf-wasm"
+version_group = "edtf"
+
+[[package]]
+name = "edtf-cli"
+version_group = "edtf"

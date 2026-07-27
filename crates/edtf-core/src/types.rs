@@ -28,7 +28,8 @@ impl core::fmt::Display for ParseError {
 
 impl core::error::Error for ParseError {}
 
-/// Uncertainty (`?`), approximation (`~`), or both (`%`), per ISO 8601-2 §3.2.6.
+/// Uncertainty (`?`), approximation (`~`), or both (`%`), per ISO 8601-2
+/// §3.2.6.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Qualifier {
@@ -99,7 +100,7 @@ impl Year {
                     v = v * 10 + i64::from(d?);
                 }
                 Some(if negative { -v } else { v })
-            }
+            },
             YearKind::Big { value } => Some(value),
             YearKind::Exponential {
                 significand,
@@ -391,7 +392,7 @@ fn interval_level(iv: &Interval) -> u8 {
             IntervalEndpoint::Open | IntervalEndpoint::Unknown => 1,
             IntervalEndpoint::OnOrBefore(d) | IntervalEndpoint::OnOrAfter(d) => {
                 2u8.max(date_level(d, true))
-            }
+            },
             IntervalEndpoint::Date(d) => date_level(d, true),
         });
     }
@@ -405,7 +406,7 @@ fn date_level(d: &Date, in_interval: bool) -> u8 {
             if negative {
                 level = level.max(1);
             }
-        }
+        },
         YearKind::Big { .. } => level = level.max(1),
         YearKind::Exponential { .. } => level = level.max(2),
     }
@@ -475,9 +476,5 @@ fn mask_level(d: &Date) -> u8 {
                 year_x,
                 [false, false, false, true] | [false, false, true, true]
             ));
-    if level1 {
-        1
-    } else {
-        2
-    }
+    if level1 { 1 } else { 2 }
 }

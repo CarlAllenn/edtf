@@ -8,7 +8,7 @@
 //! validating constructors.
 
 use edtf_core::Edtf;
-use edtf_normalize::{normalize, normalize_with, Language, Options, Outcome};
+use edtf_normalize::{Language, Options, Outcome, normalize, normalize_with};
 use proptest::prelude::*;
 
 /// Assert a Normalized outcome and re-parse the output in core.
@@ -18,7 +18,7 @@ fn assert_normalized(input: &str, expected: &str, opts: &Options) {
             assert_eq!(n.edtf, expected, "input: {input:?}");
             let parsed = Edtf::parse(&n.edtf).expect("output must parse in core");
             assert_eq!(parsed, n.value, "value/edtf mismatch for {input:?}");
-        }
+        },
         other => panic!("expected Normalized for {input:?}, got {other:?}"),
     }
 }
@@ -104,11 +104,16 @@ proptest! {
         // first half ∪ second half.
         let s = (n as i32 - 1) * 100 + 1;
         let e = n as i32 * 100;
-        assert_normalized(&format!("early {n}th century"), &format!("{s:04}/{:04}", s + 29), &en());
-        assert_normalized(&format!("mid {n}th century"), &format!("{:04}/{:04}", s + 30, s + 69), &en());
-        assert_normalized(&format!("late {n}th century"), &format!("{:04}/{e:04}", s + 70), &en());
-        assert_normalized(&format!("first half of the {n}th century"), &format!("{s:04}/{:04}", s + 49), &en());
-        assert_normalized(&format!("second half of the {n}th century"), &format!("{:04}/{e:04}", s + 50), &en());
+        let early = format!("{s:04}/{:04}", s + 29);
+        let mid = format!("{:04}/{:04}", s + 30, s + 69);
+        let late = format!("{:04}/{e:04}", s + 70);
+        let first_half = format!("{s:04}/{:04}", s + 49);
+        let second_half = format!("{:04}/{e:04}", s + 50);
+        assert_normalized(&format!("early {n}th century"), &early, &en());
+        assert_normalized(&format!("mid {n}th century"), &mid, &en());
+        assert_normalized(&format!("late {n}th century"), &late, &en());
+        assert_normalized(&format!("first half of the {n}th century"), &first_half, &en());
+        assert_normalized(&format!("second half of the {n}th century"), &second_half, &en());
     }
 
     #[test]

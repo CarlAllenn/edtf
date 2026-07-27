@@ -16,9 +16,11 @@
 //! attached to results.
 //!
 //! ```
-//! use edtf_normalize::{normalize, Outcome};
+//! use edtf_normalize::{Outcome, normalize};
 //!
-//! let Outcome::Normalized(n) = normalize("circa 1920") else { panic!() };
+//! let Outcome::Normalized(n) = normalize("circa 1920") else {
+//!     panic!()
+//! };
 //! assert_eq!(n.edtf, "1920~");
 //!
 //! // "12/04/1985" is DD/MM or MM/DD — the form gets both readings, not a guess.
@@ -29,8 +31,7 @@
 
 extern crate alloc;
 
-use alloc::string::String;
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 
 use edtf_core::Edtf;
 
@@ -78,9 +79,11 @@ pub struct Options {
 pub enum Note {
     /// The input was already valid EDTF; only canonicalized.
     AlreadyValidEdtf,
-    /// early/mid/late or half-of-century mapped to a decade-rounded interval (N1).
+    /// early/mid/late or half-of-century mapped to a decade-rounded interval
+    /// (N1).
     CenturyPartInterval,
-    /// An early/mid/late modifier was dropped as false precision and recorded (N1).
+    /// An early/mid/late modifier was dropped as false precision and recorded
+    /// (N1).
     ModifierDropped,
     /// "19th century" → `18XX`: centuries run 1801–1900 (N2).
     CenturyMask,
@@ -113,7 +116,8 @@ pub enum Note {
     OpenInterval,
     /// A date with no year: the year is masked as `XXXX` (N9).
     MissingYearMasked,
-    /// A whole-expression qualifier was distributed over interval endpoints (N10).
+    /// A whole-expression qualifier was distributed over interval endpoints
+    /// (N10).
     QualifierDistributed,
     /// "X or Y": each alternative reported instead of picking one (N14).
     OrAlternatives,
@@ -150,7 +154,7 @@ impl Note {
             | Note::NumericOrderAmbiguous => Some("N5"),
             Note::DecadeAmbiguity | Note::DefaultCenturyApplied | Note::DecadeOfCentury => {
                 Some("N6")
-            }
+            },
             Note::SeasonCode => Some("N7"),
             Note::OpenInterval => Some("N8"),
             Note::MissingYearMasked => Some("N9"),
@@ -169,19 +173,19 @@ impl Note {
             Note::AlreadyValidEdtf => "input was already valid EDTF; canonicalized",
             Note::CenturyPartInterval => {
                 "part-of-century phrase mapped to a decade-rounded year interval"
-            }
+            },
             Note::ModifierDropped => {
                 "early/mid/late modifier dropped (sub-decade precision would be false)"
-            }
+            },
             Note::CenturyMask => "Nth century runs (N-1)01 to N00, so it masks as (N-1)XX",
             Note::BcCenturyInterval => {
                 "BC centuries cannot be digit-masked; emitted as an exact year interval"
-            }
+            },
             Note::AstronomicalYear => "BC year converted to astronomical numbering (year 0 exists)",
             Note::ElidedEndYear => "elided end year inherits the start year's century",
             Note::NumericUnambiguous => {
                 "field order provable from the input (year-first layout or a value over 12)"
-            }
+            },
             Note::NumericResolvedByOption => "field order resolved by caller options",
             Note::NumericResolvedByLocale => "field order implied by the language's convention",
             Note::NumericOrderIrrelevant => "day and month are equal; order cannot matter",
@@ -193,21 +197,21 @@ impl Note {
             Note::MissingYearMasked => "no year given; year masked as XXXX",
             Note::QualifierDistributed => {
                 "whole-expression qualifier applied to every interval endpoint"
-            }
+            },
             Note::OrAlternatives => "alternatives reported instead of picking one",
             Note::SeasonRangeCollision => {
                 "NNNN-NN is both an EDTF sub-year code and a plausible year range"
-            }
+            },
             Note::RomanCentury => {
                 "century read from a Roman numeral (Cyrillic lookalike letters tolerated)"
-            }
+            },
             Note::DecadeOfCentury => "decade tied to the explicitly named century",
             Note::EndpointYearDistributed => {
                 "endpoint without a year inherited the other endpoint's stated year"
-            }
+            },
             Note::CrossYearSeason => {
                 "season-year-pair prose may name one boundary-spanning season or a range"
-            }
+            },
         }
     }
 }

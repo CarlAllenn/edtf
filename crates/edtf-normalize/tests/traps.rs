@@ -3,7 +3,7 @@
 //! here must parse in edtf-core at the asserted level — enforced inline.
 
 use edtf_core::Edtf;
-use edtf_normalize::{normalize, normalize_with, Note, NumericOrder, Options, Outcome};
+use edtf_normalize::{Note, NumericOrder, Options, Outcome, normalize, normalize_with};
 
 /// Assert a Normalized outcome with the given canonical EDTF and level.
 #[track_caller]
@@ -14,7 +14,7 @@ fn ok(input: &str, expected: &str, level: u8) {
             let parsed = Edtf::parse(&n.edtf).expect("output must parse in core");
             assert_eq!(parsed, n.value, "value/edtf mismatch for {input:?}");
             assert_eq!(parsed.level(), level, "level mismatch for {input:?}");
-        }
+        },
         other => panic!("expected Normalized for {input:?}, got {other:?}"),
     }
 }
@@ -32,7 +32,7 @@ fn ambiguous(input: &str, expected: &[&str]) {
                     i.value
                 );
             }
-        }
+        },
         other => panic!("expected Ambiguous for {input:?}, got {other:?}"),
     }
 }
@@ -114,7 +114,7 @@ fn bare_decades_are_ambiguous() {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, "198X");
             assert!(n.notes.contains(&Note::DefaultCenturyApplied));
-        }
+        },
         other => panic!("expected Normalized, got {other:?}"),
     }
 }
@@ -215,7 +215,7 @@ fn numeric_dates_report_ambiguity() {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, "1985-04-12");
             assert!(n.notes.contains(&Note::NumericResolvedByOption));
-        }
+        },
         other => panic!("expected Normalized, got {other:?}"),
     }
     // A field over 12 proves the order (N5).
@@ -301,7 +301,7 @@ fn whole_expression_qualifier_distributes() {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, "1914~/1918~");
             assert!(n.notes.contains(&Note::QualifierDistributed));
-        }
+        },
         other => panic!("expected Normalized, got {other:?}"),
     }
     ok("1868-1871?", "1868?/1871?", 1);
@@ -409,8 +409,9 @@ fn notes_cite_decisions() {
     let Outcome::Normalized(n) = normalize("500 BC") else {
         panic!("expected Normalized");
     };
-    assert!(n
-        .notes
-        .iter()
-        .any(|note| note.decision() == Some("N3") && !note.message().is_empty()));
+    assert!(
+        n.notes
+            .iter()
+            .any(|note| note.decision() == Some("N3") && !note.message().is_empty())
+    );
 }

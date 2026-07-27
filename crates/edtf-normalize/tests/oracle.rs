@@ -8,7 +8,7 @@
 //! the python-edtf-ism we do not adopt); `not_adopted` are python-edtf's
 //! substring-extraction and guessing behaviors, enforced as NoMatch (N11).
 
-use edtf_normalize::{normalize, Outcome};
+use edtf_normalize::{Outcome, normalize};
 use serde_json::Value;
 
 fn fixture() -> Value {
@@ -35,7 +35,7 @@ fn agreements_match_python_edtf() {
         match normalize(input) {
             Outcome::Normalized(n) => {
                 assert_eq!(n.edtf, expected, "agreement broken for {input:?}");
-            }
+            },
             other => panic!("expected Normalized({expected}) for {input:?}, got {other:?}"),
         }
     }
@@ -72,7 +72,7 @@ fn divergences_produce_our_documented_output() {
                 assert_eq!(n.edtf, ours, "divergence drifted for {input:?}");
                 // The whole point of diverging: our output differs from theirs.
                 assert_ne!(n.edtf, case["theirs"].as_str().expect("theirs"));
-            }
+            },
             ("ambiguous", Outcome::Ambiguous(a)) => {
                 let want: Vec<&str> = case["ours_interpretations"]
                     .as_array()
@@ -82,7 +82,7 @@ fn divergences_produce_our_documented_output() {
                     .collect();
                 let got: Vec<&str> = a.interpretations.iter().map(|i| i.edtf.as_str()).collect();
                 assert_eq!(got, want, "divergence drifted for {input:?}");
-            }
+            },
             (kind, other) => panic!("expected {kind} for {input:?}, got {other:?}"),
         }
     }
@@ -118,7 +118,7 @@ fn every_normalized_or_ambiguous_output_parses_in_core() {
                 let parsed = edtf_core::Edtf::parse(&n.edtf)
                     .unwrap_or_else(|e| panic!("{input:?} emitted unparsable {:?}: {e}", n.edtf));
                 assert_eq!(parsed, n.value);
-            }
+            },
             Outcome::Ambiguous(a) => {
                 for i in &a.interpretations {
                     let parsed = edtf_core::Edtf::parse(&i.edtf).unwrap_or_else(|e| {
@@ -126,8 +126,8 @@ fn every_normalized_or_ambiguous_output_parses_in_core() {
                     });
                     assert_eq!(parsed, i.value);
                 }
-            }
-            Outcome::NoMatch { .. } => {}
+            },
+            Outcome::NoMatch { .. } => {},
         }
     }
 }

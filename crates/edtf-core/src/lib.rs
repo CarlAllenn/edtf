@@ -7,11 +7,11 @@
 //! behind the optional `serde` feature.
 //!
 //! ```
-//! use edtf_core::{Edtf, Bound};
+//! use edtf_core::{Bound, Edtf};
 //!
-//! assert!(edtf_core::is_valid("1985-04-12"));           // level 0
-//! assert!(edtf_core::is_valid("2004-06~-11"));          // level 2 group qualification
-//! assert!(!edtf_core::is_valid("1985-02-30"));          // no such calendar day
+//! assert!(edtf_core::is_valid("1985-04-12")); // level 0
+//! assert!(edtf_core::is_valid("2004-06~-11")); // level 2 group qualification
+//! assert!(!edtf_core::is_valid("1985-02-30")); // no such calendar day
 //!
 //! let d = Edtf::parse("1985-04-12?").unwrap();
 //! assert_eq!(d.level(), 1);
@@ -19,8 +19,26 @@
 //!
 //! // Every expression maps to earliest/latest calendar-day bounds:
 //! let decade = Edtf::parse("156X").unwrap().bounds();
-//! assert_eq!(format!("{}", match decade.earliest { Bound::Date(d) => d, _ => panic!() }), "1560-01-01");
-//! assert_eq!(format!("{}", match decade.latest   { Bound::Date(d) => d, _ => panic!() }), "1569-12-31");
+//! assert_eq!(
+//!     format!(
+//!         "{}",
+//!         match decade.earliest {
+//!             Bound::Date(d) => d,
+//!             _ => panic!(),
+//!         }
+//!     ),
+//!     "1560-01-01"
+//! );
+//! assert_eq!(
+//!     format!(
+//!         "{}",
+//!         match decade.latest {
+//!             Bound::Date(d) => d,
+//!             _ => panic!(),
+//!         }
+//!     ),
+//!     "1569-12-31"
+//! );
 //!
 //! // Display renders the canonical (spec-preferred) form:
 //! let messy = Edtf::parse("?2004-?06-?11").unwrap();

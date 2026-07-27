@@ -6,10 +6,10 @@
 //! yields a semantically identical value; spellings that mean the same
 //! thing (`?2004-?06-?11` vs `2004-06-11?`) normalize to one form.
 
-use crate::types::*;
-use alloc::string::String;
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 use core::fmt::{self, Display, Formatter, Write as _};
+
+use crate::types::*;
 
 impl Display for Edtf {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -44,16 +44,16 @@ fn year_body(year: &Year) -> String {
                     None => s.push('X'),
                 }
             }
-        }
+        },
         YearKind::Big { value } => {
             let _ = write!(s, "Y{value}");
-        }
+        },
         YearKind::Exponential {
             significand,
             exponent,
         } => {
             let _ = write!(s, "Y{significand}E{exponent}");
-        }
+        },
     }
     if let Some(p) = year.significant_digits {
         let _ = write!(s, "S{p}");
@@ -146,7 +146,7 @@ impl Display for Time {
                 } else {
                     write!(f, "{sign}{h:02}:{m:02}")
                 }
-            }
+            },
         }
     }
 }

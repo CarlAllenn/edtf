@@ -4,7 +4,7 @@
 //! locale-implied day-first numeric order (N5).
 
 use edtf_core::Edtf;
-use edtf_normalize::{normalize_with, Language, NoMatchReason, Note, Options, Outcome};
+use edtf_normalize::{Language, NoMatchReason, Note, Options, Outcome, normalize_with};
 
 fn ru() -> Options {
     Options {
@@ -21,7 +21,7 @@ fn ok(input: &str, expected: &str, level: u8) {
             let parsed = Edtf::parse(&n.edtf).expect("output must parse in core");
             assert_eq!(parsed, n.value, "value/edtf mismatch for {input:?}");
             assert_eq!(parsed.level(), level, "level mismatch for {input:?}");
-        }
+        },
         other => panic!("expected Normalized for {input:?}, got {other:?}"),
     }
 }
@@ -32,7 +32,7 @@ fn ambiguous(input: &str, expected: &[&str]) {
         Outcome::Ambiguous(a) => {
             let got: Vec<&str> = a.interpretations.iter().map(|i| i.edtf.as_str()).collect();
             assert_eq!(got, expected, "input: {input:?}");
-        }
+        },
         other => panic!("expected Ambiguous for {input:?}, got {other:?}"),
     }
 }
@@ -97,7 +97,7 @@ fn roman_centuries() {
         Outcome::Normalized(n) => {
             assert!(n.notes.contains(&Note::RomanCentury));
             assert!(n.notes.iter().any(|note| note.decision() == Some("N15")));
-        }
+        },
         other => panic!("expected Normalized, got {other:?}"),
     }
 }
@@ -186,7 +186,7 @@ fn numeric_dates_use_locale_day_first() {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, "1985-04-12");
             assert!(n.notes.contains(&Note::NumericResolvedByLocale));
-        }
+        },
         other => panic!("expected Normalized, got {other:?}"),
     }
     // An explicit option still overrides the locale.

@@ -13,9 +13,12 @@
 //! expressions from stdin — handy for validating whole data files:
 //! `cut -f3 dates.tsv | edtf validate -`.
 
+use std::{
+    io::{BufRead, Write},
+    process::ExitCode,
+};
+
 use edtf_core::{Bound, Edtf};
-use std::io::{BufRead, Write};
-use std::process::ExitCode;
 
 const USAGE: &str = "\
 edtf — EDTF (ISO 8601-2:2019 Annex A) validator, levels 0-2
@@ -49,19 +52,19 @@ fn main() -> ExitCode {
         None | Some("-h" | "--help" | "help") => {
             print!("{USAGE}");
             ExitCode::SUCCESS
-        }
+        },
         Some("-V" | "--version") => {
             println!("edtf {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
-        }
+        },
         Some(cmd @ ("validate" | "canonical" | "level" | "info" | "from-julian")) => {
             run(cmd, &args[1..])
-        }
+        },
         Some("relation") => relation(&args[1..]),
         Some(other) => {
             eprintln!("edtf: unknown command {other:?}\n\n{USAGE}");
             ExitCode::FAILURE
-        }
+        },
     }
 }
 
@@ -82,7 +85,7 @@ fn run(cmd: &str, rest: &[String]) -> ExitCode {
                 Err(e) => {
                     eprintln!("edtf: stdin: {e}");
                     return ExitCode::FAILURE;
-                }
+                },
             };
             if !line.is_empty() {
                 handle(&line);
@@ -111,7 +114,7 @@ fn relation(rest: &[String]) -> ExitCode {
         Err(e) => {
             eprintln!("{s}: {e}");
             None
-        }
+        },
     };
     let (Some(a), Some(b)) = (parse(a), parse(b)) else {
         return ExitCode::FAILURE;
@@ -130,7 +133,7 @@ fn process(cmd: &str, input: &str, out: &mut impl Write) -> bool {
         Err(e) => {
             eprintln!("{input}: {e}");
             return false;
-        }
+        },
     };
     let line = match cmd {
         "validate" => format!("{input}: ok (level {})", parsed.level()),
@@ -152,11 +155,11 @@ fn from_julian(input: &str, out: &mut impl Write) -> bool {
         Ok(edtf_calendars::Converted::Day(d)) => writeln!(out, "{d}").is_ok(),
         Ok(edtf_calendars::Converted::Span { earliest, latest }) => {
             writeln!(out, "{earliest}/{latest}").is_ok()
-        }
+        },
         Err(e) => {
             eprintln!("{input}: {e}");
             false
-        }
+        },
     }
 }
 
@@ -178,7 +181,7 @@ fn parse_julian_parts(input: &str) -> Option<(i64, Option<u8>, Option<u8>)> {
         None => Some(None),
         Some(s) if s.len() == 2 && s.bytes().all(|b| b.is_ascii_digit()) => {
             Some(Some(s.parse::<u8>().ok()?))
-        }
+        },
         Some(_) => None,
     };
     let month = two_digit(parts.next())?;

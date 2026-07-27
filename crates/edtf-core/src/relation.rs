@@ -14,20 +14,21 @@
 //!
 //! - Qualification (`?~%`) never moves bounds (ISO 8601-2 §8.4.2 NOTE), so
 //!   `1985?` relates exactly as `1985`.
-//! - Only *before*, *after* and *equal* can ever be Definite: any region
-//!   wider than one day admits single-day completions, so containment or
-//!   overlap can never be forced.
+//! - Only *before*, *after* and *equal* can ever be Definite: any region wider
+//!   than one day admits single-day completions, so containment or overlap can
+//!   never be forced.
 //! - Interval endpoint linkage is coarsened away: `2004/2005` vs `2004-06`
-//!   reports possibly-before, although every true completion of the
-//!   interval straddles June 2004. Everything flows through the bounds
-//!   region.
-//! - Unknown bounds propagate as possible-everything, never Definite —
-//!   even where the other endpoint could in principle constrain them.
-//! - Bounds are day-granular (time of day refines within a day), so
-//!   same-day datetimes are definitely equal.
+//!   reports possibly-before, although every true completion of the interval
+//!   straddles June 2004. Everything flows through the bounds region.
+//! - Unknown bounds propagate as possible-everything, never Definite — even
+//!   where the other endpoint could in principle constrain them.
+//! - Bounds are day-granular (time of day refines within a day), so same-day
+//!   datetimes are definitely equal.
 
-use crate::bounds::{is_leap, last_day, Bound, BoundDate};
-use crate::types::Edtf;
+use crate::{
+    bounds::{Bound, BoundDate, is_leap, last_day},
+    types::Edtf,
+};
 
 /// One of the six coarsened Allen relations between two time regions.
 ///

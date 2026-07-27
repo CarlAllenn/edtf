@@ -12,32 +12,37 @@
 //!
 //! The traps this crate exists to get right, each pinned by tests:
 //!
-//! - The Julian–Gregorian offset is not constant: 10 days at the 1582
-//!   reform, 11 from Gregorian 1700-03-01, 12 from 1800, 13 from 1900 —
-//!   1 March 1917 O.S. is 14 March 1917 N.S.
-//! - The Julian leap rule is every-4-years with no century exception:
-//!   Julian 1900-02-29 exists and converts (to Gregorian 1900-03-13),
-//!   while Gregorian 1900-02-29 stays invalid.
-//! - Proleptic in both directions: defined before 1582 too. The offset
-//!   shrinks going back, the calendars coincide across the 3rd century,
-//!   and the Julian calendar is *ahead* before that (Julian 0001-01-01 is
-//!   Gregorian 0000-12-30).
+//! - The Julian–Gregorian offset is not constant: 10 days at the 1582 reform,
+//!   11 from Gregorian 1700-03-01, 12 from 1800, 13 from 1900 — 1 March 1917
+//!   O.S. is 14 March 1917 N.S.
+//! - The Julian leap rule is every-4-years with no century exception: Julian
+//!   1900-02-29 exists and converts (to Gregorian 1900-03-13), while Gregorian
+//!   1900-02-29 stays invalid.
+//! - Proleptic in both directions: defined before 1582 too. The offset shrinks
+//!   going back, the calendars coincide across the 3rd century, and the Julian
+//!   calendar is *ahead* before that (Julian 0001-01-01 is Gregorian
+//!   0000-12-30).
 //! - Year boundaries shift: Julian late-December dates land in the next
-//!   Gregorian year — 25 December 1917 O.S. is 7 January 1918 N.S., the
-//!   classic Orthodox-Christmas off-by-one-year error.
-//! - Astronomical year numbering throughout (year 0 exists), consistent
-//!   with `edtf-core`.
-//! - **Precision honesty**: a Julian year or month does not convert to a
-//!   single Gregorian year or month (Julian 1917 spans Gregorian
-//!   1917-01-14..1918-01-13). [`convert`] returns sub-day-precision
-//!   inputs as an explicit earliest/latest [`Converted::Span`] — never a
-//!   silently "converted" year.
+//!   Gregorian year — 25 December 1917 O.S. is 7 January 1918 N.S., the classic
+//!   Orthodox-Christmas off-by-one-year error.
+//! - Astronomical year numbering throughout (year 0 exists), consistent with
+//!   `edtf-core`.
+//! - **Precision honesty**: a Julian year or month does not convert to a single
+//!   Gregorian year or month (Julian 1917 spans Gregorian
+//!   1917-01-14..1918-01-13). [`convert`] returns sub-day-precision inputs as
+//!   an explicit earliest/latest [`Converted::Span`] — never a silently
+//!   "converted" year.
 //!
 //! ```
-//! use edtf_calendars::{convert, julian_to_gregorian, Converted, JulianDate};
+//! use edtf_calendars::{Converted, JulianDate, convert, julian_to_gregorian};
 //!
 //! // The October Revolution: 25 October 1917 O.S. = 7 November 1917 N.S.
-//! let g = julian_to_gregorian(JulianDate { year: 1917, month: 10, day: 25 }).unwrap();
+//! let g = julian_to_gregorian(JulianDate {
+//!     year: 1917,
+//!     month: 10,
+//!     day: 25,
+//! })
+//! .unwrap();
 //! assert_eq!(g.to_string(), "1917-11-07");
 //!
 //! // A Julian *year* is honestly a Gregorian range, EDTF `1917-01-14/1918-01-13`:
@@ -148,7 +153,7 @@ fn last_day(month: u8, leap: bool) -> u8 {
             } else {
                 28
             }
-        }
+        },
         _ => unreachable!("caller validated month"),
     }
 }
@@ -282,7 +287,7 @@ pub fn convert(year: i64, month: Option<u8>, day: Option<u8>) -> Result<Converte
                     day: last_day(month, leap),
                 })?,
             })
-        }
+        },
         (None, None) => Ok(Converted::Span {
             earliest: julian_to_gregorian(JulianDate {
                 year,

@@ -69,6 +69,16 @@ jobs:
           install_args: rust cargo:cargo-fuzz
           cache_key_prefix: mise-fuzz-v1
       - run: rustup toolchain install nightly --profile minimal
+      # Corpus persists across runs via the cache (CI-cached, never
+      # committed — issue #8 decision: machine-generated inputs stay out of
+      # the tree; seeds below are the human-curated part). run_id keys make
+      # every save unique; restore takes the newest prefix match.
+      - name: Restore corpus
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: fuzz-corpus-${{ matrix.target }}-
       - name: Seed corpus from fixtures
         run: ./fuzz/seed.sh
       - name: Fuzz
@@ -79,6 +89,21 @@ jobs:
           cargo +nightly fuzz run "$FUZZ_TARGET" -- \
             -max_total_time="$MAX_TOTAL_TIME" \
             -timeout=5
+      # Minimize before saving: keeps the cached corpus dense (every entry
+      # exercises a distinct path) instead of growing without bound.
+      - name: Minimize corpus
+        if: always()
+        env:
+          FUZZ_TARGET: ${{ matrix.target }}
+        run: cargo +nightly fuzz cmin "$FUZZ_TARGET"
+      # Save even on crash-failure runs — a crash-finding corpus is the most
+      # valuable corpus there is.
+      - name: Save corpus
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
       - name: Upload crash artifacts
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

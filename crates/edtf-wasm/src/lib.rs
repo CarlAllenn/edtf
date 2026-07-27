@@ -9,12 +9,12 @@
 //! - `relation(a, b)` → JSON string of a [`RelationSummary`] or `undefined`
 //! - `normalize(input, options?)` → JSON string of a [`NormalizeSummary`]
 //!   (always returns; `{"kind":"noMatch"}` when the prose is outside the
-//!   grammar). `options` is a JSON string:
-//!   `{"language": "en"|"ru", "numericOrder": "dayFirst"|"monthFirst",
-//!   "defaultCentury": 1900}` — all fields optional.
+//!   grammar). `options` is a JSON string: `{"language": "en"|"ru",
+//!   "numericOrder": "dayFirst"|"monthFirst", "defaultCentury": 1900}` — all
+//!   fields optional.
 
 use edtf_core::{Bound, Edtf, Relation};
-use edtf_normalize::{normalize_with, Language, NoMatchReason, NumericOrder, Options, Outcome};
+use edtf_normalize::{Language, NoMatchReason, NumericOrder, Options, Outcome, normalize_with};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
 

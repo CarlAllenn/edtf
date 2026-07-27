@@ -8,13 +8,12 @@
 //! - `edtf_min(text) → date` / `edtf_max(text) → date` — earliest/latest
 //!   calendar day. Open ends map to `-infinity`/`infinity`; unknown ends and
 //!   years outside the Postgres date range map to NULL.
-//! - `edtf_relation(text, text) → text[]` — three-valued temporal relation:
-//!   one entry per non-impossible relation, `definitely_<r>` when it holds
-//!   for every completion, `possibly_<r>` otherwise.
+//! - `edtf_relation(text, text) → text[]` — three-valued temporal relation: one
+//!   entry per non-impossible relation, `definitely_<r>` when it holds for
+//!   every completion, `possibly_<r>` otherwise.
 
 use edtf_core::{Bound, Edtf, Modality};
-use pgrx::datetime::Date;
-use pgrx::prelude::*;
+use pgrx::{datetime::Date, prelude::*};
 
 ::pgrx::pg_module_magic!(name, version);
 
@@ -49,7 +48,7 @@ fn to_pg_date(b: Bound) -> Option<Date> {
             }
             let year = i32::try_from(d.year).ok()?;
             Date::new(year, d.month, d.day).ok()
-        }
+        },
     }
 }
 
@@ -192,9 +191,10 @@ mod tests {
     #[pg_test]
     fn range_query_shape() {
         // The intended usage pattern: index-friendly range overlap.
-        assert!(q_bool(
-            "SELECT daterange(edtf_min('156X'), edtf_max('156X'), '[]') @> DATE '1965-06-15' IS FALSE"
-        ));
+        assert!(q_bool(concat!(
+            "SELECT daterange(edtf_min('156X'), edtf_max('156X'), '[]') ",
+            "@> DATE '1965-06-15' IS FALSE",
+        )));
         assert!(q_bool(
             "SELECT daterange(edtf_min('196X'), edtf_max('196X'), '[]') @> DATE '1965-06-15'"
         ));

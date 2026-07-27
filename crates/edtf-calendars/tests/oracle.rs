@@ -8,7 +8,7 @@
 //! non-goal), and these rows pin what the arithmetic must do *after* that
 //! resolution.
 
-use edtf_calendars::{gregorian_to_julian, julian_to_gregorian, JulianDate};
+use edtf_calendars::{JulianDate, gregorian_to_julian, julian_to_gregorian};
 use edtf_core::BoundDate;
 
 /// (Julian y, m, d, Gregorian y, m, d, what it is).

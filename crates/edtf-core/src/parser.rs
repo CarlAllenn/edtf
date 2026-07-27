@@ -8,10 +8,12 @@
 //! problem was detected; sub-parsers receive a `base` offset so positions
 //! stay absolute inside intervals, sets and date-times.
 
-use crate::bounds::{date_bounds, is_leap, Bound};
-use crate::types::*;
-use alloc::vec;
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
+
+use crate::{
+    bounds::{Bound, date_bounds, is_leap},
+    types::*,
+};
 
 pub(crate) fn parse(input: &str) -> Result<Edtf, ParseError> {
     if input.is_empty() {
@@ -141,8 +143,8 @@ impl<'a> Cur<'a> {
                             _ => "day must be two digits (or X)",
                         },
                         offset: self.base + self.i.saturating_sub(1),
-                    })
-                }
+                    });
+                },
             }
         }
         Ok(out)
@@ -176,8 +178,8 @@ pub(crate) fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
                 return Err(err(
                     c.pos().saturating_sub(1),
                     "year must have exactly four digits (or X)",
-                ))
-            }
+                ));
+            },
         }
     }
     let year_has_x = ydigits.iter().any(|d| d.is_none());
@@ -344,7 +346,7 @@ fn validate_month_day(
             if (21..=41).contains(&v) && day.is_some() {
                 return Err(err(day_off, "sub-year groupings cannot carry a day"));
             }
-        }
+        },
         None => {
             // Masked months match calendar months 01-12 only (decision D14);
             // sub-year codes must be written explicitly.
@@ -354,7 +356,7 @@ fn validate_month_day(
                     "no calendar month matches the unspecified digits",
                 ));
             }
-        }
+        },
     }
     if let Some(d) = day {
         if !day_has_valid_completion(year, m, d) {
@@ -400,13 +402,9 @@ fn day_has_valid_completion(year: &YearKind, m: &DateField, d: &DateField) -> bo
                         28
                     } else {
                         let leap = *leap_possible.get_or_insert_with(|| year_leap_possible(year));
-                        if leap {
-                            29
-                        } else {
-                            28
-                        }
+                        if leap { 29 } else { 28 }
                     }
-                }
+                },
                 _ => unreachable!("month candidates are 1-12"),
             };
             if dd <= max {
@@ -429,7 +427,7 @@ fn year_leap_possible(year: &YearKind) -> bool {
             } else {
                 (0..=9999i64).any(|y| year_matches(digits, y) && is_leap(y))
             }
-        }
+        },
         // Y-prefixed years never carry months, so this is only reachable in
         // theory; be permissive.
         YearKind::Big { value } => is_leap(*value),
@@ -646,12 +644,12 @@ fn parse_shift(s: &str, base: usize) -> Result<TimeShift, ParseError> {
         3 => {
             let h = shift_two(b, 1, base)?;
             (h, 0, true)
-        }
+        },
         6 if b[3] == b':' => {
             let h = shift_two(b, 1, base)?;
             let m = shift_two(b, 4, base)?;
             (h, m, false)
-        }
+        },
         _ => return Err(err(base, "time shift must be ±hh or ±hh:mm")),
     };
     if minutes > 59 {

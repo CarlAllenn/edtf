@@ -34,8 +34,6 @@ jobs:
       fail-fast: false
       matrix:
         target: [parse, roundtrip]
-    env:
-      MISE_DISABLE_TOOLS: cargo:cargo-pgrx,aqua:rustwasm/wasm-pack
     steps:
       # First step of every job, before checkout: runtime egress audit —
       # enforcement per issue #6 canon (allowlist derived from audit run;
@@ -66,6 +64,9 @@ jobs:
         with:
           # renovate: datasource=github-releases depName=jdx/mise
           version: 2026.7.12
+          # Single-purpose job: install only its own tools (canon rule,
+          # templates/ci/README.md).
+          install_args: rust cargo:cargo-fuzz
           cache_key_prefix: mise-fuzz-v1
       - run: rustup toolchain install nightly --profile minimal
       - name: Seed corpus from fixtures

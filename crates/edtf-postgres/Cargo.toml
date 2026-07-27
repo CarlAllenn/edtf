@@ -32,6 +32,11 @@ pgrx = "0.19.1"
 [dev-dependencies]
 pgrx-tests = "=0.19.1"
 
+[package.metadata.cargo-machete]
+# pgrx-tests has no direct `use`: `cargo pgrx test` links it as the test
+# harness, wired through the per-pg feature flags above.
+ignored = ["pgrx-tests"]
+
 [profile.dev]
 panic = "unwind"
 

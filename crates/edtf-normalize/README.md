@@ -5,7 +5,7 @@ Deterministic prose-date → EDTF normalizer: `"1980s"` → `198X`,
 the same answer on every keystroke. `no_std` + `alloc`, zero dependencies.
 
 Built for the human input boundary: values are constructed through
-[`edtf-core`](../edtf-core)'s model and rendered by its canonical `Display`,
+[`edtf-core`](https://crates.io/crates/edtf-core)'s model and rendered by its canonical `Display`,
 then re-parsed, so **every output is valid, canonical EDTF by construction**.
 
 The return type is honest — `Normalized { edtf, value, notes }`,
@@ -27,8 +27,9 @@ assert!(matches!(normalize("printed sometime after the war"), Outcome::NoMatch))
 Pattern tables are per-language (English and Russian today); adding a locale
 means adding one table struct, not touching the grammar. Every judgement call
 — century arithmetic, BC year-zero handling, season codes, ambiguity policy —
-is a numbered N-decision in [`docs/normalize-notes.md`](../../docs/normalize-notes.md),
+is a numbered N-decision in
+[`docs/normalize-notes.md`](https://github.com/CarlAllenn/edtf/blob/main/docs/normalize-notes.md),
 cited from the `Note` values attached to every result. Disagree with one?
 File an issue against the N-number.
 
-Exposed to JavaScript through [`edtf-wasm`](../edtf-wasm)'s `normalize()`.
+Exposed to JavaScript through [`edtf-wasm`](https://www.npmjs.com/package/edtf-wasm)'s `normalize()`.

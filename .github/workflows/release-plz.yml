@@ -40,13 +40,23 @@ jobs:
       contents: write # push the release branch
       pull-requests: write # open/update the Release PR
     steps:
-      # First step of every job, before checkout: runtime egress audit.
-      # AUDIT mode on the two release jobs until their first live runs
-      # derive the allowlist (recorded exception, same path #7 took for
-      # lychee; flip to block afterwards).
+      # First step of every job, before checkout: runtime egress enforcement.
+      # Allowlist derived from the observed egress of the first live runs
+      # (v1.0.0, 2026-07-27), closing the recorded audit-mode exception.
       - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            crates.io:443
+            index.crates.io:443
+            static.crates.io:443
+            static.rust-lang.org:443
+            mise.jdx.dev:443
+            mise-versions.jdx.dev:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
@@ -74,9 +84,28 @@ jobs:
       id-token: write # OIDC: crates.io + npm trusted publishing, attestations
       attestations: write # store build provenance for published artifacts
     steps:
+      # Egress allowlist from the observed v1.0.0 runs (2026-07-27): registry
+      # publishes, npm + sigstore (provenance/attestations), toolchain hosts.
       - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            uploads.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            crates.io:443
+            index.crates.io:443
+            static.crates.io:443
+            static.rust-lang.org:443
+            mise.jdx.dev:443
+            mise-versions.jdx.dev:443
+            registry.npmjs.org:443
+            fulcio.sigstore.dev:443
+            rekor.sigstore.dev:443
+            search.sigstore.dev:443
+            tuf-repo-cdn.sigstore.dev:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
@@ -132,14 +161,26 @@ jobs:
           else
             npm publish crates/edtf-wasm/pkg/
           fi
-      - name: Attest published artifacts
+      # Attest the registry's bytes, not a local re-package: what verifiers
+      # download is what gets signed. (The v1.0.0 crate attestations were
+      # produced from a re-package at a later commit and never matched —
+      # this fetch-then-attest shape is the fix.)
+      - name: Fetch published artifacts for attestation
         if: steps.release.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
         run: |
-          cargo package --workspace --allow-dirty
-          (cd crates/edtf-wasm/pkg && npm pack)
+          mkdir -p attest-artifacts
+          for dir in crates/*/; do
+            name=$(basename "$dir")
+            version=$(cargo pkgid --manifest-path "${dir}Cargo.toml" | sed 's/.*[@#]//')
+            curl -sfL --retry 5 --retry-delay 10 --retry-all-errors \
+              -o "attest-artifacts/${name}-${version}.crate" \
+              "https://static.crates.io/crates/${name}/${name}-${version}.crate"
+          done
+          wasm_v=$(node -p "require('./crates/edtf-wasm/pkg/package.json').version")
+          curl -sfL --retry 5 --retry-delay 10 --retry-all-errors \
+            -o "attest-artifacts/edtf-wasm-${wasm_v}.tgz" \
+            "https://registry.npmjs.org/edtf-wasm/-/edtf-wasm-${wasm_v}.tgz"
       - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         if: steps.release.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
         with:
-          subject-path: |
-            target/package/*.crate
-            crates/edtf-wasm/pkg/*.tgz
+          subject-path: attest-artifacts/*

@@ -1,6 +1,12 @@
 //! Spec-derived tests beyond the legacy corpus: Annex A examples, the
 //! reject list (spec-notes §5), and the D1-D17 decisions (spec-notes §9).
 
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
+
 use edtf_core::{Edtf, IntervalEndpoint, Precision, SetKind, is_valid, level};
 
 fn assert_level(s: &str, want: u8) {

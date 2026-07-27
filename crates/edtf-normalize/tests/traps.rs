@@ -2,6 +2,12 @@
 //! N-decision in docs/normalize-notes.md commits to. Every expected string
 //! here must parse in edtf-core at the asserted level — enforced inline.
 
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
+
 use edtf_core::Edtf;
 use edtf_normalize::{Note, NumericOrder, Options, Outcome, normalize, normalize_with};
 
@@ -110,7 +116,7 @@ fn bare_decades_are_ambiguous() {
         default_century: Some(1900),
         ..Options::default()
     };
-    match normalize_with("the 80s", &opts) {
+    match normalize_with("the 80s", opts) {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, "198X");
             assert!(n.notes.contains(&Note::DefaultCenturyApplied));
@@ -211,7 +217,7 @@ fn numeric_dates_report_ambiguity() {
         numeric_order: Some(NumericOrder::DayFirst),
         ..Options::default()
     };
-    match normalize_with("12/04/1985", &day_first) {
+    match normalize_with("12/04/1985", day_first) {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, "1985-04-12");
             assert!(n.notes.contains(&Note::NumericResolvedByOption));
@@ -375,7 +381,7 @@ fn out_of_domain_default_century_is_ignored() {
         ..Options::default()
     };
     assert!(matches!(
-        normalize_with("the 80s", &opts),
+        normalize_with("the 80s", opts),
         Outcome::Ambiguous(_)
     ));
 }

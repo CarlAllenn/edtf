@@ -2,6 +2,12 @@
 //! masks, qualifiers, seasons, open/unknown ends, Y-years, sets and
 //! datetimes. Property-level invariants live in `tests/props.rs`.
 
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
+
 use edtf_core::{Edtf, Modality, Relation, Relations};
 
 fn rel(a: &str, b: &str) -> Relations {

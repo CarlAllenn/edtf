@@ -9,15 +9,18 @@
 use alloc::{string::String, vec::Vec};
 use core::fmt::{self, Display, Formatter, Write as _};
 
-use crate::types::*;
+use crate::types::{
+    Date, DateField, DateTime, Edtf, Interval, IntervalEndpoint, Qualifier, Set, SetElement,
+    SetKind, Time, TimeShift, Year, YearKind,
+};
 
 impl Display for Edtf {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Edtf::Date(d) => d.fmt(f),
-            Edtf::DateTime(dt) => dt.fmt(f),
-            Edtf::Interval(iv) => iv.fmt(f),
-            Edtf::Set(s) => s.fmt(f),
+            Self::Date(d) => d.fmt(f),
+            Self::DateTime(dt) => dt.fmt(f),
+            Self::Interval(iv) => iv.fmt(f),
+            Self::Set(s) => s.fmt(f),
         }
     }
 }
@@ -61,7 +64,7 @@ fn year_body(year: &Year) -> String {
     s
 }
 
-fn field_body(f: &DateField) -> String {
+fn field_body(f: DateField) -> String {
     let mut s = String::new();
     for d in f.digits {
         match d {
@@ -77,10 +80,10 @@ impl Display for Date {
         let mut parts: Vec<(String, Qualifier)> = Vec::new();
         parts.push((year_body(&self.year), self.year.qualifier));
         if let Some(m) = &self.month {
-            parts.push((field_body(m), m.qualifier));
+            parts.push((field_body(*m), m.qualifier));
         }
         if let Some(d) = &self.day {
-            parts.push((field_body(d), d.qualifier));
+            parts.push((field_body(*d), d.qualifier));
         }
 
         let all_equal = parts.iter().all(|(_, q)| *q == parts[0].1);

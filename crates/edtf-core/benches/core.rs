@@ -3,6 +3,12 @@
 //! `task bench` (or `cargo bench -p edtf-core`) and publish the numbers in
 //! the README on release.
 
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
+
 use std::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
@@ -38,6 +44,10 @@ const INVALID: &[(&str, &str)] = &[
     ("truncated-set", "{1984-10-10..1984-11-01"),
 ];
 
+#[allow(
+    clippy::significant_drop_tightening,
+    reason = "false positive: criterion's finish() consumes the group; the lint misreads the guard"
+)]
 fn bench_parse(c: &mut Criterion) {
     let mut g = c.benchmark_group("parse");
     for (label, input) in CASES {

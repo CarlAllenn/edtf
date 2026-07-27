@@ -52,6 +52,7 @@ fn bound_json(b: Bound) -> Option<String> {
 }
 
 /// Build the [`Summary`] for an input, if it is valid EDTF.
+#[must_use]
 pub fn summarize(input: &str) -> Option<Summary> {
     let parsed = Edtf::parse(input).ok()?;
     let bounds = parsed.bounds();
@@ -83,11 +84,12 @@ fn precision_str(d: &edtf_core::Date) -> &'static str {
     }
 }
 
-/// The JSON shape `relation` returns: the modality of each of the six
-/// coarsened Allen relations between the two inputs, each
-/// `"impossible" | "possible" | "definite"`. Semantics: `docs/spec-notes.md`
-/// D23 (possible-completions over bounds regions; Unknown bounds are
-/// possible-everything, never definite).
+/// The JSON shape `relation` returns.
+///
+/// The modality of each of the six coarsened Allen relations between the
+/// two inputs, each `"impossible" | "possible" | "definite"`. Semantics:
+/// `docs/spec-notes.md` D23 (possible-completions over bounds regions;
+/// Unknown bounds are possible-everything, never definite).
 #[derive(Debug, Serialize)]
 pub struct RelationSummary {
     /// A ends before B starts.
@@ -105,6 +107,7 @@ pub struct RelationSummary {
 }
 
 /// Build the [`RelationSummary`] for two inputs, if both are valid EDTF.
+#[must_use]
 pub fn relate(a: &str, b: &str) -> Option<RelationSummary> {
     let rel = Edtf::parse(a).ok()?.relation(&Edtf::parse(b).ok()?);
     let m = |r: Relation| rel.modality(r).as_str();
@@ -148,7 +151,7 @@ pub enum NormalizeSummary {
         /// Why nothing was produced.
         reason: &'static str,
         /// The governing N-decision in docs/normalize-notes.md.
-        decision: Option<&'static str>,
+        decision: &'static str,
     },
 }
 
@@ -227,9 +230,10 @@ fn notes_json(notes: &[edtf_normalize::Note]) -> Vec<NoteJson> {
 
 /// Build the [`NormalizeSummary`] for an input. `None` only for invalid
 /// options JSON.
+#[must_use]
 pub fn normalize_summary(input: &str, options: Option<&str>) -> Option<NormalizeSummary> {
     let opts = parse_options(options)?;
-    Some(match normalize_with(input, &opts) {
+    Some(match normalize_with(input, opts) {
         Outcome::Normalized(n) => NormalizeSummary::Normalized {
             level: n.value.level(),
             notes: notes_json(&n.notes),
@@ -259,12 +263,18 @@ pub fn normalize_summary(input: &str, options: Option<&str>) -> Option<Normalize
 }
 
 /// Deterministic prose-date normalization ("1980s" → 198X) as a JSON string.
+///
 /// Always returns a value for valid options (a `noMatch` object with a
 /// `reason` when nothing can be produced); `undefined` only for invalid
 /// options — malformed JSON, unknown keys, or out-of-domain values. An
 /// empty/whitespace options string means defaults. See [`NormalizeSummary`]
 /// for the object shape.
 #[wasm_bindgen]
+#[must_use]
+#[allow(
+    clippy::needless_pass_by_value,
+    reason = "wasm-bindgen passes JS strings owned, not as Option<&str>"
+)]
 pub fn normalize(input: &str, options: Option<String>) -> Option<String> {
     let summary = normalize_summary(input, options.as_deref())?;
     serde_json::to_string(&summary).ok()
@@ -272,6 +282,7 @@ pub fn normalize(input: &str, options: Option<String>) -> Option<String> {
 
 /// True if `input` is valid EDTF (levels 0–2).
 #[wasm_bindgen(js_name = isValid)]
+#[must_use]
 pub fn is_valid(input: &str) -> bool {
     edtf_core::is_valid(input)
 }
@@ -284,6 +295,7 @@ pub fn level(input: &str) -> i32 {
 
 /// The canonical (spec-preferred) form of `input`, or `undefined` if invalid.
 #[wasm_bindgen]
+#[must_use]
 pub fn canonical(input: &str) -> Option<String> {
     Some(Edtf::parse(input).ok()?.to_string())
 }
@@ -291,6 +303,7 @@ pub fn canonical(input: &str) -> Option<String> {
 /// Full parse summary as a JSON string, or `undefined` if invalid.
 /// See [`Summary`] for the object shape.
 #[wasm_bindgen]
+#[must_use]
 pub fn parse(input: &str) -> Option<String> {
     let summary = summarize(input)?;
     serde_json::to_string(&summary).ok()
@@ -300,12 +313,18 @@ pub fn parse(input: &str) -> Option<String> {
 /// `undefined` if either input is invalid. See [`RelationSummary`] for the
 /// object shape.
 #[wasm_bindgen]
+#[must_use]
 pub fn relation(a: &str, b: &str) -> Option<String> {
     serde_json::to_string(&relate(a, b)?).ok()
 }
 
 #[cfg(test)]
 mod tests {
+    #![allow(
+        clippy::unwrap_used,
+        reason = "test code: a panic here is the failure signal, not a crash path"
+    )]
+
     use super::*;
 
     #[test]

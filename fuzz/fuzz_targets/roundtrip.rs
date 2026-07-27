@@ -11,7 +11,7 @@ fuzz_target!(|data: &[u8]| {
     };
     if let Ok(parsed) = edtf_core::Edtf::parse(s) {
         // Everything accepted must also have total (panic-free) bounds.
-        let _ = parsed.bounds();
+        let _bounds = parsed.bounds();
         let rendered = parsed.to_string();
         let reparsed = edtf_core::Edtf::parse(&rendered).unwrap_or_else(|e| {
             panic!("accepted {s:?}, but canonical form {rendered:?} fails to reparse: {e}")

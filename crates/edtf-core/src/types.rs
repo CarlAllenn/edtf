@@ -41,11 +41,12 @@ pub struct Qualifier {
 
 impl Qualifier {
     /// True if either flag is set.
-    pub fn is_qualified(self) -> bool {
+    #[must_use]
+    pub const fn is_qualified(self) -> bool {
         self.uncertain || self.approximate
     }
 
-    pub(crate) fn merge(&mut self, other: Qualifier) {
+    pub(crate) fn merge(&mut self, other: Self) {
         self.uncertain |= other.uncertain;
         self.approximate |= other.approximate;
     }
@@ -92,6 +93,7 @@ pub struct Year {
 impl Year {
     /// The numeric year value, when every digit is specified and the value is
     /// representable. `None` for masked years and overflowing exponentials.
+    #[must_use]
     pub fn value(&self) -> Option<i64> {
         match self.kind {
             YearKind::Standard { negative, digits } => {
@@ -110,8 +112,9 @@ impl Year {
     }
 
     /// True if any digit is unspecified (`X`).
+    #[must_use]
     pub fn has_unspecified(&self) -> bool {
-        matches!(self.kind, YearKind::Standard { digits, .. } if digits.iter().any(|d| d.is_none()))
+        matches!(self.kind, YearKind::Standard { digits, .. } if digits.iter().any(Option::is_none))
     }
 }
 
@@ -127,13 +130,15 @@ pub struct DateField {
 
 impl DateField {
     /// The numeric value when both digits are specified.
-    pub fn value(&self) -> Option<u8> {
+    #[must_use]
+    pub fn value(self) -> Option<u8> {
         Some(self.digits[0]? * 10 + self.digits[1]?)
     }
 
     /// True if either digit is unspecified (`X`).
-    pub fn has_unspecified(&self) -> bool {
-        self.digits.iter().any(|d| d.is_none())
+    #[must_use]
+    pub fn has_unspecified(self) -> bool {
+        self.digits.iter().any(Option::is_none)
     }
 }
 
@@ -165,6 +170,7 @@ pub struct Date {
 
 impl Date {
     /// The precision of this date (its lowest specified component).
+    #[must_use]
     pub fn precision(&self) -> Precision {
         if self.day.is_some() {
             Precision::Day
@@ -185,20 +191,23 @@ impl Date {
     }
 
     /// True if any component is marked uncertain (`?` or `%`).
+    #[must_use]
     pub fn is_uncertain(&self) -> bool {
         self.any_component(|q| q.uncertain)
     }
 
     /// True if any component is marked approximate (`~` or `%`).
+    #[must_use]
     pub fn is_approximate(&self) -> bool {
         self.any_component(|q| q.approximate)
     }
 
     /// True if any component contains an unspecified digit (`X`).
+    #[must_use]
     pub fn has_unspecified(&self) -> bool {
         self.year.has_unspecified()
-            || self.month.is_some_and(|m| m.has_unspecified())
-            || self.day.is_some_and(|d| d.has_unspecified())
+            || self.month.is_some_and(DateField::has_unspecified)
+            || self.day.is_some_and(DateField::has_unspecified)
     }
 }
 
@@ -259,15 +268,14 @@ pub enum IntervalEndpoint {
 
 impl IntervalEndpoint {
     /// True unless the endpoint is open (`..`) or unknown (empty).
-    pub fn is_dated(&self) -> bool {
-        !matches!(self, IntervalEndpoint::Open | IntervalEndpoint::Unknown)
+    #[must_use]
+    pub const fn is_dated(&self) -> bool {
+        !matches!(self, Self::Open | Self::Unknown)
     }
 
-    pub(crate) fn date(&self) -> Option<&Date> {
+    pub(crate) const fn date(&self) -> Option<&Date> {
         match self {
-            IntervalEndpoint::Date(d)
-            | IntervalEndpoint::OnOrBefore(d)
-            | IntervalEndpoint::OnOrAfter(d) => Some(d),
+            Self::Date(d) | Self::OnOrBefore(d) | Self::OnOrAfter(d) => Some(d),
             _ => None,
         }
     }
@@ -333,6 +341,11 @@ pub enum Edtf {
 
 impl Edtf {
     /// Parse an EDTF string (levels 0–2, ISO 8601-2:2019 Annex A).
+    ///
+    /// # Errors
+    ///
+    /// [`ParseError`] with a byte offset and message pointing at the first
+    /// place the input stops being valid EDTF.
     pub fn parse(input: &str) -> Result<Self, ParseError> {
         crate::parser::parse(input)
     }
@@ -340,21 +353,22 @@ impl Edtf {
     /// The minimum EDTF conformance level (0, 1 or 2) able to express this
     /// value. Semantically equivalent spellings classify identically: e.g.
     /// `?1985-?04-?12` reports level 1 because `1985-04-12?` means the same.
+    #[must_use]
     pub fn level(&self) -> u8 {
         match self {
-            Edtf::Date(d) => date_level(d, false),
-            Edtf::DateTime(_) => 0,
-            Edtf::Interval(iv) => interval_level(iv),
-            Edtf::Set(_) => 2,
+            Self::Date(d) => date_level(d, false),
+            Self::DateTime(_) => 0,
+            Self::Interval(iv) => interval_level(iv),
+            Self::Set(_) => 2,
         }
     }
 
     fn any_date<F: Fn(&Date) -> bool>(&self, f: F) -> bool {
         match self {
-            Edtf::Date(d) => f(d),
-            Edtf::DateTime(dt) => f(&dt.date),
-            Edtf::Interval(iv) => iv.start.date().is_some_and(&f) || iv.end.date().is_some_and(&f),
-            Edtf::Set(s) => s.elements.iter().any(|e| match e {
+            Self::Date(d) => f(d),
+            Self::DateTime(dt) => f(&dt.date),
+            Self::Interval(iv) => iv.start.date().is_some_and(&f) || iv.end.date().is_some_and(&f),
+            Self::Set(s) => s.elements.iter().any(|e| match e {
                 SetElement::Date(d) | SetElement::OnOrBefore(d) | SetElement::OnOrAfter(d) => f(d),
                 SetElement::Range(a, b) => f(a) || f(b),
             }),
@@ -381,7 +395,7 @@ impl core::str::FromStr for Edtf {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Edtf::parse(s)
+        Self::parse(s)
     }
 }
 
@@ -413,7 +427,7 @@ fn date_level(d: &Date, in_interval: bool) -> u8 {
     if d.year.significant_digits.is_some() {
         level = level.max(2);
     }
-    if let Some(v) = d.month.as_ref().and_then(DateField::value) {
+    if let Some(v) = d.month.and_then(DateField::value) {
         if (21..=24).contains(&v) {
             level = level.max(1);
         } else if (25..=41).contains(&v) {
@@ -458,12 +472,11 @@ fn mask_level(d: &Date) -> u8 {
     };
     let year_full = !year_x.iter().any(|&x| x);
     let month_full = d.month.map(|m| !m.has_unspecified());
-    let month_all_x = d.month.map(|m| m.digits.iter().all(|x| x.is_none()));
-    let day_all_x = d.day.map(|f| f.digits.iter().all(|x| x.is_none()));
-    let day_any_x = d.day.map(|f| f.has_unspecified());
-    let any_x = !year_full
-        || d.month.map(|m| m.has_unspecified()).unwrap_or(false)
-        || day_any_x.unwrap_or(false);
+    let month_all_x = d.month.map(|m| m.digits.iter().all(Option::is_none));
+    let day_all_x = d.day.map(|f| f.digits.iter().all(Option::is_none));
+    let day_any_x = d.day.map(DateField::has_unspecified);
+    let any_x =
+        !year_full || d.month.is_some_and(DateField::has_unspecified) || day_any_x.unwrap_or(false);
     if !any_x {
         return 0;
     }
@@ -471,10 +484,6 @@ fn mask_level(d: &Date) -> u8 {
     let level1 = (year_full && month_full == Some(true) && day_all_x == Some(true))
         || (year_full && month_all_x == Some(true) && day_all_x == Some(true))
         || (year_full && month_all_x == Some(true) && d.day.is_none())
-        || (d.month.is_none()
-            && matches!(
-                year_x,
-                [false, false, false, true] | [false, false, true, true]
-            ));
+        || (d.month.is_none() && matches!(year_x, [false, false, false | true, true]));
     if level1 { 1 } else { 2 }
 }

@@ -3,6 +3,12 @@
 //! grammatical-case month/season forms, year-marker noise ("гг."), and the
 //! locale-implied day-first numeric order (N5).
 
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
+
 use edtf_core::Edtf;
 use edtf_normalize::{Language, NoMatchReason, Note, Options, Outcome, normalize_with};
 
@@ -15,7 +21,7 @@ fn ru() -> Options {
 
 #[track_caller]
 fn ok(input: &str, expected: &str, level: u8) {
-    match normalize_with(input, &ru()) {
+    match normalize_with(input, ru()) {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, expected, "input: {input:?}");
             let parsed = Edtf::parse(&n.edtf).expect("output must parse in core");
@@ -28,7 +34,7 @@ fn ok(input: &str, expected: &str, level: u8) {
 
 #[track_caller]
 fn ambiguous(input: &str, expected: &[&str]) {
-    match normalize_with(input, &ru()) {
+    match normalize_with(input, ru()) {
         Outcome::Ambiguous(a) => {
             let got: Vec<&str> = a.interpretations.iter().map(|i| i.edtf.as_str()).collect();
             assert_eq!(got, expected, "input: {input:?}");
@@ -40,7 +46,7 @@ fn ambiguous(input: &str, expected: &[&str]) {
 #[track_caller]
 fn no_match(input: &str) {
     assert!(
-        matches!(normalize_with(input, &ru()), Outcome::NoMatch { .. }),
+        matches!(normalize_with(input, ru()), Outcome::NoMatch { .. }),
         "expected NoMatch for {input:?}"
     );
 }
@@ -93,7 +99,7 @@ fn roman_centuries() {
     ok("XL век", "39XX", 1);
     ok("IX-X вв.", "08XX/09XX", 2);
     // Roman provenance is citable (N15).
-    match normalize_with("XIX век", &ru()) {
+    match normalize_with("XIX век", ru()) {
         Outcome::Normalized(n) => {
             assert!(n.notes.contains(&Note::RomanCentury));
             assert!(n.notes.iter().any(|note| note.decision() == Some("N15")));
@@ -182,7 +188,7 @@ fn seasons() {
 #[test]
 fn numeric_dates_use_locale_day_first() {
     // N5: DD.MM.YYYY is the Russian convention — resolved, with the note.
-    match normalize_with("12.04.1985", &ru()) {
+    match normalize_with("12.04.1985", ru()) {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, "1985-04-12");
             assert!(n.notes.contains(&Note::NumericResolvedByLocale));
@@ -195,7 +201,7 @@ fn numeric_dates_use_locale_day_first() {
         numeric_order: Some(edtf_normalize::NumericOrder::MonthFirst),
         ..Options::default()
     };
-    match normalize_with("12.04.1985", &opts) {
+    match normalize_with("12.04.1985", opts) {
         Outcome::Normalized(n) => assert_eq!(n.edtf, "1985-12-04"),
         other => panic!("expected Normalized, got {other:?}"),
     }
@@ -236,7 +242,7 @@ fn explicit_no_date() {
     no_match("б.д.");
     no_match("не датировано");
     assert!(matches!(
-        normalize_with("без даты", &ru()),
+        normalize_with("без даты", ru()),
         Outcome::NoMatch {
             reason: NoMatchReason::ExplicitNoDate
         }

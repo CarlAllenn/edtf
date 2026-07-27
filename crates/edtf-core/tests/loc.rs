@@ -1,8 +1,14 @@
 //! Interop cross-check against every example on the Library of Congress
 //! EDTF specification page (loc.gov/standards/datetime) — the original that
-//! the ISO 8601-2:2019 profile codifies. Where LoC and ISO disagree, ISO
+//! the ISO 8601-2:2019 profile codifies. Where `LoC` and ISO disagree, ISO
 //! Annex A wins; divergences are recorded in docs/spec-notes.md (D19, D20)
 //! and as `our_level` overrides in the fixture.
+
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
 
 use edtf_core::Edtf;
 use serde_json::Value;

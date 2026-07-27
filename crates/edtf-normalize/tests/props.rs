@@ -7,12 +7,24 @@
 //! that re-parse is what makes the guarantee real, since core has no
 //! validating constructors.
 
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss,
+    reason = "generator and oracle ranges are bounded by construction"
+)]
+
 use edtf_core::Edtf;
 use edtf_normalize::{Language, Options, Outcome, normalize, normalize_with};
 use proptest::prelude::*;
 
 /// Assert a Normalized outcome and re-parse the output in core.
-fn assert_normalized(input: &str, expected: &str, opts: &Options) {
+fn assert_normalized(input: &str, expected: &str, opts: Options) {
     match normalize_with(input, opts) {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, expected, "input: {input:?}");
@@ -67,35 +79,35 @@ const MONTHS_RU: [&str; 12] = [
 proptest! {
     #[test]
     fn plain_years_round_trip(y in 100i32..=9999) {
-        assert_normalized(&format!("{y}"), &format!("{y:04}"), &en());
+        assert_normalized(&format!("{y}"), &format!("{y:04}"), en());
     }
 
     #[test]
     fn circa_years(y in 100i32..=9999) {
-        assert_normalized(&format!("circa {y}"), &format!("{y:04}~"), &en());
-        assert_normalized(&format!("около {y}"), &format!("{y:04}~"), &ru());
+        assert_normalized(&format!("circa {y}"), &format!("{y:04}~"), en());
+        assert_normalized(&format!("около {y}"), &format!("{y:04}~"), ru());
     }
 
     #[test]
     fn bc_years_use_astronomical_numbering(b in 2u32..=9999) {
         // N3: year b BC = astronomical -(b-1).
         let astro = -(b as i32 - 1);
-        assert_normalized(&format!("{b} BC"), &format!("-{:04}", -astro), &en());
-        assert_normalized(&format!("{b} до н. э."), &format!("-{:04}", -astro), &ru());
+        assert_normalized(&format!("{b} BC"), &format!("-{:04}", -astro), en());
+        assert_normalized(&format!("{b} до н. э."), &format!("-{:04}", -astro), ru());
     }
 
     #[test]
     fn decades_mask_the_final_digit(p3 in 100u16..=999) {
         prop_assume!(p3 % 10 != 0); // '..00s' forms are deliberately ambiguous (N6)
-        assert_normalized(&format!("{p3}0s"), &format!("{p3}X"), &en());
-        assert_normalized(&format!("{p3}0-е"), &format!("{p3}X"), &ru());
+        assert_normalized(&format!("{p3}0s"), &format!("{p3}X"), en());
+        assert_normalized(&format!("{p3}0-е"), &format!("{p3}X"), ru());
     }
 
     #[test]
     fn centuries_are_off_by_one(n in 2u32..=20) {
         // N2: the nth century masks as (n-1)XX.
-        assert_normalized(&format!("{n}th century"), &format!("{:02}XX", n - 1), &en());
-        assert_normalized(&format!("{n} век"), &format!("{:02}XX", n - 1), &ru());
+        assert_normalized(&format!("{n}th century"), &format!("{:02}XX", n - 1), en());
+        assert_normalized(&format!("{n} век"), &format!("{:02}XX", n - 1), ru());
     }
 
     #[test]
@@ -109,26 +121,26 @@ proptest! {
         let late = format!("{:04}/{e:04}", s + 70);
         let first_half = format!("{s:04}/{:04}", s + 49);
         let second_half = format!("{:04}/{e:04}", s + 50);
-        assert_normalized(&format!("early {n}th century"), &early, &en());
-        assert_normalized(&format!("mid {n}th century"), &mid, &en());
-        assert_normalized(&format!("late {n}th century"), &late, &en());
-        assert_normalized(&format!("first half of the {n}th century"), &first_half, &en());
-        assert_normalized(&format!("second half of the {n}th century"), &second_half, &en());
+        assert_normalized(&format!("early {n}th century"), &early, en());
+        assert_normalized(&format!("mid {n}th century"), &mid, en());
+        assert_normalized(&format!("late {n}th century"), &late, en());
+        assert_normalized(&format!("first half of the {n}th century"), &first_half, en());
+        assert_normalized(&format!("second half of the {n}th century"), &second_half, en());
     }
 
     #[test]
     fn month_year_forms(y in 1000i32..=9999, m in 0usize..12) {
         let expected = format!("{y:04}-{:02}", m + 1);
-        assert_normalized(&format!("{} {y}", MONTHS_EN[m]), &expected, &en());
-        assert_normalized(&format!("{} {y} года", MONTHS_RU[m]), &expected, &ru());
+        assert_normalized(&format!("{} {y}", MONTHS_EN[m]), &expected, en());
+        assert_normalized(&format!("{} {y} года", MONTHS_RU[m]), &expected, ru());
     }
 
     #[test]
     fn unambiguous_numeric_dates(y in 1000i32..=9999, m in 1u32..=12, d in 13u32..=28) {
         // d > 12 proves the order; d ≤ 28 is valid in every month (N5).
         let expected = format!("{y:04}-{m:02}-{d:02}");
-        assert_normalized(&format!("{d}/{m}/{y}"), &expected, &en());
-        assert_normalized(&format!("{d}.{m}.{y}"), &expected, &ru());
+        assert_normalized(&format!("{d}/{m}/{y}"), &expected, en());
+        assert_normalized(&format!("{d}.{m}.{y}"), &expected, ru());
     }
 
     #[test]
@@ -151,16 +163,16 @@ proptest! {
     #[test]
     fn year_ranges(a in 1000i32..=9998, span in 1i32..=500) {
         let b = (a + span).min(9999);
-        assert_normalized(&format!("from {a} to {b}"), &format!("{a:04}/{b:04}"), &en());
-        assert_normalized(&format!("с {a} по {b}"), &format!("{a:04}/{b:04}"), &ru());
+        assert_normalized(&format!("from {a} to {b}"), &format!("{a:04}/{b:04}"), en());
+        assert_normalized(&format!("с {a} по {b}"), &format!("{a:04}/{b:04}"), ru());
     }
 
     #[test]
     fn before_after_open_intervals(y in 1000i32..=9999) {
-        assert_normalized(&format!("before {y}"), &format!("../{y:04}"), &en());
-        assert_normalized(&format!("after {y}"), &format!("{y:04}/.."), &en());
-        assert_normalized(&format!("до {y}"), &format!("../{y:04}"), &ru());
-        assert_normalized(&format!("после {y}"), &format!("{y:04}/.."), &ru());
+        assert_normalized(&format!("before {y}"), &format!("../{y:04}"), en());
+        assert_normalized(&format!("after {y}"), &format!("{y:04}/.."), en());
+        assert_normalized(&format!("до {y}"), &format!("../{y:04}"), ru());
+        assert_normalized(&format!("после {y}"), &format!("{y:04}/.."), ru());
     }
 
     #[test]

@@ -12,7 +12,10 @@ use alloc::{vec, vec::Vec};
 
 use crate::{
     bounds::{Bound, date_bounds, is_leap},
-    types::*,
+    types::{
+        Date, DateField, DateTime, Edtf, Interval, IntervalEndpoint, ParseError, Precision,
+        Qualifier, Set, SetElement, SetKind, Time, TimeShift, Year, YearKind,
+    },
 };
 
 pub(crate) fn parse(input: &str) -> Result<Edtf, ParseError> {
@@ -36,7 +39,7 @@ pub(crate) fn parse(input: &str) -> Result<Edtf, ParseError> {
     }
 }
 
-fn err(offset: usize, message: &'static str) -> ParseError {
+const fn err(offset: usize, message: &'static str) -> ParseError {
     ParseError { message, offset }
 }
 
@@ -54,7 +57,7 @@ struct Cur<'a> {
 }
 
 impl<'a> Cur<'a> {
-    fn new(s: &'a str, base: usize) -> Self {
+    const fn new(s: &'a str, base: usize) -> Self {
         Self {
             b: s.as_bytes(),
             i: 0,
@@ -62,11 +65,11 @@ impl<'a> Cur<'a> {
         }
     }
 
-    fn pos(&self) -> usize {
+    const fn pos(&self) -> usize {
         self.base + self.i
     }
 
-    fn fail(&self, message: &'static str) -> ParseError {
+    const fn fail(&self, message: &'static str) -> ParseError {
         err(self.pos(), message)
     }
 
@@ -91,7 +94,7 @@ impl<'a> Cur<'a> {
         }
     }
 
-    fn eof(&self) -> bool {
+    const fn eof(&self) -> bool {
         self.i >= self.b.len()
     }
 
@@ -153,6 +156,10 @@ impl<'a> Cur<'a> {
 
 // ---------------------------------------------------------------- dates
 
+#[allow(
+    clippy::too_many_lines,
+    reason = "one linear scan; splitting scatters the offset bookkeeping"
+)]
 pub(crate) fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
     if s.is_empty() {
         return Err(err(base, "empty date"));
@@ -182,7 +189,7 @@ pub(crate) fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
             },
         }
     }
-    let year_has_x = ydigits.iter().any(|d| d.is_none());
+    let year_has_x = ydigits.iter().any(Option::is_none);
     if negative && year_has_x {
         return Err(err(
             year_off,
@@ -194,8 +201,7 @@ pub(crate) fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
     }
 
     // Optional S<digits> significant-digit suffix (year-precision only).
-    let mut significant = None;
-    if c.eat(b'S') {
+    let significant = if c.eat(b'S') {
         if year_has_x {
             return Err(err(
                 c.pos() - 1,
@@ -204,14 +210,17 @@ pub(crate) fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
         }
         let sig_off = c.pos();
         let (n, len) = c.take_number()?;
-        if len == 0 || n == 0 || n > 4 {
+        let sig = u32::try_from(n).ok().filter(|s| (1..=4).contains(s));
+        if len == 0 || sig.is_none() {
             return Err(err(
                 sig_off,
                 "significant digits must be 1-4 for a four-digit year",
             ));
         }
-        significant = Some(n as u32);
-    }
+        sig
+    } else {
+        None
+    };
 
     // Optional trailing qualifier (group: year, or complete if year-only).
     if let Some(q) = c.take_qualifier() {
@@ -302,7 +311,10 @@ pub(crate) fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
     )
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "finisher taking every parsed component; it has one caller"
+)]
 fn finish_date(
     negative: bool,
     ydigits: [Option<u8>; 4],
@@ -350,7 +362,7 @@ fn validate_month_day(
         None => {
             // Masked months match calendar months 01-12 only (decision D14);
             // sub-year codes must be written explicitly.
-            if month_candidates(m).is_empty() {
+            if month_candidates(*m).is_empty() {
                 return Err(err(
                     month_off,
                     "no calendar month matches the unspecified digits",
@@ -359,14 +371,14 @@ fn validate_month_day(
         },
     }
     if let Some(d) = day {
-        if !day_has_valid_completion(year, m, d) {
+        if !day_has_valid_completion(year, *m, *d) {
             return Err(err(day_off, "day is out of range for the month"));
         }
     }
     Ok(())
 }
 
-fn month_candidates(m: &DateField) -> Vec<u8> {
+fn month_candidates(m: DateField) -> Vec<u8> {
     match m.value() {
         Some(v) if (1..=12).contains(&v) => vec![v],
         Some(_) => Vec::new(),
@@ -374,7 +386,7 @@ fn month_candidates(m: &DateField) -> Vec<u8> {
     }
 }
 
-fn day_candidates(d: &DateField) -> Vec<u8> {
+fn day_candidates(d: DateField) -> Vec<u8> {
     match d.value() {
         Some(v) if (1..=31).contains(&v) => vec![v],
         Some(_) => Vec::new(),
@@ -382,13 +394,13 @@ fn day_candidates(d: &DateField) -> Vec<u8> {
     }
 }
 
-fn field_matches(f: &DateField, v: u8) -> bool {
+fn field_matches(f: DateField, v: u8) -> bool {
     f.digits[0].is_none_or(|p| p == v / 10) && f.digits[1].is_none_or(|p| p == v % 10)
 }
 
 /// Decision D11: a (possibly masked) year-month-day needs at least one valid
 /// calendar completion.
-fn day_has_valid_completion(year: &YearKind, m: &DateField, d: &DateField) -> bool {
+fn day_has_valid_completion(year: &YearKind, m: DateField, d: DateField) -> bool {
     let months = month_candidates(m);
     let days = day_candidates(d);
     let mut leap_possible: Option<bool> = None;
@@ -418,14 +430,14 @@ fn day_has_valid_completion(year: &YearKind, m: &DateField, d: &DateField) -> bo
 fn year_leap_possible(year: &YearKind) -> bool {
     match year {
         YearKind::Standard { negative, digits } => {
-            if digits.iter().all(|d| d.is_some()) {
+            if digits.iter().all(Option::is_some) {
                 let mut v: i64 = 0;
                 for d in digits.iter().flatten() {
                     v = v * 10 + i64::from(*d);
                 }
                 is_leap(if *negative { -v } else { v })
             } else {
-                (0..=9999i64).any(|y| year_matches(digits, y) && is_leap(y))
+                (0..=9999i64).any(|y| year_matches(*digits, y) && is_leap(y))
             }
         },
         // Y-prefixed years never carry months, so this is only reachable in
@@ -435,7 +447,7 @@ fn year_leap_possible(year: &YearKind) -> bool {
     }
 }
 
-fn year_matches(digits: &[Option<u8>; 4], y: i64) -> bool {
+fn year_matches(digits: [Option<u8>; 4], y: i64) -> bool {
     let actual = [(y / 1000) % 10, (y / 100) % 10, (y / 10) % 10, y % 10];
     digits
         .iter()
@@ -456,15 +468,13 @@ fn parse_prefixed_year(s: &str, base: usize) -> Result<Date, ParseError> {
     // Leading zeros are only meaningful in four-digit years (P1 4.5); in a
     // Y-year they would also desynchronize the S-digit budget from the
     // canonical (zero-stripped) rendering (decision D20).
-    if mantissa > 0 && mantissa_len as u32 != mantissa.ilog10() + 1 {
+    if mantissa > 0 && mantissa_len as u64 != u64::from(mantissa.ilog10() + 1) {
         return Err(err(
             value_off,
             "leading zeros are not allowed in Y-prefixed years",
         ));
     }
-    let kind;
-    let digit_count: u64;
-    if c.eat(b'E') {
+    let (kind, digit_count) = if c.eat(b'E') {
         let exp_off = c.pos();
         let (exp, exp_len) = c.take_number()?;
         if exp_len == 0 {
@@ -476,11 +486,10 @@ fn parse_prefixed_year(s: &str, base: usize) -> Result<Date, ParseError> {
                 "exponential year significand cannot be zero",
             ));
         }
-        if exp > 100_000 {
+        let Some(exponent) = u32::try_from(exp).ok().filter(|e| *e <= 100_000) else {
             return Err(err(exp_off, "exponent out of supported range"));
-        }
+        };
         let significand = if negative { -mantissa } else { mantissa };
-        let exponent = exp as u32;
         // Reject values expressible as a plain four-digit year (decision D1).
         if let Some(v) = 10i64
             .checked_pow(exponent)
@@ -490,32 +499,40 @@ fn parse_prefixed_year(s: &str, base: usize) -> Result<Date, ParseError> {
                 return Err(err(value_off, "Y-prefixed years require |year| > 9999"));
             }
         }
-        kind = YearKind::Exponential {
-            significand,
-            exponent,
-        };
-        digit_count = mantissa_len as u64 + u64::from(exponent);
+        (
+            YearKind::Exponential {
+                significand,
+                exponent,
+            },
+            mantissa_len as u64 + u64::from(exponent),
+        )
     } else {
         if mantissa <= 9999 {
             return Err(err(value_off, "Y-prefixed years require |year| > 9999"));
         }
-        kind = YearKind::Big {
-            value: if negative { -mantissa } else { mantissa },
-        };
-        digit_count = mantissa_len as u64;
-    }
-    let mut significant = None;
-    if c.eat(b'S') {
+        (
+            YearKind::Big {
+                value: if negative { -mantissa } else { mantissa },
+            },
+            mantissa_len as u64,
+        )
+    };
+    let significant = if c.eat(b'S') {
         let sig_off = c.pos();
         let (n, len) = c.take_number()?;
-        if len == 0 || n == 0 || (n as u64) > digit_count {
+        let sig = u32::try_from(n)
+            .ok()
+            .filter(|s| *s >= 1 && u64::from(*s) <= digit_count);
+        if len == 0 || sig.is_none() {
             return Err(err(
                 sig_off,
                 "significant digits exceed the year's digit count",
             ));
         }
-        significant = Some(n as u32);
-    }
+        sig
+    } else {
+        None
+    };
     let mut qualifier = Qualifier::default();
     if let Some(q) = c.take_qualifier() {
         qualifier.merge(q);
@@ -537,7 +554,11 @@ fn parse_prefixed_year(s: &str, base: usize) -> Result<Date, ParseError> {
 // ---------------------------------------------------------------- datetime
 
 fn parse_datetime(s: &str) -> Result<Edtf, ParseError> {
-    let (date_part, time_part) = s.split_once('T').expect("caller checked for 'T'");
+    // The dispatcher only routes strings containing 'T' here; a graceful
+    // error beats a library panic if that invariant ever breaks.
+    let Some((date_part, time_part)) = s.split_once('T') else {
+        return Err(err(0, "datetime requires 'T'"));
+    };
     let date = parse_plain_complete_date(date_part)?;
     let time = parse_time(time_part, date_part.len() + 1)?;
     Ok(Edtf::DateTime(DateTime { date, time }))
@@ -570,7 +591,11 @@ fn parse_plain_complete_date(s: &str) -> Result<Date, ParseError> {
         digits: [Some(digit(8)?), Some(digit(9)?)],
         qualifier: Qualifier::default(),
     };
-    let m = month.value().expect("fully specified");
+    // Both digits were just parsed; a graceful error beats a panic if that
+    // invariant ever breaks.
+    let Some(m) = month.value() else {
+        return Err(err(5, "month must be fully specified"));
+    };
     if !(1..=12).contains(&m) {
         return Err(err(5, "month must be 01-12"));
     }
@@ -578,7 +603,7 @@ fn parse_plain_complete_date(s: &str) -> Result<Date, ParseError> {
         negative: false,
         digits: ydigits,
     };
-    if !day_has_valid_completion(&kind, &month, &day) {
+    if !day_has_valid_completion(&kind, month, day) {
         return Err(err(8, "day is out of range for the month"));
     }
     Ok(Date {
@@ -679,7 +704,7 @@ fn shift_two(b: &[u8], i: usize, base: usize) -> Result<u8, ParseError> {
 
 fn parse_interval(s: &str) -> Result<Edtf, ParseError> {
     let mut parts = s.splitn(3, '/');
-    let start_str = parts.next().expect("split yields at least one part");
+    let start_str = parts.next().unwrap_or("");
     let end_str = parts
         .next()
         .ok_or_else(|| err(s.len(), "interval requires '/'"))?;

@@ -3,10 +3,16 @@
 //! tests/fixtures/natlang/python-edtf-natlang.json.
 //!
 //! Buckets: `agreements` are enforced to match python-edtf exactly;
-//! `agreements_no_match` are NoMatch for both; `divergences` are enforced
+//! `agreements_no_match` are `NoMatch` for both; `divergences` are enforced
 //! against OUR documented output (each entry cites its N-decision and records
 //! the python-edtf-ism we do not adopt); `not_adopted` are python-edtf's
-//! substring-extraction and guessing behaviors, enforced as NoMatch (N11).
+//! substring-extraction and guessing behaviors, enforced as `NoMatch` (N11).
+
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
 
 use edtf_normalize::{Outcome, normalize};
 use serde_json::Value;
@@ -19,7 +25,7 @@ fn fixture() -> Value {
     serde_json::from_str(raw).expect("fixture must be valid JSON")
 }
 
-fn entries<'a>(doc: &'a Value, bucket: &str) -> impl Iterator<Item = &'a Value> {
+fn entries<'a>(doc: &'a Value, bucket: &str) -> impl Iterator<Item = &'a Value> + use<'a> {
     doc[bucket]
         .as_array()
         .unwrap_or_else(|| panic!("bucket {bucket} must be an array"))

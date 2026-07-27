@@ -3,7 +3,19 @@
 //!
 //! Uses a fixed-seed xorshift generator so failures are reproducible; no
 //! nightly toolchain or external fuzzer needed, so this guards every CI run.
-//! Iteration counts scale up under `--release` (and via EDTF_FUZZ_ITERS).
+//! Iteration counts scale up under `--release` (and via `EDTF_FUZZ_ITERS`).
+
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test/bench code: a panic here is the failure signal, not a crash path"
+)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss,
+    reason = "generator and oracle ranges are bounded by construction"
+)]
 
 use edtf_core::Edtf;
 
@@ -108,7 +120,7 @@ fn mutated_valid_inputs_never_panic() {
     for _ in 0..iterations(20_000) {
         let seed = seeds[rng.below(seeds.len())];
         let mut bytes = seed.as_bytes().to_vec();
-        for _ in 0..(rng.below(3) + 1) {
+        for _ in 0..=rng.below(3) {
             match rng.below(3) {
                 0 if !bytes.is_empty() => {
                     // replace

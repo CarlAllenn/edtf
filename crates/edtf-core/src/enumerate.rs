@@ -27,7 +27,7 @@ use crate::{
     bounds::{
         big_width, day_candidates_of, is_leap, last_day, month_candidates_of, significant_range,
     },
-    types::*,
+    types::{Date, DateField, Edtf, Precision, Qualifier, SetElement, Year, YearKind},
 };
 
 /// Why [`Edtf::values`] cannot enumerate an expression (decisions D24–D25).
@@ -49,11 +49,9 @@ pub enum Unenumerable {
 impl core::fmt::Display for Unenumerable {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(match self {
-            Unenumerable::Interval => "intervals denote an extent, not enumerable values",
-            Unenumerable::UnboundedSetElement => {
-                "'..'-open set elements denote unbounded value sets"
-            },
-            Unenumerable::YearRangeOverflow => "year range exceeds the computable range",
+            Self::Interval => "intervals denote an extent, not enumerable values",
+            Self::UnboundedSetElement => "'..'-open set elements denote unbounded value sets",
+            Self::YearRangeOverflow => "year range exceeds the computable range",
         })
     }
 }
@@ -95,12 +93,18 @@ impl Edtf {
     /// // Intervals denote one extent, not a collection:
     /// assert!(Edtf::parse("2004/2005").unwrap().values().is_err());
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// [`Unenumerable`] when the value denotes no finite collection: an
+    /// interval, a set with an unbounded `..date`/`date..` element, or a
+    /// year sweep beyond the numeric range this library computes with.
     pub fn values(&self) -> Result<Values, Unenumerable> {
         let state = match self {
-            Edtf::Interval(_) => return Err(Unenumerable::Interval),
-            Edtf::DateTime(dt) => State::Singleton(Some(Edtf::DateTime(*dt))),
-            Edtf::Date(d) => State::Date(DateValues::new(d)?),
-            Edtf::Set(s) => {
+            Self::Interval(_) => return Err(Unenumerable::Interval),
+            Self::DateTime(dt) => State::Singleton(Some(Self::DateTime(*dt))),
+            Self::Date(d) => State::Date(DateValues::new(d)?),
+            Self::Set(s) => {
                 let mut queue = Vec::with_capacity(s.elements.len());
                 for e in &s.elements {
                     queue.push(match e {
@@ -143,8 +147,8 @@ enum ElementValues {
 impl ElementValues {
     fn next(&mut self) -> Option<Date> {
         match self {
-            ElementValues::Date(dv) => dv.next(),
-            ElementValues::Range(rw) => rw.next(),
+            Self::Date(dv) => dv.next(),
+            Self::Range(rw) => rw.next(),
         }
     }
 }
@@ -192,7 +196,7 @@ fn concrete_year(v: i64, qualifier: Qualifier) -> Year {
     }
 }
 
-fn concrete_field(v: u8, qualifier: Qualifier) -> DateField {
+const fn concrete_field(v: u8, qualifier: Qualifier) -> DateField {
     DateField {
         digits: [Some(v / 10), Some(v % 10)],
         qualifier,
@@ -223,7 +227,7 @@ impl DateValues {
             let (lo, hi) =
                 significant_range(value, d.year.significant_digits, big_width(&d.year.kind))
                     .ok_or(Unenumerable::YearRangeOverflow)?;
-            return Ok(DateValues::Sweep {
+            return Ok(Self::Sweep {
                 cur: lo,
                 hi,
                 qualifier: d.year.qualifier,
@@ -231,15 +235,15 @@ impl DateValues {
             });
         }
         if !d.has_unspecified() {
-            return Ok(DateValues::Singleton(Some(*d)));
+            return Ok(Self::Singleton(Some(*d)));
         }
-        Ok(DateValues::Masked(Masked::new(d)))
+        Ok(Self::Masked(Masked::new(d)))
     }
 
     fn next(&mut self) -> Option<Date> {
         match self {
-            DateValues::Singleton(d) => d.take(),
-            DateValues::Sweep {
+            Self::Singleton(d) => d.take(),
+            Self::Sweep {
                 cur,
                 hi,
                 qualifier,
@@ -260,7 +264,7 @@ impl DateValues {
                     day: None,
                 })
             },
-            DateValues::Masked(m) => m.next(),
+            Self::Masked(m) => m.next(),
         }
     }
 }
@@ -299,16 +303,17 @@ impl Masked {
         let (year, year_count) = match (d.year.value(), d.year.kind) {
             (Some(v), _) => (MaskedYear::Fixed(v), 1),
             (None, YearKind::Standard { digits, .. }) => {
-                let n = digits.iter().filter(|x| x.is_none()).count() as u32;
+                // At most four maskable digit positions.
+                let n = u32::try_from(digits.iter().filter(|x| x.is_none()).count()).unwrap_or(4);
                 (MaskedYear::Pattern(digits), 10u32.pow(n))
             },
             (None, _) => unreachable!("only standard years carry X digits"),
         };
-        Masked {
+        Self {
             year,
             year_count,
-            months: d.month.as_ref().map(month_candidates_of),
-            days: d.day.as_ref().map(day_candidates_of),
+            months: d.month.map(month_candidates_of),
+            days: d.day.map(day_candidates_of),
             yq: d.year.qualifier,
             mq: d.month.map(|m| m.qualifier).unwrap_or_default(),
             dq: d.day.map(|f| f.qualifier).unwrap_or_default(),
@@ -400,8 +405,8 @@ impl RangeWalk {
     fn new(a: &Date, b: &Date) -> Result<Self, Unenumerable> {
         let ay = a.year.value().ok_or(Unenumerable::YearRangeOverflow)?;
         let by = b.year.value().ok_or(Unenumerable::YearRangeOverflow)?;
-        let field = |f: Option<DateField>| f.and_then(|x| x.value()).unwrap_or(0);
-        Ok(RangeWalk {
+        let field = |f: Option<DateField>| f.and_then(DateField::value).unwrap_or(0);
+        Ok(Self {
             cur: (ay, field(a.month), field(a.day)),
             end: (by, field(b.month), field(b.day)),
             precision: a.precision(),

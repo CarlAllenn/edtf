@@ -13,6 +13,12 @@
 //! expressions from stdin — handy for validating whole data files:
 //! `cut -f3 dates.tsv | edtf validate -`.
 
+#![allow(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    reason = "a CLI's job is printing: stdout is output, stderr is diagnostics"
+)]
+
 use std::{
     io::{BufRead, Write},
     process::ExitCode,
@@ -166,10 +172,9 @@ fn from_julian(input: &str, out: &mut impl Write) -> bool {
 /// Split `Y`, `Y-MM` or `Y-MM-DD` (astronomical year, may be negative)
 /// into numeric parts. Returns None on any other shape.
 fn parse_julian_parts(input: &str) -> Option<(i64, Option<u8>, Option<u8>)> {
-    let (negative, rest) = match input.strip_prefix('-') {
-        Some(rest) => (true, rest),
-        None => (false, input),
-    };
+    let (negative, rest) = input
+        .strip_prefix('-')
+        .map_or((false, input), |rest| (true, rest));
     let mut parts = rest.split('-');
     let year_digits = parts.next()?;
     if year_digits.is_empty() || !year_digits.bytes().all(|b| b.is_ascii_digit()) {

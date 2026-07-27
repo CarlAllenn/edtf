@@ -346,11 +346,11 @@ dependencies = [
 
 [[package]]
 name = "edtf-core"
-version = "0.3.0"
+version = "1.0.0"
 
 [[package]]
 name = "edtf-postgres"
-version = "0.3.0"
+version = "1.0.0"
 dependencies = [
  "edtf-core",
  "pgrx",

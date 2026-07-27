@@ -65,7 +65,7 @@ lychee = "0.24.2"
 # postgres extension harness (ci.yml matrix)
 "cargo:cargo-pgrx" = "0.19.1"
 # per-PR coverage visibility (no threshold gate)
-"aqua:taiki-e/cargo-llvm-cov" = "0.6.21"
+"aqua:taiki-e/cargo-llvm-cov" = "0.8.7"
 # libFuzzer driver (fuzz.yml); runs cargo +nightly itself
 "cargo:cargo-fuzz" = "0.13.2"
 # npm-ready wasm package build (task wasm:pack)

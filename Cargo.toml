@@ -1,9 +1,15 @@
 [workspace]
 resolver = "2"
 members = ["crates/edtf-core", "crates/edtf-calendars", "crates/edtf-normalize", "crates/edtf-wasm", "crates/edtf-cli"]
-# crates/edtf-postgres is intentionally NOT a workspace member: pgrx
-# extensions need their own dependency graph and a locally-initialized pgrx
-# toolchain (`cargo pgrx init`). Build/test it via `task pg:test`.
+# crates/edtf-postgres is intentionally NOT a workspace member. The binding
+# constraint is [profile]: Cargo honours it only at the workspace root and
+# silently ignores a member's own, so joining would impose the release
+# profile below — `opt-level = "z"` and `strip = "symbols"`, both tuned for
+# the wasm artifact — on a Postgres extension that needs `opt-level = 3`,
+# `panic = "unwind"` and its exported symbols intact. It also wants its own
+# dependency graph and a locally-initialized pgrx toolchain
+# (`cargo pgrx init`). Build/test it via `task pg:test`; its version is
+# gated against this workspace's by `task lint:versions`.
 # fuzz/ is excluded for the same reason: cargo-fuzz targets need nightly and
 # libfuzzer, and must not drag those into the everyday workspace build.
 exclude = ["crates/edtf-postgres", "fuzz"]

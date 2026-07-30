@@ -64,6 +64,7 @@ tasks:
       - lint:actions
       - lint:shell
       - lint:machete
+      - lint:versions
 
   lint:rust:
     desc: rustfmt (check) + clippy, warnings as errors
@@ -170,6 +171,15 @@ tasks:
       - |
         files=$(shfmt --find .)
         [ -z "$files" ] || shellcheck $files
+
+  lint:versions:
+    desc: All six crates share one version — catches a forgotten hand-bump
+    method: checksum
+    sources:
+      - crates/*/Cargo.toml
+      - .github/scripts/check-version-drift.sh
+    cmds:
+      - .github/scripts/check-version-drift.sh
 
   lint:machete:
     desc: cargo-machete (unused dependencies, metadata mode)

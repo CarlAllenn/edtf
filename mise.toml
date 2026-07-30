@@ -70,3 +70,5 @@ lychee = "0.24.2"
 "cargo:cargo-fuzz" = "0.13.2"
 # npm-ready wasm package build (task wasm:pack)
 "aqua:rustwasm/wasm-pack" = "0.15.0"
+# CycloneDX SBOMs for the published crates (publish.yml); not in aqua
+"cargo:cargo-cyclonedx" = "0.5.9"

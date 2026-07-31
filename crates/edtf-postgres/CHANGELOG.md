@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1](https://github.com/CarlAllenn/edtf/compare/edtf-postgres-v1.1.0...edtf-postgres-v1.1.1) - 2026-07-31
+
+### Fixed
+
+- close all 39 confirmed findings from the release-pipeline audit ([#76](https://github.com/CarlAllenn/edtf/pull/76))
+
 ## [1.1.0](https://github.com/CarlAllenn/edtf/compare/edtf-postgres-v1.0.2...edtf-postgres-v1.1.0) - 2026-07-31
 
 ### Added

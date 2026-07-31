@@ -204,6 +204,17 @@ mod tests {
             "SELECT daterange(edtf_min('196X'), edtf_max('196X'), '[]') @> DATE '1965-06-15'"
         ));
     }
+
+    /// The shared conformance corpus (`tests/corpus.sql`), which the
+    /// prebuilt-tarball smoke test also runs with `psql -f` against a real
+    /// install. Running it from here too is what keeps the binary held to
+    /// the same standard as the source: one set of assertions, two callers,
+    /// nothing to drift. Each check is a plpgsql `ASSERT`, so a failure
+    /// surfaces as an SPI error carrying the message.
+    #[pg_test]
+    fn shared_corpus() {
+        Spi::run(include_str!("../tests/corpus.sql")).expect("shared corpus");
+    }
 }
 
 /// Standard pgrx test harness plumbing.

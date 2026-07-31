@@ -328,6 +328,14 @@ jobs:
       - run: >
           cd crates/edtf-postgres && cargo pgrx test "pg$PG"
           --no-default-features --features "pg$PG"
+      # One leg only: the snapshot is the crate's SQL contract, and the
+      # point is that there is a single canonical copy of it. pg18 is the
+      # default feature, so it is the one that governs. Running this on all
+      # five legs would demand five snapshots and answer a different,
+      # less useful question.
+      - name: SQL surface snapshot
+        if: matrix.pg == 18
+        run: .github/scripts/schema-snapshot.sh
       # The release publishes edtf-postgres with --no-verify, because the
       # verify build runs pgrx's build script and needs a $PGRX_HOME the
       # release runner does not have. This job DOES have one, so the check

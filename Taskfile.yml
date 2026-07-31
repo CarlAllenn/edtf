@@ -62,6 +62,7 @@ tasks:
       - lint:actions
       - lint:shell
       - lint:machete
+      - lint:pg-upgrade-path
 
   lint:rust:
     desc: rustfmt (check) + clippy, warnings as errors
@@ -177,6 +178,17 @@ tasks:
     cmds:
       - cargo machete --with-metadata
 
+  lint:pg-upgrade-path:
+    desc: Every released extension version must be reachable by ALTER EXTENSION UPDATE
+    # Needs no Postgres — it reads the version and the sql/ directory only,
+    # which is why it belongs in the lint gate rather than the pgrx job.
+    method: checksum
+    sources:
+      - crates/edtf-postgres/Cargo.toml
+      - crates/edtf-postgres/sql/**
+    cmds:
+      - .github/scripts/assert-upgrade-path.sh
+
   scan:secrets:
     desc: gitleaks over the full git history
     # Not fingerprinted: the input is git history, which sources: cannot
@@ -226,3 +238,12 @@ tasks:
     dir: crates/edtf-postgres
     cmds:
       - cargo pgrx package
+
+  pg:schema-snapshot:
+    desc: Diff the generated SQL surface against the snapshot (requires `cargo pgrx init`)
+    # Deliberately not fingerprinted: the snapshot's input is a pgrx BUILD,
+    # not just the sources it is derived from.
+    env:
+      PG: 18
+    cmds:
+      - .github/scripts/schema-snapshot.sh

@@ -1,0 +1,35 @@
+# Per-link escapes for lychee, one entry per line, each with its reason —
+# the convention lychee.toml states. lychee runs weekly in scheduled.yml
+# over the whole tree; anything listed here would otherwise turn that
+# workflow red every Monday for something that is not actually broken.
+#
+# Nothing goes in here to silence a genuinely dead link. Both entries below
+# are permanent facts about the repository's history, not rot.
+#
+# Entries are REGEXES, not literal URLs — an unanchored entry matches by
+# prefix, so a bare `.../package/edtf-wasm` would also swallow
+# `.../package/edtf-wasm-anything-else`. Verified: it did. Every pattern
+# below is therefore escaped and `$`-anchored to match exactly one URL.
+
+# The changelogs' first comparison link, for the five crates that existed
+# before v1.0.0. release-plz generates `.../compare/<crate>-v<prev>...<crate>-v<new>`
+# for every release, and for the FIRST 1.0.0 entry the previous tag is a
+# v0.x per-crate tag that was never created — those versions went to
+# crates.io before the repository used per-crate tags at all. Verified
+# absent: the oldest tag of every crate is v1.0.0.
+#
+# These 404s cannot be fixed. Creating the tags now would be inventing
+# history, which is the same reason crates/edtf-postgres/CHANGELOG.md states
+# plainly that its 1.0.0 heading carries no comparison link and that one
+# "cannot honestly be created after the fact".
+^https://github\.com/CarlAllenn/edtf/compare/edtf\-calendars\-v0\.1\.0\.\.\.edtf\-calendars\-v1\.0\.0$
+^https://github\.com/CarlAllenn/edtf/compare/edtf\-cli\-v0\.1\.0\.\.\.edtf\-cli\-v1\.0\.0$
+^https://github\.com/CarlAllenn/edtf/compare/edtf\-core\-v0\.2\.0\.\.\.edtf\-core\-v1\.0\.0$
+^https://github\.com/CarlAllenn/edtf/compare/edtf\-normalize\-v0\.1\.0\.\.\.edtf\-normalize\-v1\.0\.0$
+^https://github\.com/CarlAllenn/edtf/compare/edtf\-wasm\-v0\.2\.0\.\.\.edtf\-wasm\-v1\.0\.0$
+
+# The npm badge target. npmjs.com answers 403 to lychee's user agent — bot
+# protection, not a broken link; the package resolves fine in a browser and
+# `npm view edtf-wasm` works. Scoped to this one URL rather than the whole
+# host, so a genuinely dead npm link elsewhere would still be caught.
+^https://www\.npmjs\.com/package/edtf\-wasm$

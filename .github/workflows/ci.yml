@@ -339,10 +339,21 @@ jobs:
       # Same feature selection as the test step above, so every leg verifies
       # packaging against the Postgres it initialised. Left on defaults this
       # would build pg18 on all five legs and fail everywhere but one.
+      # Packaged alongside edtf-core, not alone: packaging a crate strips its
+      # path dependencies and resolves them from the registry instead. On a
+      # release PR the bumped version is not published yet, so packaging
+      # edtf-postgres by itself fails with "failed to select a version for
+      # the requirement `edtf-core = ^1.0.1`". Naming both makes cargo build
+      # a temporary registry from the sibling and resolve against that.
+      #
+      # The real publish never hits this — publish-crates.sh puts edtf-core
+      # on crates.io before edtf-postgres — but this check must pass on the
+      # release PR that creates the version, which is exactly when it cannot
+      # be resolved remotely.
       - name: Verify the packaged crate builds
         run: >
-          cargo package --manifest-path crates/edtf-postgres/Cargo.toml
-          --no-default-features --features "pg$PG"
+          cargo package -p edtf-core -p edtf-postgres
+          --no-default-features --features "edtf-postgres/pg$PG"
 
   docs:
     name: rustdoc (warnings are errors) + doc tests

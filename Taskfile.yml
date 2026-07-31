@@ -29,19 +29,17 @@ tasks:
       - "**/*.rs"
       - "**/Cargo.toml"
       - Cargo.lock
-      - crates/edtf-postgres/Cargo.lock
       - fuzz/Cargo.lock
       - mise.toml
       - mise.lock
       - exclude: "**/target/**"
     cmds:
-      - cargo test --workspace --all-features
+      - cargo test --all-features
 
   fmt:
     desc: Apply all formatters
     cmds:
       - cargo +{{.RUSTFMT_TOOLCHAIN}} fmt --all
-      - cargo +{{.RUSTFMT_TOOLCHAIN}} fmt --manifest-path crates/edtf-postgres/Cargo.toml
       - cargo +{{.RUSTFMT_TOOLCHAIN}} fmt --manifest-path fuzz/Cargo.toml
       - taplo fmt
       - shfmt -w .
@@ -64,7 +62,6 @@ tasks:
       - lint:actions
       - lint:shell
       - lint:machete
-      - lint:versions
 
   lint:rust:
     desc: rustfmt (check) + clippy, warnings as errors
@@ -72,14 +69,13 @@ tasks:
     sources: *rust-sources
     cmds:
       - task: lint:fmt-check
-      - cargo clippy --workspace --all-features --all-targets -- -D warnings
+      - cargo clippy --all-features --all-targets -- -D warnings
 
   lint:fmt-check:
-    desc: rustfmt check, all three workspaces, pinned nightly
+    desc: rustfmt check, workspace + fuzz, pinned nightly
     cmds:
       - cargo +{{.RUSTFMT_TOOLCHAIN}} fmt --all --check
-      # edtf-postgres and fuzz are outside the workspace; keep fmt honest there.
-      - cargo +{{.RUSTFMT_TOOLCHAIN}} fmt --check --manifest-path crates/edtf-postgres/Cargo.toml
+      # fuzz/ is excluded from the workspace; keep fmt honest there too.
       - cargo +{{.RUSTFMT_TOOLCHAIN}} fmt --check --manifest-path fuzz/Cargo.toml
 
   lint:deny:
@@ -172,15 +168,6 @@ tasks:
         files=$(shfmt --find .)
         [ -z "$files" ] || shellcheck $files
 
-  lint:versions:
-    desc: All six crates share one version — catches a forgotten hand-bump
-    method: checksum
-    sources:
-      - crates/*/Cargo.toml
-      - .github/scripts/check-version-drift.sh
-    cmds:
-      - .github/scripts/check-version-drift.sh
-
   lint:machete:
     desc: cargo-machete (unused dependencies, metadata mode)
     # Deterministic given the lock (verified lockfile-untouched); canon:
@@ -204,7 +191,7 @@ tasks:
     # repo content — a content-hash skip could hide a stale verdict.
     # Canon: renovate-config templates/cargo-semver-checks/README.md.
     cmds:
-      - cargo semver-checks --workspace
+      - cargo semver-checks --workspace --exclude edtf-postgres
 
   bench:
     desc: Run the criterion benchmarks (numbers published in the README)

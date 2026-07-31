@@ -207,7 +207,7 @@ jobs:
       - name: Derive MSRV from Cargo.toml
         run: echo "MSRV=$(taplo get -f Cargo.toml 'workspace.package.rust-version')" >> "$GITHUB_ENV"
       - run: rustup toolchain install "$MSRV" --profile minimal
-      - run: rustup run "$MSRV" cargo check --workspace --all-features
+      - run: rustup run "$MSRV" cargo check --all-features
 
   wasm:
     name: WebAssembly build + native tests
@@ -378,8 +378,8 @@ jobs:
           # Single-purpose job: install only its own tools (canon rule,
           # templates/ci/README.md).
           install_args: rust
-      - run: cargo doc --workspace --all-features --no-deps
-      - run: cargo test --workspace --all-features --doc
+      - run: cargo doc --all-features --no-deps
+      - run: cargo test --all-features --doc
 
   coverage:
     name: Coverage (visibility, no threshold)
@@ -428,7 +428,7 @@ jobs:
           {
             echo '## Coverage (lines)'
             echo '```'
-            cargo llvm-cov --workspace --all-features
+            cargo llvm-cov --all-features
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
       - run: cargo llvm-cov report --lcov --output-path lcov.info

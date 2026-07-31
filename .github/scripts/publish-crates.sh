@@ -50,15 +50,16 @@ for name in "${ORDERED_CRATES[@]}"; do
   cargo publish -p "${name}"
 done
 
-# edtf-postgres. --no-verify: the verify build runs pgrx's build script,
-# which needs an initialized $PGRX_HOME this runner does not have; ci.yml's
-# postgres job runs the verify build on a runner that does.
+# edtf-postgres last: it resolves edtf-core from the registry, so the five
+# above must be live first. --no-verify because the verify build runs pgrx's
+# build script, which needs an initialized $PGRX_HOME this runner does not
+# have; ci.yml's postgres job runs it on runners that do.
 check_published edtf-postgres
 if [[ ${PUBLISHED} == "yes" ]]; then
   echo "::notice::edtf-postgres ${VERSION} already published; skipping"
 else
   echo "publishing edtf-postgres ${VERSION}"
-  cargo publish --no-verify --manifest-path crates/edtf-postgres/Cargo.toml
+  cargo publish -p edtf-postgres --no-verify
 fi
 
 # All six must now exist, whether this run published them or a prior one

@@ -32,10 +32,18 @@ jobs:
           disable-sudo: true
           # GitHub API responses over ~a few MB redirect to Azure blob
           # storage; the dependency graph diff is one of them.
+          #
+          # deps.dev and securityscorecards.dev are queried only for
+          # dependencies the PR ADDS — a PR that adds none never calls them,
+          # which is why this allowlist survived until a change that brought
+          # ~150 new crates into the graph (#54). Derived from the blocked
+          # endpoints that run reported.
           allowed-endpoints: >
             api.github.com:443
             github.com:443
             *.blob.core.windows.net:443
+            api.deps.dev:443
+            api.securityscorecards.dev:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false

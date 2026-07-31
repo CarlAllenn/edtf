@@ -316,8 +316,15 @@ jobs:
           cargo cyclonedx --format json --spec-version 1.5 \
             --manifest-path crates/edtf-postgres/Cargo.toml
           mkdir -p sbom
+          # MOVED, not copied. cargo-cyclonedx has no output-directory flag —
+          # it always writes beside the manifest — so a copy leaves
+          # crates/<name>/<name>.cdx.json behind and the working tree dirty.
+          # `cargo publish` then refuses outright: "files in the working
+          # directory contain changes that were not yet committed into git".
+          # That is what broke v1.1.1, on the first crate, the moment this
+          # step was hoisted above the publish so the rehearsal could cover it.
           for name in edtf-core edtf-calendars edtf-normalize edtf-wasm edtf-cli edtf-postgres; do
-            cp "crates/${name}/${name}.cdx.json" "sbom/${name}.cdx.json"
+            mv "crates/${name}/${name}.cdx.json" "sbom/${name}.cdx.json"
           done
           ls -1 sbom/
 
@@ -348,6 +355,27 @@ jobs:
       - name: Assert the rehearsal published nothing
         if: env.DRY_RUN == 'true'
         run: .github/scripts/assert-nothing-published.sh
+
+      # Nothing above may leave the working tree dirty. `cargo publish`
+      # refuses to publish from a dirty tree, and it refuses on the FIRST
+      # crate — so the failure is safe but total, and it is invisible until
+      # a real release reaches this line. v1.1.1 died here. Asserting it
+      # explicitly turns "no step writes into the tree" from a convention
+      # into a checked precondition, one step before it would matter.
+      - name: Assert the working tree is clean
+        run: |
+          set -euo pipefail
+          # UNTRACKED files count. cargo publish rejected v1.1.1 over
+          # crates/edtf-core/edtf-core.cdx.json, which was untracked, not
+          # modified — so a guard using --untracked-files=no would miss the
+          # exact defect it exists to catch. Release staging (dist/, sbom/)
+          # is gitignored, so it does not register here.
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::the working tree is dirty; cargo publish will refuse"
+            git status --porcelain
+            exit 1
+          fi
+          echo "::notice::working tree is clean"
 
       # --- publish -------------------------------------------------------
       # Trusted publishing: short-lived crates.io token via OIDC exchange —

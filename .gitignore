@@ -13,3 +13,7 @@ lefthook-local.yml
 # Release staging: package-all.sh writes the .crate files here, and the
 # extension tarballs and SHA256SUMS land beside them.
 /dist/
+
+# SBOM staging: cargo-cyclonedx has no output-directory flag, so the
+# release step moves its output here out of the crate directories.
+/sbom/

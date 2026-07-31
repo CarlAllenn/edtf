@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2](https://github.com/CarlAllenn/edtf/compare/edtf-core-v1.0.1...edtf-core-v1.0.2) - 2026-07-31
+
+### Changed
+
+- no library changes — republished through the hardened release pipeline:
+  in-run provenance self-verification and per-crate SBOM attachment
+  ([#67](https://github.com/CarlAllenn/edtf/pull/67), [#69](https://github.com/CarlAllenn/edtf/pull/69))
+
 ## [1.0.0](https://github.com/CarlAllenn/edtf/compare/edtf-core-v0.2.0...edtf-core-v1.0.0) - 2026-07-27
 
 ### Added

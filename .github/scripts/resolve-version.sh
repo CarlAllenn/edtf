@@ -9,13 +9,25 @@ set -euo pipefail
 
 GITHUB_REF_NAME="${GITHUB_REF_NAME:?GITHUB_REF_NAME must be set}"
 GITHUB_ENV="${GITHUB_ENV:?GITHUB_ENV must be set}"
+GITHUB_REF="${GITHUB_REF:?GITHUB_REF must be set}"
+DRY_RUN="${DRY_RUN:-false}"
 
 version=$(cargo pkgid --manifest-path crates/edtf-core/Cargo.toml | sed 's/.*[@#]//')
 pg_version=$(cargo pkgid --manifest-path crates/edtf-postgres/Cargo.toml | sed 's/.*[@#]//')
 
-if [[ "v${version}" != "${GITHUB_REF_NAME}" ]]; then
-  echo "::error::tag ${GITHUB_REF_NAME} does not match workspace version ${version}"
+# The tag must name the version being released. Skipped only when rehearsing
+# from a branch, which has no version in its name — assert-publish-ref.sh has
+# already established that a branch ref is permitted solely for a dry run.
+if [[ ${GITHUB_REF} == refs/tags/* ]]; then
+  if [[ "v${version}" != "${GITHUB_REF_NAME}" ]]; then
+    echo "::error::tag ${GITHUB_REF_NAME} does not match workspace version ${version}"
+    exit 1
+  fi
+elif [[ ${DRY_RUN} != "true" ]]; then
+  echo "::error::refusing to release from non-tag ref ${GITHUB_REF}"
   exit 1
+else
+  echo "::notice::rehearsing from ${GITHUB_REF}; a real release runs at refs/tags/v${version}"
 fi
 
 if [[ ${pg_version} != "${version}" ]]; then

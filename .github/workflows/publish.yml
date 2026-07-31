@@ -48,10 +48,6 @@ jobs:
       contents: write # upload SBOMs to the release
       id-token: write # OIDC: crates.io + npm trusted publishing, attestations
       attestations: write # store build provenance
-    env:
-      # Routed through env so no template expands inside run: code
-      # (zizmor template-injection, pedantic tier).
-      DRY_RUN: ${{ inputs.dry_run || 'false' }}
     steps:
       # Egress allowlist: registry publishes, npm + sigstore, toolchain hosts.
       - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
@@ -77,15 +73,20 @@ jobs:
             search.sigstore.dev:443
             tuf-repo-cdn.sigstore.dev:443
 
-      # Refuse to run on a non-tag ref. Provenance is the product here; a
-      # branch ref would silently produce the v1.0.0 defect again.
-      - name: Assert tag ref
-        run: |
-          set -euo pipefail
-          case "${GITHUB_REF}" in
-            refs/tags/v*) echo "::notice::publishing for ${GITHUB_REF}" ;;
-            *) echo "::error::refusing to publish from ${GITHUB_REF} — dispatch with --ref <tag>"; exit 1 ;;
-          esac
+      # Sets DRY_RUN from the event name rather than from an expression over
+      # the `inputs` context, whose value on non-dispatch events GitHub does
+      # not document. See the script header.
+      - name: Resolve dry-run mode
+        env:
+          DRY_RUN_INPUT: ${{ inputs.dry_run }}
+        run: .github/scripts/resolve-dry-run.sh
+
+      # Refuse to PUBLISH from a non-tag ref. Provenance is the product here,
+      # and a branch ref would silently reproduce the v1.0.0 defect. A dry
+      # run is exempt: it signs nothing, so it has no provenance to get
+      # wrong — and without the exemption the rehearsal is unreachable.
+      - name: Assert publishing ref
+        run: .github/scripts/assert-publish-ref.sh
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

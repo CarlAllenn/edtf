@@ -50,6 +50,12 @@ jobs:
       attestations: write # store build provenance
     steps:
       # Egress allowlist: registry publishes, npm + sigstore, toolchain hosts.
+      # The last two are GitHub's own TUF trust root and its target store:
+      # `gh attestation verify` fetches them to verify GitHub-signed
+      # attestations, and the v1.0.1 self-verify step failed solely because
+      # they were absent here (issue #66) — every artifact reported
+      # "provenance does not match" when the truth was "could not fetch the
+      # trust root to check".
       - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: block
@@ -72,6 +78,8 @@ jobs:
             rekor.sigstore.dev:443
             search.sigstore.dev:443
             tuf-repo-cdn.sigstore.dev:443
+            tuf-repo.github.com:443
+            tmaproduction.blob.core.windows.net:443
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

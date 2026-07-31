@@ -22,18 +22,45 @@ GITHUB_SHA="${GITHUB_SHA:?GITHUB_SHA must be set}"
 fail=0
 checked=0
 
-for artifact in dist/*; do
-  [[ -f ${artifact} ]] || continue
-  checked=$((checked + 1))
-  if gh attestation verify "${artifact}" \
+# Retried, and stderr kept: at v1.0.1 every artifact "failed" here with the
+# real error invisible — it was a blocked egress host, not bad provenance,
+# and the swallowed stderr said so plainly (issue #66). The retries cover
+# the attestation API's read-after-write lag; the surfaced stderr covers
+# everything else.
+# Sets VERIFIED rather than returning a status — a plain statement, not a
+# condition, for the same SC2310 reason as push-umbrella-tag.sh.
+VERIFIED="false"
+verify_once() {
+  VERIFIED="false"
+  if gh attestation verify "$1" \
     --repo "${GITHUB_REPOSITORY}" \
     --source-ref "${GITHUB_REF}" \
     --source-digest "${GITHUB_SHA}" \
     --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/publish.yml" \
-    > /dev/null 2>&1; then
+    > /dev/null 2> "${RUNNER_TEMP:-/tmp}/verify-stderr.txt"; then
+    VERIFIED="true"
+  fi
+}
+
+for artifact in dist/*; do
+  [[ -f ${artifact} ]] || continue
+  checked=$((checked + 1))
+
+  for attempt in 1 2 3; do
+    verify_once "${artifact}"
+    if [[ ${VERIFIED} == "true" ]]; then
+      break
+    fi
+    if [[ ${attempt} -lt 3 ]]; then
+      sleep 20
+    fi
+  done
+
+  if [[ ${VERIFIED} == "true" ]]; then
     echo "ok  $(basename "${artifact}")  ref=${GITHUB_REF}  commit=${GITHUB_SHA}"
   else
-    echo "::error::$(basename "${artifact}"): provenance does not match this tag, commit or workflow"
+    echo "::error::$(basename "${artifact}"): attestation verification failed"
+    cat "${RUNNER_TEMP:-/tmp}/verify-stderr.txt"
     fail=1
   fi
 done

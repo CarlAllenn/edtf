@@ -91,25 +91,58 @@ for name in "${CRATES[@]}"; do
     RELEASE_EXISTS="true"
   fi
 
-  # --draft, matching release-plz's git_release_draft on the normal path
-  # (issue #55). This script is the recovery path and is NOT covered by that
-  # setting — it calls `gh release create` directly — so the flag has to be
-  # repeated here or a recovered release would publish immediately, with no
-  # assets on it and no way to attach them once immutability applies.
-  # publish-releases.sh publishes these at the end of phase 2.
+  # A DRAFT release creates NO git ref. GitHub records tag_name and
+  # target_commitish on the draft and mints the tag only when it is
+  # published — verified empirically against this repository.
+  #
+  # That is load-bearing here. push-umbrella-tag.sh, the very next step in
+  # the dispatch job, decides whether a release is in flight by reading
+  # refs/tags/edtf-core-v<version>. Before `--draft` this loop did create
+  # the ref as a side effect of `gh release create --target` — v1.0.1 and
+  # v1.0.2 are the lightweight refs it left behind. After `--draft` the ref
+  # never appeared, the anchor lookup 404'd, push-umbrella-tag.sh reported
+  # "no release in progress" and the whole dispatch job exited GREEN having
+  # triggered nothing, with six invisible drafts and no way to converge:
+  # a re-dispatch finds the drafts present and skips.
+  #
+  # So the ref is created explicitly and first, and the release is created
+  # against it. That also makes the TAG_SHA guard above meaningful on the
+  # recovery path, which it could not be while nothing ever left a tag.
+  if [[ -z ${TAG_SHA} ]]; then
+    gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+      -f "ref=refs/tags/${tag}" -f "sha=${GITHUB_SHA}" > /dev/null
+    echo "::notice::created ref refs/tags/${tag} -> ${GITHUB_SHA}"
+  fi
+
+  # publish-releases.sh publishes these at the end of phase 2; they must not
+  # go public before their assets are attached (issue #55).
   if [[ ${RELEASE_EXISTS} == "true" ]]; then
-    echo "::notice::release ${tag} already exists; leaving it alone"
-  elif [[ -n ${TAG_SHA} ]]; then
-    # Tag already at the right commit (an earlier partial run): release only.
+    echo "::notice::draft release ${tag} already exists; leaving it alone"
+  else
     gh release create "${tag}" --repo "${GITHUB_REPOSITORY}" \
       --draft --title "${tag}" --notes "${notes}"
-    echo "::notice::created draft release ${tag} for the existing tag"
-  else
-    # `gh release create --target` creates the tag and the release together.
-    gh release create "${tag}" --repo "${GITHUB_REPOSITORY}" \
-      --draft --target "${GITHUB_SHA}" --title "${tag}" --notes "${notes}"
-    echo "::notice::created ${tag} -> ${GITHUB_SHA} (tag + draft release)"
+    echo "::notice::created draft release ${tag} at ${GITHUB_SHA}"
   fi
 done
 
-echo "::notice::all six per-crate tags and releases exist at ${GITHUB_SHA}"
+# Read the tags back rather than announcing them. The previous version
+# printed "all six per-crate tags and releases exist" having never read one,
+# which is precisely how the silent-green failure above stayed invisible.
+missing=()
+for name in "${CRATES[@]}"; do
+  tag="${name}-v${version}"
+  REF_SHA=""
+  REF_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}" \
+    -q .object.sha 2> /dev/null) || REF_SHA=""
+  if [[ ${REF_SHA} != "${GITHUB_SHA}" ]]; then
+    missing+=("${tag}=${REF_SHA:-absent}")
+  fi
+done
+
+if [[ ${#missing[@]} -gt 0 ]]; then
+  echo "::error::tags absent or at the wrong commit: ${missing[*]}"
+  echo "::error::push-umbrella-tag.sh would exit green having triggered nothing"
+  exit 1
+fi
+
+echo "::notice::all six per-crate tags exist at ${GITHUB_SHA}, each with a draft release"

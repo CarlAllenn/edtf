@@ -58,6 +58,19 @@ read_state() {
   STATE=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases" \
     --jq ".[] | select(.tag_name == \"$1\") | \"\(.draft) \(.immutable)\"" \
     2> /dev/null) || STATE=""
+
+  # GitHub permits several DRAFTS to share a tag_name — drafts have no ref
+  # to make unique. Two matches would concatenate into a two-line STATE
+  # that equals neither "true false" nor "false true", so the run would
+  # fail with an unreadable value rather than naming the real problem.
+  MATCHES=0
+  MATCHES=$(grep -c . <<< "${STATE}") || MATCHES=0
+  if [[ ${MATCHES} -gt 1 ]]; then
+    echo "::error::more than one release carries the tag $1:"
+    echo "${STATE}"
+    echo "::error::delete the duplicate drafts before releasing"
+    exit 1
+  fi
 }
 
 for name in "${CRATES[@]}"; do
@@ -76,9 +89,16 @@ for name in "${CRATES[@]}"; do
   fi
 
   if [[ ${STATE} == "false "* ]]; then
-    echo "::error::${tag} is already published but NOT immutable (${STATE})"
-    echo "::error::that cannot be corrected in place; enable immutable releases and cut a new version"
-    exit 1
+    # Published already, but mutable: that is a PRE-EXISTING condition from
+    # an earlier run, and it cannot be corrected in place. Warn and carry
+    # on. Failing here would strand the remaining drafts permanently — the
+    # script would refuse on this crate every time it was re-dispatched,
+    # which is the opposite of what its own recovery instruction asks for.
+    # The live signal about the repository setting is the read-back below,
+    # on a release THIS run just published.
+    echo "::warning::${tag} was already published without immutability (${STATE})"
+    echo "::warning::its assets are mutable and cannot be sealed retroactively"
+    continue
   fi
 
   gh release edit "${tag}" --repo "${GITHUB_REPOSITORY}" --draft=false

@@ -40,21 +40,25 @@ multiple-versions = "deny"
 multiple-versions-include-dev = true
 wildcards = "deny"
 allow-wildcard-paths = true
-# Cross-major ecosystem lag. Each pin is the OLD version, so the entry dies
+# Cross-major ecosystem lag. Each entry is a RANGE over the lagging
+# major/minor, not an exact version: `crate = "syn@2.0.119"` is parsed by
+# cargo-deny as an exact requirement, so every Renovate lockfile refresh
+# that moved a patch turned this gate red with `skipped crate was not
+# encountered`. A range survives patch churn and still dies
 # (-D unmatched-skip) the moment the laggard catches up. Audited 2026-07-26;
 # extended 2026-07-31 when edtf-postgres became a workspace member and its
 # tree became visible to this gate for the first time.
 skip = [
-  { crate = "syn@2.0.119", reason = "several proc-macro crates lag the syn 3 move" },
-  { crate = "getrandom@0.3.4", reason = "tempfile (via pgrx-tests) lags getrandom 0.4" },
-  { crate = "half@1.8.3", reason = "serde_cbor (via pgrx) lags half 2; see the RUSTSEC-2021-0127 ignore" },
-  { crate = "hashbrown@0.15.5", reason = "petgraph (via pgrx-sql-entity-graph) lags hashbrown 0.17" },
-  { crate = "rand@0.9.5", reason = "proptest lags the rand 0.10 move that pgrx already took" },
-  { crate = "rand_core@0.9.5", reason = "pulled by rand 0.9.5, same lag" },
-  { crate = "shlex@1.3.0", reason = "bindgen (via pgrx-bindgen) lags shlex 2" },
-  { crate = "toml@0.9.12+spec-1.1.0", reason = "cargo_toml (via pgrx-pg-config) lags toml 1" },
-  { crate = "toml_datetime@0.7.5+spec-1.1.0", reason = "pulled by toml 0.9, same lag" },
-  { crate = "winnow@0.7.15", reason = "pulled by toml 0.9, same lag" },
+  { crate = "syn@^2.0", reason = "several proc-macro crates lag the syn 3 move" },
+  { crate = "getrandom@^0.3", reason = "tempfile (via pgrx-tests) lags getrandom 0.4" },
+  { crate = "half@^1.8", reason = "serde_cbor (via pgrx) lags half 2; see the RUSTSEC-2021-0127 ignore" },
+  { crate = "hashbrown@^0.15", reason = "petgraph (via pgrx-sql-entity-graph) lags hashbrown 0.17" },
+  { crate = "rand@^0.9", reason = "proptest lags the rand 0.10 move that pgrx already took" },
+  { crate = "rand_core@^0.9", reason = "pulled by rand 0.9.5, same lag" },
+  { crate = "shlex@^1.3", reason = "bindgen (via pgrx-bindgen) lags shlex 2" },
+  { crate = "toml@^0.9", reason = "cargo_toml (via pgrx-pg-config) lags toml 1" },
+  { crate = "toml_datetime@^0.7", reason = "pulled by toml 0.9, same lag" },
+  { crate = "winnow@^0.7", reason = "pulled by toml 0.9, same lag" },
 ]
 
 [bans.workspace-dependencies]

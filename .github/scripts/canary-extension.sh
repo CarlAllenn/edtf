@@ -36,32 +36,46 @@ trap 'rm -rf "${scratch}"' EXIT
 # proved is the integrity of the attached bytes, not the anonymity of the
 # fetch.
 gh release download "${TAG}" --repo "${GITHUB_REPOSITORY}" \
-  --pattern "${ASSET}" --dir "${scratch}"
+  --pattern "${ASSET}" --pattern SHA256SUMS --dir "${scratch}"
 
-if [[ ! -f "${scratch}/${ASSET}" ]]; then
-  echo "::error::${ASSET} could not be downloaded from ${TAG}"
-  exit 1
-fi
+for f in "${ASSET}" SHA256SUMS; do
+  if [[ ! -f "${scratch}/${f}" ]]; then
+    echo "::error::${f} could not be downloaded from ${TAG}"
+    exit 1
+  fi
+done
 
-# Compare against the checksums file that ships beside it, not against a
-# digest recomputed from dist/ — the point is that the published file and
-# the published manifest agree.
+# BOTH sides come from the release. The check earlier compared a downloaded
+# tarball against the LOCAL dist/SHA256SUMS, which is not what its own
+# comment claimed and could not see the failure that matters: a stale or
+# mis-attached manifest sitting on the release. Published-vs-published is
+# the only comparison that proves what a stranger will actually experience.
 expected=""
-expected=$(awk -v n="${ASSET}" '$2 == n { print $1 }' dist/SHA256SUMS)
+expected=$(awk -v n="${ASSET}" '$2 == n { print $1 }' "${scratch}/SHA256SUMS")
 actual=""
 actual=$(sha256sum "${scratch}/${ASSET}" | cut -d' ' -f1)
 
 if [[ -z ${expected} ]]; then
-  echo "::error::${ASSET} is not listed in SHA256SUMS"
+  echo "::error::${ASSET} is not listed in the released SHA256SUMS"
   exit 1
 fi
 
 if [[ ${expected} != "${actual}" ]]; then
-  echo "::error::${ASSET}: SHA256SUMS says ${expected}, the release serves ${actual}"
+  echo "::error::${ASSET}: released SHA256SUMS says ${expected}, the release serves ${actual}"
   exit 1
 fi
 
-echo "ok  ${ASSET} matches SHA256SUMS"
+echo "ok  ${ASSET} matches the released SHA256SUMS"
+
+# And the released manifest must be the one this run built, or the release
+# describes artifacts from some other run. upload-extension-assets.sh
+# overwrites while the release is a draft precisely so these agree.
+if ! diff -u dist/SHA256SUMS "${scratch}/SHA256SUMS"; then
+  echo "::error::the released SHA256SUMS differs from the one this run built"
+  exit 1
+fi
+
+echo "ok  released SHA256SUMS is identical to this run's"
 
 PG="${PG}" VERSION="${VERSION}" DISTRO=trixie \
   TARBALL="${scratch}/${ASSET}" \

@@ -283,6 +283,12 @@ jobs:
             crates.io:443
             dl.google.com:443
             esm.ubuntu.com:443
+            # Only reached on a ~/.pgrx cache MISS, when `cargo pgrx init
+            # --pgN download` fetches versions.rss and the Postgres tarball.
+            # A warm cache short-circuits the init step entirely, which is
+            # why an egress audit never observed these two.
+            ftp.postgresql.org:443
+            www.postgresql.org:443
             github.com:443
             index.crates.io:443
             mise-versions.jdx.dev:443

@@ -17,8 +17,8 @@ that is valid in your application is valid in your database — always:
 | Crate | What it is |
 | --- | --- |
 | **`edtf-core`** | The implementation. `#![no_std]`, zero runtime dependencies. Parsing, validation, level classification, calendar bounds, three-valued temporal relations, value enumeration, canonical formatting, positioned errors. Optional `serde` feature. |
-| **`edtf-normalize`** | Deterministic prose-date → EDTF normalizer at the human input boundary: `"1980s"` → `198X`, `"circa 1920"` → `1920~`, `"около 1920 г."` → `1920~`. Honest ambiguity (`"12/04/1985"` returns both readings, never a guess), every output valid canonical EDTF by construction. English and Russian pattern tables; `no_std` + `alloc`, zero dependencies. |
-| **`edtf-calendars`** | Proleptic Julian (Old Style) → Gregorian conversion at the ingest boundary: day precision converts exactly, year/month precision returns honest earliest/latest spans. `#![no_std]`, zero dependencies. |
+| **`edtf-normalize`** | Deterministic prose-date → EDTF normalizer at the human input boundary: `"1980s"` → `198X`, `"circa 1920"` → `1920~`, `"около 1920 г."` → `1920~`. Honest ambiguity (`"12/04/1985"` returns both readings, never a guess), every output valid canonical EDTF by construction. English and Russian pattern tables; `no_std` + `alloc`, no third-party dependencies (only `edtf-core`). |
+| **`edtf-calendars`** | Proleptic Julian (Old Style) → Gregorian conversion at the ingest boundary: day precision converts exactly, year/month precision returns honest earliest/latest spans. `#![no_std]`, no third-party dependencies (only `edtf-core`). |
 | **`edtf-wasm`** | WebAssembly bindings for JavaScript: `isValid`, `level`, `canonical`, `parse` (JSON summary), `relation`, and `normalize` (prose → EDTF via `edtf-normalize`). |
 | **`edtf-postgres`** | Postgres extension (via [pgrx], Postgres 14–18): `edtf_valid()`, `edtf_level()`, `edtf_canonical()`, `edtf_min()`, `edtf_max()`, `edtf_relation()` as SQL functions. |
 | **`edtf-cli`** | The `edtf` command-line tool: `validate` / `canonical` / `level` / `info` over arguments or stdin, plus `relation` (three-valued comparison of two expressions) and `from-julian` (Old Style → Gregorian EDTF). Installable anywhere via `cargo install edtf-cli` (or pin it with mise: `"cargo:edtf-cli"`). |
@@ -97,13 +97,13 @@ FROM artworks;
 
 ### Installing the Postgres extension
 
-Prebuilt, attested tarballs are attached to each `edtf-postgres-v*` release,
-so installing needs no Rust toolchain and no `cargo-pgrx`. **Verify before
-extracting** — the archive unpacks into `/` as root, so checking the
-signature afterwards is a postmortem, not verification.
+Prebuilt, attested tarballs are attached to each `edtf-postgres-v*` release
+from **v1.1.0** onward, so installing needs no Rust toolchain and no
+`cargo-pgrx`. **Verify before extracting** — the archive unpacks into `/` as
+root, so checking the signature afterwards is a postmortem, not verification.
 
 ```bash
-VERSION=1.0.2
+VERSION=1.1.0
 PG=18                 # 14, 15, 16, 17 or 18
 ARCH=amd64            # amd64 or arm64 — dpkg's spelling, not uname's
 FILE="edtf_postgres-${VERSION}-pg${PG}-linux-${ARCH}.tar.gz"

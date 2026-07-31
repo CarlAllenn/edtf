@@ -2,7 +2,7 @@
 
 Deterministic prose-date → EDTF normalizer: `"1980s"` → `198X`,
 `"circa 1920"` → `1920~`, `"около 1920 г."` → `1920~` — instant, offline,
-the same answer on every keystroke. `no_std` + `alloc`, zero dependencies.
+the same answer on every keystroke. `no_std` + `alloc`, no third-party dependencies (only `edtf-core`).
 
 Built for the human input boundary: values are constructed through
 [`edtf-core`](https://crates.io/crates/edtf-core)'s model and rendered by its canonical `Display`,

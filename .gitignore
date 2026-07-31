@@ -9,3 +9,7 @@ target/
 
 # personal lefthook overrides — never committed
 lefthook-local.yml
+
+# Release staging: package-all.sh writes the .crate files here, and the
+# extension tarballs and SHA256SUMS land beside them.
+/dist/

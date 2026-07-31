@@ -5,15 +5,26 @@
 # else, so they belong on that crate's release. There is no release at the
 # umbrella tag to put them on anyway (issue #66, defect 1).
 #
-# The release is still a DRAFT at this point — that is the whole reason
-# phase 1 stopped publishing. Immutability applies at publish, so every
-# asset has to be in place first; publish-releases.sh comes last.
+# REPLACES rather than skips, while the release is a draft.
 #
-# Idempotent in the shape publish-crates.sh established: state is read back
-# from the release rather than assumed from a workflow output, each asset is
-# skipped if already present, and a final assertion proves the whole set
-# landed. Without that assertion a partial upload is invisible — the release
-# would simply have fewer assets than the support matrix promises.
+# The obvious shape — skip any asset whose name is already attached — is
+# wrong here, and dangerously so. A re-dispatched run rebuilds all ten
+# tarballs, and those bytes are explicitly not reproducible
+# (build-extension-inner.sh says so: the .so is not claimed bit-identical,
+# and the container apt-installs at run time). checksum-extension.sh then
+# regenerates SHA256SUMS over the NEW bytes. Skipping by name would leave the
+# release carrying run 1's tarballs beside run 2's manifest — a published,
+# immutable release whose checksums file contradicts its own assets — and the
+# canary would compare freshly built digests against stale published ones and
+# fail forever, so the release could never be completed at all.
+#
+# Drafts are mutable, which is the whole reason phase 1 stops short of
+# publishing. So the coherent move is to overwrite: after this runs, the
+# attached bytes, dist/, SHA256SUMS and the attestation subjects all describe
+# the same artifacts by construction.
+#
+# Once a release is published it is immutable and nothing can be attached.
+# That is not recoverable in place, so it fails loudly rather than pretending.
 set -euo pipefail
 
 VERSION="${VERSION:?VERSION must be set}"
@@ -27,22 +38,30 @@ for path in dist/edtf_postgres-*.tar.gz; do
 done
 assets+=(SHA256SUMS)
 
-# Plain statement, then read — never a function as a condition (SC2310,
-# .shellcheckrc enable=all): a failed API call must not read as "absent".
-EXISTING=""
-EXISTING=$(gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" \
-  --json assets --jq '.assets[].name' 2> /dev/null) || EXISTING=""
+# Plain statements, never functions-as-conditions (SC2310, .shellcheckrc
+# enable=all): a failed API call must not read as a legitimate value.
+IS_DRAFT=""
+IS_DRAFT=$(gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" \
+  --json isDraft --jq .isDraft 2> /dev/null) || IS_DRAFT=""
 
-for name in "${assets[@]}"; do
-  if grep -qxF "${name}" <<< "${EXISTING}"; then
-    echo "::notice::${name} already attached to ${TAG}; skipping"
-    continue
-  fi
-  gh release upload "${TAG}" "dist/${name}" --repo "${GITHUB_REPOSITORY}"
-  echo "::notice::attached ${name} to ${TAG}"
-done
+if [[ -z ${IS_DRAFT} ]]; then
+  echo "::error::release ${TAG} does not exist — phase 1 did not create it"
+  exit 1
+fi
 
-# Read the release back and prove every asset is on it.
+if [[ ${IS_DRAFT} == "true" ]]; then
+  for name in "${assets[@]}"; do
+    gh release upload "${TAG}" "dist/${name}" \
+      --repo "${GITHUB_REPOSITORY}" --clobber
+    echo "::notice::attached ${name} to ${TAG}"
+  done
+else
+  echo "::notice::${TAG} is already published; assets are immutable"
+fi
+
+# Read the release back and prove every asset is on it. On the published
+# path this is the only check that runs, and it is the one that matters:
+# an immutable release missing an asset cannot be repaired.
 FINAL=""
 FINAL=$(gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" \
   --json assets --jq '.assets[].name' 2> /dev/null) || FINAL=""
@@ -55,7 +74,10 @@ for name in "${assets[@]}"; do
 done
 
 if [[ ${#missing[@]} -gt 0 ]]; then
-  echo "::error::not attached to ${TAG} after upload: ${missing[*]}"
+  echo "::error::not attached to ${TAG}: ${missing[*]}"
+  if [[ ${IS_DRAFT} != "true" ]]; then
+    echo "::error::${TAG} is published and immutable — this cannot be repaired in place"
+  fi
   exit 1
 fi
 

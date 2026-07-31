@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Every script under .github/scripts/ must be executable IN GIT.
+# Every tracked *.sh must be executable IN GIT.
 #
 # Paid for at v1.1.0. canary-extension.sh was committed 100644 while its
 # twenty-three siblings were 100755, and workflows invoke these by path
@@ -13,12 +13,14 @@
 # tag it broke: the release has to be completed out-of-band. That is what
 # makes a cheap mode check worth a gate of its own.
 #
+# Repo-wide, not just .github/scripts: fuzz/seed.sh is invoked by path from
+# fuzz.yml and sat outside the first version of this gate — the same class
+# of defect, one directory over.
+#
 # `git ls-files -s` reports the INDEX mode, which is the thing that actually
 # ships — not the filesystem bit, which can differ and which a fresh clone
 # on a mode-ignoring filesystem would not reproduce.
 set -euo pipefail
-
-DIR=".github/scripts"
 
 # Captured first, then iterated. Reading straight from a process
 # substitution masks git's exit status (SC2312): a failed `git ls-files`
@@ -26,10 +28,10 @@ DIR=".github/scripts"
 # nothing — the same vacuous-success shape self-verify-attestations.sh
 # guards against.
 LISTING=""
-LISTING=$(git ls-files -s "${DIR}"/*.sh)
+LISTING=$(git ls-files -s '*.sh')
 
 if [[ -z ${LISTING} ]]; then
-  echo "::error::no scripts found under ${DIR} — refusing to pass vacuously"
+  echo "::error::no tracked .sh files found — refusing to pass vacuously"
   exit 1
 fi
 
@@ -41,11 +43,11 @@ while read -r mode _ _ path; do
 done <<< "${LISTING}"
 
 if [[ ${#bad[@]} -gt 0 ]]; then
-  echo "::error::${#bad[@]} script(s) under ${DIR} are not executable in git:"
+  echo "::error::${#bad[@]} tracked script(s) are not executable in git:"
   printf '::error::  %s\n' "${bad[@]}"
   echo "::error::fix with: git update-index --chmod=+x <path>"
   exit 1
 fi
 
-count=$(git ls-files "${DIR}"/*.sh | wc -l | tr -d ' ')
-echo "::notice::all ${count} scripts under ${DIR} are executable"
+count=$(git ls-files '*.sh' | wc -l | tr -d ' ')
+echo "::notice::all ${count} tracked scripts are executable"

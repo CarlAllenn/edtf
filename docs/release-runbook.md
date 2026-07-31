@@ -112,10 +112,15 @@ Supporting rules:
 
 ## Normal release
 
-1. Before merging: the release PR bumps the version, so `edtf-postgres` needs
-   its upgrade script for the new version — `assert-upgrade-path.sh` fails the
-   lint gate and names the file. Empty is correct unless
-   `task pg:schema-snapshot` shows the SQL surface moved.
+1. On the release branch, run **`task release:prepare`** and commit what it
+   changes. Two things sit outside release-plz's reach and fail the lint gate
+   on every single release until someone does them by hand: the extension
+   upgrade script (`default_version` is `@CARGO_VERSION@`, so each release
+   mints a version needing an `ALTER EXTENSION UPDATE` path) and
+   `fuzz/Cargo.lock` (fuzz/ is excluded from the workspace, so its edtf-core
+   pin goes stale). The task does both, and refuses to invent SQL — if
+   `schema.snapshot.sql` changed, it stops and the migration is written by
+   hand.
 2. release-plz maintains the release PR. **Merging it is the commitment
    point.** Everything downstream is automatic: phase 1 tags and cuts draft
    releases, the umbrella tag fires phase 2, phase 2 builds and smoke-tests

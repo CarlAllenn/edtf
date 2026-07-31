@@ -1,6 +1,6 @@
 [package]
 name = "edtf-normalize"
-version = "1.1.1"
+version = "1.1.2"
 description = "Deterministic prose-date to EDTF normalizer (English and Russian): '1980s' -> 198X, 'circa 1920' -> 1920~. Honest ambiguity, no silent guesses. no_std, no third-party dependencies."
 keywords = ["edtf", "date", "iso8601", "natural-language", "no-std"]
 categories = ["date-and-time", "parser-implementations", "no-std"]

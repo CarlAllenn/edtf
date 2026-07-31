@@ -231,6 +231,15 @@ tasks:
       - cargo clippy --manifest-path fuzz/Cargo.toml --all-targets --locked -- -D warnings
       - cargo deny --manifest-path fuzz/Cargo.toml check -D unmatched-skip
 
+  release:prepare:
+    desc: Do the two things every Release PR needs that release-plz cannot
+    # The extension upgrade script and fuzz/Cargo.lock both sit outside
+    # release-plz's reach and both fail the lint gate on every release until
+    # someone does them by hand. Run this once on the release branch.
+    # It refuses to invent SQL if the surface actually moved.
+    cmds:
+      - .github/scripts/prepare-release.sh
+
   scan:secrets:
     desc: gitleaks over the full git history
     # Not fingerprinted: the input is git history, which sources: cannot

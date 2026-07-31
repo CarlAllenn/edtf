@@ -220,6 +220,16 @@ jobs:
             tuf-repo-cdn.sigstore.dev:443
             tuf-repo.github.com:443
             tmaproduction.blob.core.windows.net:443
+            # canary-extension.sh runs `docker` in THIS job: it installs the
+            # released tarball into a clean Postgres. Docker Hub serves blobs
+            # from cloudflare AND cloudfront, choosing per request, so both
+            # are required (v1.1.0: the extension job had them, this job did
+            # not, and the step would have failed on egress the moment its
+            # executable bit was fixed).
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+            production.cloudfront.docker.com:443
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

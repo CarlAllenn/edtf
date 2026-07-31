@@ -63,6 +63,8 @@ tasks:
       - lint:shell
       - lint:machete
       - lint:pg-upgrade-path
+      - lint:scripts-exec
+      - lint:fuzz-lock
 
   lint:rust:
     desc: rustfmt (check) + clippy, warnings as errors
@@ -188,6 +190,28 @@ tasks:
       - crates/edtf-postgres/sql/**
     cmds:
       - .github/scripts/assert-upgrade-path.sh
+
+  lint:scripts-exec:
+    desc: Every .github/scripts/*.sh must be executable in git
+    # Not fingerprinted on file contents: the input is the git INDEX MODE,
+    # which `sources:` cannot see — a chmod changes no file content.
+    cmds:
+      - .github/scripts/assert-scripts-executable.sh
+
+  lint:fuzz-lock:
+    desc: fuzz/ is outside the workspace; its lockfile must not drift from it
+    # release-plz owns the workspace lockfile but cannot see fuzz/ (excluded
+    # in the root Cargo.toml), so a version bump leaves fuzz/Cargo.lock
+    # pinning the previous version until someone remembers. `--locked` turns
+    # "remember" into a gate: it refuses to update the lock and fails.
+    method: checksum
+    sources:
+      - fuzz/Cargo.toml
+      - fuzz/Cargo.lock
+      - crates/*/Cargo.toml
+      - Cargo.toml
+    cmds:
+      - cargo metadata --manifest-path fuzz/Cargo.toml --locked --format-version 1 > /dev/null
 
   scan:secrets:
     desc: gitleaks over the full git history

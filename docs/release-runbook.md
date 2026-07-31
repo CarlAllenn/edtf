@@ -155,14 +155,36 @@ umbrella tag as usual. This exists because release-plz refuses to tag any
 commit that is not a release-PR merge commit, so without it the automated path
 has no way back.
 
-**The pipeline itself is broken in the tag** (the failure mode of v1.0.1's
-self-verify): the tag freezes the workflow and scripts, and immutability means
+**The pipeline itself is broken in the tag** (v1.0.1's self-verify, and again
+at v1.1.0): the tag freezes the workflow and scripts, and immutability means
 that copy can never be fixed. If the defect is in verification rather than
 publishing, do the verification out-of-band (the spot-check above, plus the
 canary script run locally), document it on the tracking issue, fix `main`, and
 let the next version demonstrate the green path. Never lift the ruleset to
 move a tag — attestations name the tagged commit, and a moved tag breaks every
 one of them.
+
+v1.1.0 is the worked example, and the one place where hand-finishing was
+correct. `canary-extension.sh` was committed non-executable, so phase 2 died
+at `Permission denied` — *after* six crates reached crates.io, npm was
+published, every attestation was created and self-verified, and all assets
+were attached, but *before* `publish-releases.sh`. Because that step was
+skipped, the six releases were still drafts: nothing public, nothing wrong,
+and re-dispatching would only have re-run the same frozen broken script.
+
+The completion was, in order:
+
+1. Download every attached asset and check it against the released
+   `SHA256SUMS` — all ten.
+2. `gh attestation verify` one tarball pinned to `refs/tags/v1.1.0` and the
+   publishing workflow.
+3. Install the released bytes into a clean Postgres via
+   `smoke-extension.sh` — non-superuser, `extversion`, full corpus.
+4. Only then run `publish-releases.sh` locally to publish the six drafts.
+
+The order is the point: everything the frozen canary would have proven was
+proven first, by hand, against the real published artifacts — and the step
+that makes a release permanent ran last, exactly as it does in the workflow.
 
 **Nothing releasable but the pipeline changed**: release-plz opens no release
 PR for CI-only changes. Hand-author the bump (manifests, workspace dependency
@@ -186,13 +208,25 @@ Failure modes this design now absorbs, each found during a live release:
 | GitHub TUF hosts absent from egress allowlist; stderr swallowed | every attestation "does not match" when the truth was "could not fetch trust root" | allowlist entries; surfaced stderr; retries |
 | Upload targeted a release that is never created | SBOM step aimed at an umbrella release; only per-crate releases exist | per-crate SBOM attachment |
 | Release-PR-merge-only tagging | any post-merge fix strands the release | phase-1 `workflow_dispatch` recovery |
+| Script committed `100644` | release died at `Permission denied` after crates.io and npm had published (v1.1.0) | `assert-scripts-executable.sh` gates the git index mode |
+| `releases/tags/{tag}` 404s on drafts | the step that publishes drafts could not read the drafts it exists to publish | list endpoint, which returns drafts and exposes `.immutable` |
+| Docker Hub blob host unlisted | image pull refused against a bare IP; the hostname appears only in harden-runner's log | both `cloudflare` and `cloudfront` listed, in every job that runs docker |
+| `release-pr` raced `tag` on the merge commit | a duplicate Release PR opened for the version being released (#74) | `needs: tag` serialises phase 1 |
+| markdownlint MD024 scoped document-wide | generated changelogs went red on the first repeated section type | `siblings_only` |
+| `fuzz/` excluded, so release-plz cannot bump its lockfile | stale pin after every version bump, silently | `cargo metadata --locked` in the lint gate |
 
-One further defect belongs in this list but not in that table, because it is
-the only one caught *before* it cost a release: enabling immutable releases
+Two further defects belong in this list but not in that table, because they
+were caught *before* they cost a release. The first: enabling immutable releases
 against the publish-then-attach shape would have refused every asset upload
 and left releases uncompletable. It was found by reading the pipeline end to
 end while planning issue #55, not by shipping. That is the cheaper way to
 find them, and it is available for the asking.
+
+The second: the Docker Hub allowlist gap was caught by the dry-run
+rehearsal rather than by the release. It also carries a lesson of its own —
+the arm64 legs passed while every amd64 leg failed, because harden-runner
+does not enforce egress on the arm64 runners. A green arm64 job is not
+evidence that an allowlist is complete; judge egress on amd64.
 
 The meta-lesson: **every defect in the table was invisible to CI and appeared
 only during a real release.** Treat the first release through a new pipeline as the

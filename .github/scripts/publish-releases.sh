@@ -41,16 +41,29 @@ GITHUB_REPOSITORY="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY must be set}"
 
 CRATES=(edtf-core edtf-calendars edtf-normalize edtf-wasm edtf-cli edtf-postgres)
 
-# Plain statements rather than functions-as-conditions throughout: under
-# `set -e` the flag is suspended inside a function, which SC2310 rejects
-# (.shellcheckrc enable=all) — a real API failure would otherwise be read
-# as a legitimate value.
+# Read a release's draft/immutable state by tag, via the LIST endpoint.
+#
+# Not `releases/tags/{tag}`: that endpoint 404s on draft releases, and every
+# release this script is asked to publish is a draft by definition — so the
+# obvious lookup fails on precisely its intended input. The list endpoint
+# returns drafts and is the only one that also exposes `.immutable`.
+# Paginated because six releases are cut per version and the default page
+# holds thirty.
+#
+# Sets STATE rather than returning it: under `set -e` the flag is suspended
+# inside a function, which SC2310 rejects (.shellcheckrc enable=all) — a
+# failed API call must not read as a legitimate value.
+STATE=""
+read_state() {
+  STATE=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases" \
+    --jq ".[] | select(.tag_name == \"$1\") | \"\(.draft) \(.immutable)\"" \
+    2> /dev/null) || STATE=""
+}
+
 for name in "${CRATES[@]}"; do
   tag="${name}-v${VERSION}"
 
-  STATE=""
-  STATE=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" \
-    --jq '"\(.draft) \(.immutable)"' 2> /dev/null) || STATE=""
+  read_state "${tag}"
 
   if [[ -z ${STATE} ]]; then
     echo "::error::release ${tag} does not exist — phase 1 did not create it"
@@ -72,12 +85,10 @@ for name in "${CRATES[@]}"; do
 
   # Read back immediately. Anything other than published-and-immutable stops
   # the run here, leaving the remaining releases as drafts.
-  AFTER=""
-  AFTER=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" \
-    --jq '"\(.draft) \(.immutable)"' 2> /dev/null) || AFTER=""
+  read_state "${tag}"
 
-  if [[ ${AFTER} != "false true" ]]; then
-    echo "::error::${tag}: expected draft=false immutable=true, got '${AFTER:-unreadable}'"
+  if [[ ${STATE} != "false true" ]]; then
+    echo "::error::${tag}: expected draft=false immutable=true, got '${STATE:-unreadable}'"
     echo "::error::immutable releases appear to be DISABLED on ${GITHUB_REPOSITORY}"
     echo "::error::enable it, then re-dispatch this tag — the remaining releases are still drafts:"
     echo "::error::  gh api --method PUT repos/${GITHUB_REPOSITORY}/immutable-releases"

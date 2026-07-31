@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1](https://github.com/CarlAllenn/edtf/compare/edtf-core-v1.0.0...edtf-core-v1.0.1) - 2026-07-31
+
+### Other
+
+- release v1.0.1 ([#62](https://github.com/CarlAllenn/edtf/pull/62))
+
 ## [1.0.0](https://github.com/CarlAllenn/edtf/compare/edtf-core-v0.2.0...edtf-core-v1.0.0) - 2026-07-27
 
 ### Added

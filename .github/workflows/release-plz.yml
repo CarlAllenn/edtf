@@ -122,51 +122,10 @@ jobs:
           command: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # The umbrella tag is what publish.yml listens for. It must be pushed
-      # with the PAT: tags pushed with GITHUB_TOKEN do not trigger workflows
-      # (GitHub's recursion guard), and a tag that silently triggers nothing
-      # is the same failure shape as the old "already published; skipping"
-      # green exit — the release would look complete and publish nothing.
-      #
-      # `v<version>` matches publish.yml's `v*` filter; the per-crate tags
-      # (edtf-core-v1.0.1 …) do not, so exactly one run fires. This is also
-      # the "one number, one tag" line in release-plz.toml made literal.
-      #
-      # Deliberately NOT gated on steps.release.outputs.releases_created:
-      # if this step fails (expired PAT, transient API error), a re-run
-      # would find nothing newly released, skip, and leave the release
-      # permanently untriggered — tags cut, nothing published, green.
-      # Instead the step derives its own state from the tags themselves, so
-      # re-running always converges.
+      # The umbrella tag is what publish.yml listens for, and it must be
+      # pushed with the PAT — see the script header for why, and for the
+      # guards that keep an ordinary push to main from minting one.
       - name: Push umbrella tag
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
-        run: |
-          set -euo pipefail
-          version=$(cargo pkgid --manifest-path crates/edtf-core/Cargo.toml | sed 's/.*[@#]//')
-          anchor="edtf-core-v${version}"
-          tag="v${version}"
-
-          # No per-crate tag means release-plz has not released this version
-          # (an ordinary push to main). Nothing to do.
-          if ! gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${anchor}" >/dev/null 2>&1; then
-            echo "::notice::${anchor} does not exist — no release in progress"
-            exit 0
-          fi
-
-          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}" >/dev/null 2>&1; then
-            echo "::notice::${tag} already exists; leaving it alone"
-          else
-            # Point the umbrella at the same commit release-plz tagged, not
-            # at GITHUB_SHA — they are the same today, but deriving it from
-            # the anchor keeps the two tags honest if that ever changes.
-            sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${anchor}" -q .object.sha)
-            gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" \
-              -f "ref=refs/tags/${tag}" -f "sha=${sha}" >/dev/null
-            echo "::notice::pushed ${tag} -> ${sha}"
-          fi
-
-          # Assert it landed. A missing tag means publish.yml never fires,
-          # so failing loudly here is the whole point of the check.
-          gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}" >/dev/null
-          echo "::notice::${tag} confirmed; publish.yml takes over"
+        run: .github/scripts/push-umbrella-tag.sh

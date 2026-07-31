@@ -317,6 +317,14 @@ jobs:
       - run: >
           grep -q "pg$PG" ~/.pgrx/config.toml 2>/dev/null ||
           cargo pgrx init "--pg$PG" download
+      # edtf-postgres is not a default member, so the workspace clippy gate
+      # does not reach it — and it cannot: linting needs the Postgres
+      # toolchain this job initialises, and `--all-features` over its
+      # mutually-exclusive pg14-pg18 features is a hard error. Same tier as
+      # everywhere else, warnings denied.
+      - run: >
+          cargo clippy -p edtf-postgres --all-targets
+          --no-default-features --features "pg$PG" -- -D warnings
       - run: >
           cd crates/edtf-postgres && cargo pgrx test "pg$PG"
           --no-default-features --features "pg$PG"

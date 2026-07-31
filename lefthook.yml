@@ -23,7 +23,7 @@ pre-commit:
 
     - name: clippy
       glob: "*.rs"
-      run: cargo clippy --workspace --all-features --all-targets -- -D warnings
+      run: cargo clippy --all-features --all-targets -- -D warnings
 
     - name: deny
       glob: "{Cargo.toml,Cargo.lock,deny.toml}"
@@ -37,4 +37,4 @@ pre-commit:
 pre-push:
   jobs:
     - name: test
-      run: cargo test --workspace --all-features
+      run: cargo test --all-features

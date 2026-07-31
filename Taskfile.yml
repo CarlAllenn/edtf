@@ -208,6 +208,13 @@ tasks:
     cmds:
       - wasm-pack build crates/edtf-wasm --target web --out-dir pkg
 
+  pg:lint:
+    desc: clippy over the Postgres extension (requires `cargo pgrx init`)
+    # Not covered by lint:rust: edtf-postgres is not a default member, and
+    # linting it needs $PGRX_HOME plus exactly one pg feature.
+    cmds:
+      - cargo clippy -p edtf-postgres --all-targets --no-default-features --features pg18 -- -D warnings
+
   pg:test:
     desc: Run the Postgres extension test suite (requires `cargo pgrx init`)
     dir: crates/edtf-postgres

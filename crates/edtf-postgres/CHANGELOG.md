@@ -7,8 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.1](https://github.com/CarlAllenn/edtf/compare/edtf-postgres-v1.0.0...edtf-postgres-v1.0.1) - 2026-07-31
+## 1.0.1 - 2026-07-31
 
 ### Other
 
 - #54 edtf-postgres becomes a workspace member ([#59](https://github.com/CarlAllenn/edtf/pull/59))
+
+## 1.0.0 - 2026-07-27
+
+Initial release, published to crates.io as part of the v1.0.0 release of the
+`edtf` crate family.
+
+Unlike the other five crates it received no git tag, no GitHub release and no
+changelog entry at the time: `edtf-postgres` sat outside the release-plz
+workspace, so nothing owned its versioning. That is also why the heading above
+carries no comparison link — there is no `edtf-postgres-v1.0.0` tag to compare
+against, and one cannot honestly be created after the fact.
+
+Fixed in 1.0.1: the crate is now a workspace member, and release-plz owns its
+version, tag, changelog and release exactly like the other five
+([#54](https://github.com/CarlAllenn/edtf/issues/54)).

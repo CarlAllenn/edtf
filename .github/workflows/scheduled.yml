@@ -70,6 +70,39 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  scorecard:
+    name: OpenSSF Scorecard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # analyze the repository
+      id-token: write # OIDC: proves to the OpenSSF API these results are ours
+    steps:
+      # Audit, not block — same quarantine rationale as lychee below, and
+      # the same path every other allowlist in this repo took: the enforced
+      # lists were "derived from the audit run". Scorecard queries a wide
+      # and undocumented set of hosts (OpenSSF, OSV, best-practices, the
+      # GitHub API), so the allowlist gets read off the first live run
+      # rather than guessed at here. Nothing secret-bearing runs in this
+      # job; the token is read-only plus a scoped OIDC exchange.
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+          disable-sudo: true
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # publish_results puts the score behind the README badge and replaces
+      # the OpenSSF team's own weekly scan of this repo with our run.
+      # Scheduled runs only ever execute on the default branch, which is
+      # what publishing requires.
+      - uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          results_file: results.json
+          results_format: json
+          publish_results: true
+
   links:
     name: lychee
     runs-on: ubuntu-latest

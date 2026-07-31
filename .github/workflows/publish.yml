@@ -1,0 +1,263 @@
+---
+name: Publish
+
+# PHASE 2 of two (issue #54). Triggered by the umbrella tag that
+# release-plz.yml pushes on Release PR merge. This run builds, publishes
+# and attests — all three in one job whose `github.ref` IS the tag, so the
+# provenance it produces names the tag and the tagged commit.
+#
+# Why this workflow exists at all: at v1.0.0 publishing happened on `main`,
+# the run failed partway, and the recovery attested crates it had merely
+# downloaded from crates.io. Digests matched, `gh attestation verify`
+# passed, and the provenance still named a commit (`1e80e45`) that built
+# none of the bytes. Sigstore is append-only, so that record is permanent.
+#
+# The invariant this workflow enforces, in order:
+#   package -> publish -> prove local bytes == registry bytes -> attest
+# Attestation happens last and only on proof, so there is no window in
+# which something gets signed that is not what shipped.
+
+"on":
+  push:
+    # Umbrella tag only. The per-crate tags (edtf-core-v1.0.1 …) do not
+    # match, so exactly one run fires per release.
+    tags: [v*]
+  # Resume and rehearsal path. ALWAYS dispatch with --ref <tag>: dispatching
+  # from a branch would publish with branch-ref provenance, recreating the
+  # exact defect this workflow exists to prevent. The guard below refuses to
+  # run on anything that is not a tag.
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Package and print provenance, publish nothing
+        type: boolean
+        default: true
+
+permissions: {}
+
+# Never cancel a publish mid-flight.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish + attest (${{ github.ref_name }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # upload SBOMs to the release
+      id-token: write # OIDC: crates.io + npm trusted publishing, attestations
+      attestations: write # store build provenance
+    env:
+      # Routed through env so no template expands inside run: code
+      # (zizmor template-injection, pedantic tier).
+      DRY_RUN: ${{ inputs.dry_run || 'false' }}
+    steps:
+      # Egress allowlist: registry publishes, npm + sigstore, toolchain hosts.
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            uploads.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            codeload.github.com:443
+            crates.io:443
+            index.crates.io:443
+            static.crates.io:443
+            static.rust-lang.org:443
+            mise.jdx.dev:443
+            mise-versions.jdx.dev:443
+            nodejs.org:443
+            registry.npmjs.org:443
+            fulcio.sigstore.dev:443
+            rekor.sigstore.dev:443
+            search.sigstore.dev:443
+            tuf-repo-cdn.sigstore.dev:443
+
+      # Refuse to run on a non-tag ref. Provenance is the product here; a
+      # branch ref would silently produce the v1.0.0 defect again.
+      - name: Assert tag ref
+        run: |
+          set -euo pipefail
+          case "${GITHUB_REF}" in
+            refs/tags/v*) echo "::notice::publishing for ${GITHUB_REF}" ;;
+            *) echo "::error::refusing to publish from ${GITHUB_REF} — dispatch with --ref <tag>"; exit 1 ;;
+          esac
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.7.12
+          install_args: rust node aqua:rustwasm/wasm-pack cargo:cargo-cyclonedx
+          # No tool cache in the publishing workflow (zizmor cache-poisoning,
+          # high). Everything this job builds gets signed, so a poisoned
+          # cache entry would be laundered into an attested artifact. mise
+          # runs locked with per-tool checksums, so the cache only ever
+          # bought time — and time is not what this job optimizes for.
+          cache: false
+
+      - name: Resolve version and assert it matches the tag
+        run: .github/scripts/resolve-version.sh
+
+      # --- package -------------------------------------------------------
+      # Explicitly enumerated, never globbed: edtf-postgres is its own
+      # workspace and needs different flags, and a glob is what let it get
+      # treated as one of the five and silently skipped at v1.0.0.
+      - name: Package all six crates
+        run: .github/scripts/package-all.sh
+
+      - name: Assert packaging is deterministic
+        run: .github/scripts/assert-deterministic.sh
+
+      - name: Build wasm package
+        run: wasm-pack build crates/edtf-wasm --release
+
+      # --- rehearsal exit ------------------------------------------------
+      - name: Dry run summary
+        if: env.DRY_RUN == 'true'
+        run: |
+          set -euo pipefail
+          {
+            echo "## Dry run — nothing published"
+            echo
+            echo "Provenance this release *would* record:"
+            echo
+            echo '```'
+            echo "ref:       ${GITHUB_REF}"
+            echo "gitCommit: ${GITHUB_SHA}"
+            echo '```'
+            echo
+            echo "Artifact digests:"
+            echo
+            echo '```'
+            cat "${RUNNER_TEMP}/digests-2.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      # Dry-run safety otherwise rests on every publishing step below
+      # carrying its `if:` guard — a convention a future edit can forget.
+      # This checks the post-condition instead of trusting the convention.
+      - name: Assert the rehearsal published nothing
+        if: env.DRY_RUN == 'true'
+        run: .github/scripts/assert-nothing-published.sh
+
+      # --- publish -------------------------------------------------------
+      # Trusted publishing: short-lived crates.io token via OIDC exchange —
+      # no CARGO_REGISTRY_TOKEN secret exists in this repository.
+      - uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+        if: env.DRY_RUN != 'true'
+        id: auth
+
+      # Per-crate guard in dependency order, so a run that dies partway can
+      # simply be re-dispatched at the same tag. See the script header.
+      - name: Publish all six crates to crates.io
+        if: env.DRY_RUN != 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: .github/scripts/publish-crates.sh
+
+      # npm trusted publisher: OIDC, provenance automatic on public packages.
+      - name: Publish edtf-wasm to npm
+        if: env.DRY_RUN != 'true'
+        run: .github/scripts/publish-npm.sh
+
+      # --- prove before signing ------------------------------------------
+      # The registry is the thing consumers download. If what it holds is
+      # not byte-identical to what this run built, attesting the local files
+      # would assert something false — so this fails the release instead.
+      - name: Verify registry bytes match local bytes
+        if: env.DRY_RUN != 'true'
+        run: .github/scripts/verify-registry-bytes.sh
+
+      # --- attest --------------------------------------------------------
+      # Subjects are the files THIS run built and just proved identical to
+      # the registry's — never a re-download. That distinction is the whole
+      # point of issue #54.
+      # actions/attest, not actions/attest-build-provenance: as of v4 the
+      # latter is a wrapper over this action, and upstream directs new
+      # implementations here. Provenance is this action's default predicate.
+      - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        if: env.DRY_RUN != 'true'
+        with:
+          subject-path: dist/*
+
+      # cargo-cyclonedx emits one SBOM per package, next to that package's
+      # manifest. edtf-postgres needs its own invocation — separate
+      # workspace, so the root run does not see it.
+      - name: Generate SBOMs
+        if: env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          cargo cyclonedx --format json --spec-version 1.5
+          cargo cyclonedx --format json --spec-version 1.5 \
+            --manifest-path crates/edtf-postgres/Cargo.toml
+          mkdir -p sbom
+          for name in edtf-core edtf-calendars edtf-normalize edtf-wasm edtf-cli edtf-postgres; do
+            cp "crates/${name}/${name}.cdx.json" "sbom/${name}.cdx.json"
+          done
+          ls -1 sbom/
+
+      # One SBOM per crate, attested against that crate only. `sbom-path`
+      # takes a single file, so a shared step would attach one crate's
+      # dependency list to all six — asserting, for example, that
+      # edtf-core's (empty) dependency set describes edtf-cli. Enumerated
+      # rather than looped because a GitHub Action cannot be run in a shell
+      # loop, and silent breakage here is a false SBOM claim.
+      - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        if: env.DRY_RUN != 'true'
+        with:
+          subject-path: dist/edtf-core-${{ env.VERSION }}.crate
+          sbom-path: sbom/edtf-core.cdx.json
+      - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        if: env.DRY_RUN != 'true'
+        with:
+          subject-path: dist/edtf-calendars-${{ env.VERSION }}.crate
+          sbom-path: sbom/edtf-calendars.cdx.json
+      - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        if: env.DRY_RUN != 'true'
+        with:
+          subject-path: dist/edtf-normalize-${{ env.VERSION }}.crate
+          sbom-path: sbom/edtf-normalize.cdx.json
+      - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        if: env.DRY_RUN != 'true'
+        with:
+          subject-path: dist/edtf-wasm-${{ env.VERSION }}.crate
+          sbom-path: sbom/edtf-wasm.cdx.json
+      - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        if: env.DRY_RUN != 'true'
+        with:
+          subject-path: dist/edtf-cli-${{ env.VERSION }}.crate
+          sbom-path: sbom/edtf-cli.cdx.json
+      - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        if: env.DRY_RUN != 'true'
+        with:
+          subject-path: dist/edtf-postgres-${{ env.VERSION }}.crate
+          sbom-path: sbom/edtf-postgres.cdx.json
+
+      # --- prove the attestation itself ----------------------------------
+      # The check that would have caught v1.0.0 automatically. A passing
+      # `gh attestation verify` is NOT sufficient — the v1.0.0 artifacts
+      # pass it today while naming the wrong commit. What matters is which
+      # ref and commit the provenance records.
+      - name: Self-verify attestation ref and commit
+        if: env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/self-verify-attestations.sh
+
+      # --- canary --------------------------------------------------------
+      - name: Canary — consume from the registries
+        if: env.DRY_RUN != 'true'
+        run: .github/scripts/canary.sh
+
+      - name: Attach SBOMs to the release
+        if: env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${GITHUB_REF_NAME}" sbom/*.cdx.json --clobber

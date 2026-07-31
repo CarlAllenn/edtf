@@ -3,25 +3,30 @@ name: Release
 
 # Release canon (renovate-config templates/release/, issue #8): release-plz
 # maintains a Release PR previewing versions + changelog + semver-checks;
-# MERGING that PR is the commitment point — this workflow then publishes to
-# crates.io (trusted publishing, no long-lived tokens), chains the nested
-# edtf-postgres workspace and the npm publish of edtf-wasm off the release
-# outputs, tags, cuts the GitHub release, and attests what it published.
+# MERGING that PR is the commitment point.
+#
+# PHASE 1 of two (issue #54). This workflow TAGS and cuts GitHub releases —
+# it publishes nothing. The final step pushes the umbrella tag `v<version>`,
+# which triggers publish.yml (phase 2): that run builds, publishes to
+# crates.io and npm, and attests, with `github.ref` set to the tag it is
+# signing for.
+#
+# Why the split: this workflow runs on `main`, so provenance produced here
+# can only ever record `ref: refs/heads/main`. At v1.0.0 the release failed
+# partway, was resumed by two dispatches, and the attestations ended up
+# naming `1e80e45` — a commit that built none of the published bytes. The
+# tag is the only ref that is stable, immutable (tag-immutability ruleset,
+# ~ALL) and meaningful to a verifier, so publishing happens there.
 #
 # Account-side prerequisites (edtf#32): per-crate crates.io trusted
 # publishers, the npm trusted publisher for edtf-wasm, and the
 # RELEASE_PLZ_TOKEN fine-grained PAT (release PRs created with the default
-# GITHUB_TOKEN would not trigger CI — same constraint class as the
-# renovate-branch CI prerequisite).
+# GITHUB_TOKEN would not trigger CI — the same constraint that forces the
+# umbrella tag below to be pushed with the PAT).
 
 "on":
   push:
     branches: [main]
-  # Resume path: re-runs the chained publish steps (edtf-postgres, npm,
-  # attestations) after a partial release — the release-plz step itself is
-  # idempotent and skips already-published crates. First used 2026-07-27
-  # when the v1.0.0 postgres step failed after five crates had published.
-  workflow_dispatch: {}
 
 permissions: {}
 
@@ -34,7 +39,6 @@ concurrency:
 jobs:
   release-pr:
     name: Maintain Release PR
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write # push the release branch
@@ -75,24 +79,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
 
-  release:
-    name: Publish on Release PR merge
+  tag:
+    name: Tag on Release PR merge
     runs-on: ubuntu-latest
     permissions:
-      contents: write # push tags, create the GitHub release
+      contents: write # push tags, create the GitHub releases
       pull-requests: read # detect the merged Release PR
-      id-token: write # OIDC: crates.io + npm trusted publishing, attestations
-      attestations: write # store build provenance for published artifacts
     steps:
-      # Egress allowlist from the observed v1.0.0 runs (2026-07-27): registry
-      # publishes, npm + sigstore (provenance/attestations), toolchain hosts.
       - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: block
+          # No registry hosts: this job publishes nothing. crates.io remains
+          # for cargo's index reads during release-plz's version resolution.
           allowed-endpoints: >
             github.com:443
             api.github.com:443
-            uploads.github.com:443
             objects.githubusercontent.com:443
             release-assets.githubusercontent.com:443
             crates.io:443
@@ -101,86 +102,30 @@ jobs:
             static.rust-lang.org:443
             mise.jdx.dev:443
             mise-versions.jdx.dev:443
-            registry.npmjs.org:443
-            fulcio.sigstore.dev:443
-            rekor.sigstore.dev:443
-            search.sigstore.dev:443
-            tuf-repo-cdn.sigstore.dev:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+          # The umbrella-tag step pushes with an explicit PAT, so the
+          # checkout credential is neither needed nor wanted here.
           persist-credentials: false
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
         with:
           # renovate: datasource=github-releases depName=jdx/mise
           version: 2026.7.12
-          install_args: rust node aqua:rustwasm/wasm-pack
-      # Trusted publishing: short-lived crates.io token via OIDC exchange —
-      # no CARGO_REGISTRY_TOKEN secret exists in this repository.
-      - uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
-        id: auth
-      - name: release-plz release
+          install_args: rust
+      # publish = false in release-plz.toml: this creates the five per-crate
+      # tags and their GitHub releases, and runs cargo publish for nothing.
+      - name: release-plz release (tags + GitHub releases only)
         id: release
         uses: release-plz/action@2eb1d8bcb770b4c48ccfaad919734b38b51958c9 # v0.5.131
         with:
           command: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-      # Nested workspace: edtf-postgres publishes last, resolving edtf-core
-      # from the registry (it is outside the release-plz workspace; its
-      # version is bumped to the group number inside the Release PR).
-      # --no-verify: the verify build runs pgrx's build script, which needs
-      # an initialized $PGRX_HOME (a full Postgres toolchain) the runner
-      # doesn't have; CI already builds and tests the extension on Postgres
-      # 14-18. Guarded against republish so the dispatch resume path is
-      # idempotent.
-      - name: Publish edtf-postgres
-        if: steps.release.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
+      # The umbrella tag is what publish.yml listens for, and it must be
+      # pushed with the PAT — see the script header for why, and for the
+      # guards that keep an ordinary push to main from minting one.
+      - name: Push umbrella tag
         env:
-          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-        run: |
-          version=$(cargo pkgid --manifest-path crates/edtf-postgres/Cargo.toml | sed 's/.*[@#]//')
-          url="https://crates.io/api/v1/crates/edtf-postgres/${version}"
-          if curl -sfA 'edtf-release-workflow' "$url" | grep -q '"num"'; then
-            echo "edtf-postgres ${version} already published; skipping"
-          else
-            cargo publish --no-verify --manifest-path crates/edtf-postgres/Cargo.toml
-          fi
-      # npm side of edtf-wasm, chained off the same release outputs. npm
-      # trusted publisher: OIDC, provenance automatic on public packages.
-      - name: Build wasm package
-        if: steps.release.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
-        run: wasm-pack build crates/edtf-wasm --release
-      - name: Publish edtf-wasm to npm
-        if: steps.release.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
-        run: |
-          version=$(node -p "require('./crates/edtf-wasm/pkg/package.json').version")
-          if [ "$(npm view "edtf-wasm@${version}" version 2>/dev/null)" = "${version}" ]; then
-            echo "edtf-wasm ${version} already on npm; skipping"
-          else
-            npm publish crates/edtf-wasm/pkg/
-          fi
-      # Attest the registry's bytes, not a local re-package: what verifiers
-      # download is what gets signed. (The v1.0.0 crate attestations were
-      # produced from a re-package at a later commit and never matched —
-      # this fetch-then-attest shape is the fix.)
-      - name: Fetch published artifacts for attestation
-        if: steps.release.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
-        run: |
-          mkdir -p attest-artifacts
-          for dir in crates/*/; do
-            name=$(basename "$dir")
-            version=$(cargo pkgid --manifest-path "${dir}Cargo.toml" | sed 's/.*[@#]//')
-            curl -sfL --retry 5 --retry-delay 10 --retry-all-errors \
-              -o "attest-artifacts/${name}-${version}.crate" \
-              "https://static.crates.io/crates/${name}/${name}-${version}.crate"
-          done
-          wasm_v=$(node -p "require('./crates/edtf-wasm/pkg/package.json').version")
-          curl -sfL --retry 5 --retry-delay 10 --retry-all-errors \
-            -o "attest-artifacts/edtf-wasm-${wasm_v}.tgz" \
-            "https://registry.npmjs.org/edtf-wasm/-/edtf-wasm-${wasm_v}.tgz"
-      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
-        if: steps.release.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
-        with:
-          subject-path: attest-artifacts/*
+          GH_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
+        run: .github/scripts/push-umbrella-tag.sh

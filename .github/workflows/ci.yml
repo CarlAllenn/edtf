@@ -320,6 +320,21 @@ jobs:
       - run: >
           cd crates/edtf-postgres && cargo pgrx test "pg$PG"
           --no-default-features --features "pg$PG"
+      # The release publishes edtf-postgres with --no-verify, because the
+      # verify build runs pgrx's build script and needs a $PGRX_HOME the
+      # release runner does not have. This job DOES have one, so the check
+      # lives here instead of being skipped everywhere: it proves the
+      # packaged tarball — not just the working tree — actually builds.
+      # Without it, --no-verify would be an assumption rather than a
+      # delegation (issue #54).
+      #
+      # Same feature selection as the test step above, so every leg verifies
+      # packaging against the Postgres it initialised. Left on defaults this
+      # would build pg18 on all five legs and fail everywhere but one.
+      - name: Verify the packaged crate builds
+        run: >
+          cargo package --manifest-path crates/edtf-postgres/Cargo.toml
+          --no-default-features --features "pg$PG"
 
   docs:
     name: rustdoc (warnings are errors) + doc tests

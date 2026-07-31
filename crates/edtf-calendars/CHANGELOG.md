@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0](https://github.com/CarlAllenn/edtf/compare/edtf-calendars-v1.0.2...edtf-calendars-v1.1.0) - 2026-07-31
+
+### Other
+
+- release v1.1.0 ([#73](https://github.com/CarlAllenn/edtf/pull/73))
+
 ## [1.0.2](https://github.com/CarlAllenn/edtf/compare/edtf-calendars-v1.0.1...edtf-calendars-v1.0.2) - 2026-07-31
 
 ### Changed

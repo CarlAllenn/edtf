@@ -23,12 +23,20 @@ mkdir -p dist
 # The five pure-Rust crates, verify build included.
 cargo package --workspace --exclude edtf-postgres
 
-# edtf-postgres separately with --no-verify: the verify build runs pgrx's
-# build script, which needs an initialized $PGRX_HOME that this runner does
-# not have. ci.yml's postgres job runs `cargo package` WITH the verify build
-# on runners that do — against every Postgres major — so this is backed by a
-# real check rather than assumed (issue #54).
-cargo package -p edtf-postgres --no-verify
+# edtf-postgres with --no-verify: the verify build runs pgrx's build script,
+# which needs an initialized $PGRX_HOME that this runner does not have.
+# ci.yml's postgres job runs `cargo package` WITH the verify build on runners
+# that do — against every Postgres major — so this is backed by a real check
+# rather than assumed (issue #54).
+#
+# edtf-core is named alongside it even though it was packaged above.
+# --no-verify skips the BUILD, not the dependency resolution: preparing the
+# package still resolves `edtf-core = ^<version>` from the registry, and on a
+# release that version does not exist there yet — the release being what
+# creates it. Naming both makes cargo resolve against a temporary registry
+# built from the sibling. Re-packaging edtf-core is harmless: packaging is
+# deterministic (the step after this proves it), so the .crate is identical.
+cargo package -p edtf-core -p edtf-postgres --no-verify
 
 # One workspace now, so every .crate lands in the same target/package.
 for name in "${PURE_RUST_CRATES[@]}" edtf-postgres; do

@@ -33,9 +33,9 @@ default-members = [
 exclude = ["fuzz"]
 
 [workspace.dependencies]
-edtf-core = { path = "crates/edtf-core", version = "1.0.0" }
-edtf-calendars = { path = "crates/edtf-calendars", version = "1.0.0" }
-edtf-normalize = { path = "crates/edtf-normalize", version = "1.0.0" }
+edtf-core = { path = "crates/edtf-core", version = "1.0.1" }
+edtf-calendars = { path = "crates/edtf-calendars", version = "1.0.1" }
+edtf-normalize = { path = "crates/edtf-normalize", version = "1.0.1" }
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = "1"
 # Model-side property tests; std-only subset (no fork/timeout machinery).

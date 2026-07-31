@@ -45,19 +45,23 @@ if [[ -z ${ANCHOR_SHA} ]]; then
 fi
 
 # The anchor tag existing is NOT sufficient — it also exists for every past
-# release. Requiring it to point at the commit this run is on distinguishes
-# "release-plz tagged this version just now" from "this version shipped
-# weeks ago and this is an ordinary push to main".
+# release. The discriminator is whether this version has actually been
+# published yet, which is the question that matters: tags cut but nothing on
+# crates.io means a release is mid-flight and publish.yml still needs its
+# trigger.
 #
-# Without this check, merging any change would mint an umbrella tag for
-# whatever version the manifests currently hold, triggering publish.yml to
-# republish an already-released version — and leaving behind a tag that the
-# tag-immutability ruleset makes undeletable.
-#
-# Re-running on the same commit still converges: the SHAs match, so a failed
-# umbrella push is retried rather than skipped.
-if [[ ${ANCHOR_SHA} != "${GITHUB_SHA}" ]]; then
-  echo "::notice::${anchor} points at ${ANCHOR_SHA}, not this commit — ${version} is an earlier release"
+# It deliberately does NOT compare the anchor to GITHUB_SHA. release-plz
+# releases from "the latest commit of the release PR", not from the squash
+# commit that lands on main, so those two are never equal for a squash-merged
+# release — a SHA comparison silently skips every real release and leaves it
+# tags-cut-nothing-published, green. That is precisely what happened to
+# v1.0.1 on its first attempt.
+published=""
+published=$(curl -sfA 'edtf-release-workflow' \
+  "https://crates.io/api/v1/crates/edtf-core/${version}" 2> /dev/null) || published=""
+
+if [[ ${published} == *'"num"'* ]]; then
+  echo "::notice::edtf-core ${version} is already on crates.io — ${version} is an earlier release"
   exit 0
 fi
 

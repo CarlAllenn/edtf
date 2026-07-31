@@ -25,14 +25,11 @@ publish_timeout = "30m"
 [changelog]
 protect_breaking_commits = true
 
-# Unified version: one number, one tag, all five workspace crates
-# (edtf-postgres rides the same number, bumped in the Release PR by hand —
-# it lives outside this workspace; see .github/workflows/publish.yml).
-# The hand-bump is guarded: ci.yml's version-drift check fails the PR if
-# edtf-postgres does not match this group, because the old release-time
-# guard printed "already published; skipping" and exited GREEN when the
-# bump was forgotten — a silent skip is how the crate went untagged at
-# v1.0.0 (issue #54).
+# Unified version: one number, one tag, all six crates. edtf-postgres is a
+# workspace member (see the root Cargo.toml), so release-plz owns its
+# version, tag, changelog and release like every other crate — no hand-bump
+# and nothing to forget. It went untagged at v1.0.0 because it sat outside
+# the workspace and nothing owned it (issue #54).
 [[package]]
 name = "edtf-core"
 version_group = "edtf"
@@ -52,3 +49,13 @@ version_group = "edtf"
 [[package]]
 name = "edtf-cli"
 version_group = "edtf"
+
+[[package]]
+name = "edtf-postgres"
+version_group = "edtf"
+# cargo-semver-checks builds the crate to compare its API against the
+# published baseline, and building pgrx needs an initialized $PGRX_HOME
+# that the release runner does not have. The extension's contract is its
+# SQL surface, not a Rust API, so there is no Rust semver to check: its
+# lib target exists only because pgrx requires one.
+semver_check = false

@@ -1,0 +1,12 @@
+# Postgres server symbols are only available at runtime, inside the server
+# process — tell the macOS linker not to resolve them at build time.
+# (Standard cargo-pgrx project configuration.)
+#
+# This lives at the workspace root, not in crates/edtf-postgres/, because
+# Cargo does not read config files from crates inside a workspace: "when
+# being invoked from a workspace, Cargo does not read config files from
+# crates within the workspace". A crate-local config would silently stop
+# applying to any command run from the root. ParadeDB and pgvectorscale
+# both keep this file at the root for the same reason.
+[target.'cfg(target_os="macos")']
+rustflags = ["-Clink-arg=-undefined", "-Clink-arg=dynamic_lookup"]

@@ -5,54 +5,10 @@ readme = "README.md"
 description = "Postgres extension (pgrx) exposing edtf-core: EDTF validation, levels, canonical form and date bounds in SQL."
 keywords = ["edtf", "date", "iso8601", "postgres", "pgrx"]
 categories = ["date-and-time", "database"]
-edition = "2021"
-rust-version = "1.82"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/CarlAllenn/edtf"
-
-# Deliberately its own workspace: pgrx extensions need an independent
-# dependency graph and a locally-initialized pgrx toolchain.
-[workspace]
-
-# Lint canon: renovate-config templates/rust-lints/Cargo-lints.toml —
-# mirrored from the main workspace (this manifest is its own workspace, so
-# it cannot inherit). Keep the three blocks in lockstep.
-[workspace.lints.rust]
-unsafe_code = "forbid"
-missing_docs = "warn"
-missing_debug_implementations = "warn"
-unreachable_pub = "warn"
-unused_qualifications = "warn"
-elided_lifetimes_in_paths = "warn"
-let_underscore_drop = "warn"
-trivial_casts = "warn"
-trivial_numeric_casts = "warn"
-non_ascii_idents = "warn"
-unit_bindings = "warn"
-meta_variable_misuse = "warn"
-unused_lifetimes = "warn"
-redundant_lifetimes = "warn"
-unnameable_types = "warn"
-variant_size_differences = "warn"
-single_use_lifetimes = "warn"
-explicit_outlives_requirements = "warn"
-rust-2024-compatibility = { level = "warn", priority = -1 }
-
-[workspace.lints.clippy]
-all = { level = "warn", priority = -1 }
-pedantic = { level = "warn", priority = -1 }
-nursery = { level = "warn", priority = -1 }
-cargo = { level = "warn", priority = -1 }
-redundant_pub_crate = "allow"
-multiple_crate_versions = "allow"
-unwrap_used = "warn"
-expect_used = "warn"
-undocumented_unsafe_blocks = "warn"
-allow_attributes_without_reason = "warn"
-dbg_macro = "warn"
-todo = "warn"
-print_stdout = "warn"
-print_stderr = "warn"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [lints]
 workspace = true
@@ -70,7 +26,7 @@ pg18 = ["pgrx/pg18", "pgrx-tests/pg18"]
 pg_test = []
 
 [dependencies]
-edtf-core = { path = "../edtf-core", version = "1.0.0" }
+edtf-core.workspace = true
 pgrx = "0.19.1"
 
 [dev-dependencies]
@@ -80,12 +36,3 @@ pgrx-tests = "=0.19.1"
 # pgrx-tests has no direct `use`: `cargo pgrx test` links it as the test
 # harness, wired through the per-pg feature flags above.
 ignored = ["pgrx-tests"]
-
-[profile.dev]
-panic = "unwind"
-
-[profile.release]
-panic = "unwind"
-opt-level = 3
-lto = "fat"
-codegen-units = 1

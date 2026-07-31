@@ -1,18 +1,36 @@
 [workspace]
 resolver = "2"
-members = ["crates/edtf-core", "crates/edtf-calendars", "crates/edtf-normalize", "crates/edtf-wasm", "crates/edtf-cli"]
-# crates/edtf-postgres is intentionally NOT a workspace member. The binding
-# constraint is [profile]: Cargo honours it only at the workspace root and
-# silently ignores a member's own, so joining would impose the release
-# profile below — `opt-level = "z"` and `strip = "symbols"`, both tuned for
-# the wasm artifact — on a Postgres extension that needs `opt-level = 3`,
-# `panic = "unwind"` and its exported symbols intact. It also wants its own
-# dependency graph and a locally-initialized pgrx toolchain
-# (`cargo pgrx init`). Build/test it via `task pg:test`; its version is
-# gated against this workspace's by `task lint:versions`.
-# fuzz/ is excluded for the same reason: cargo-fuzz targets need nightly and
-# libfuzzer, and must not drag those into the everyday workspace build.
-exclude = ["crates/edtf-postgres", "fuzz"]
+members = [
+  "crates/edtf-core",
+  "crates/edtf-calendars",
+  "crates/edtf-normalize",
+  "crates/edtf-wasm",
+  "crates/edtf-cli",
+  "crates/edtf-postgres",
+]
+# edtf-postgres is a member so release-plz versions, tags, changelogs and
+# releases it exactly like the other five. It went untagged and unreleased
+# at v1.0.0 precisely because it sat outside and nothing owned it (#54).
+#
+# It is NOT a default member: building it needs a locally-initialized pgrx
+# toolchain ($PGRX_HOME, via `cargo pgrx init`), and its pg14-pg18 features
+# are mutually exclusive, so `--all-features` across it is a hard error.
+# Bare `cargo build`/`test`/`clippy` therefore cover the five pure-Rust
+# crates and skip it; reach it with `-p edtf-postgres` or `task pg:test`.
+#
+# This is the layout serious pgrx projects use: ParadeDB sets
+# default-members = ["pg_search", "tokenizers"] for the same reason, and
+# pgvectorscale keeps its extension a member too.
+default-members = [
+  "crates/edtf-core",
+  "crates/edtf-calendars",
+  "crates/edtf-normalize",
+  "crates/edtf-wasm",
+  "crates/edtf-cli",
+]
+# fuzz/ stays excluded: cargo-fuzz targets need nightly and libfuzzer, and
+# must not drag those into the everyday workspace build.
+exclude = ["fuzz"]
 
 [workspace.dependencies]
 edtf-core = { path = "crates/edtf-core", version = "1.0.0" }
@@ -78,9 +96,30 @@ print_stdout = "warn"
 print_stderr = "warn"
 
 # Size-tuned release: matters most for the wasm artifact; the CLI and core
-# are tiny either way, and edtf-postgres has its own workspace/profile.
+# are tiny either way. Profiles are only read from the workspace root — a
+# member's own [profile] is silently ignored — so edtf-postgres is handled
+# by the package override below rather than by a manifest of its own.
 [profile.release]
 opt-level = "z"
 lto = "fat"
 codegen-units = 1
 strip = "symbols"
+# pgrx cannot be built with panic = "abort": it unwinds across the Postgres
+# FFI boundary. `panic` is one of the three settings Cargo refuses to take
+# in a package override (with `lto` and `rpath`), so it has to be stated
+# here, workspace-wide. This is already the default for both profiles —
+# making it explicit stops a future size tweak from silently breaking the
+# extension. Both ParadeDB and pgvectorscale pin it the same way.
+panic = "unwind"
+
+[profile.dev]
+panic = "unwind"
+
+# A Postgres extension is the opposite of the wasm artifact: Postgres loads
+# it as a shared library and resolves its functions by name, so it wants
+# speed and its symbol table intact, not minimum bytes. Per-package
+# overrides accept opt-level and strip (unlike panic/lto/rpath), which is
+# exactly what makes membership possible.
+[profile.release.package.edtf-postgres]
+opt-level = 3
+strip = "none"

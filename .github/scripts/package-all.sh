@@ -14,23 +14,24 @@ set -euo pipefail
 
 VERSION="${VERSION:?VERSION must be set}"
 
-WORKSPACE_CRATES=(edtf-core edtf-calendars edtf-normalize edtf-wasm edtf-cli)
-PG_MANIFEST="crates/edtf-postgres/Cargo.toml"
+PURE_RUST_CRATES=(edtf-core edtf-calendars edtf-normalize edtf-wasm edtf-cli)
 
 # Clear prior output so a re-run cannot inherit anything.
-rm -rf dist target/package crates/edtf-postgres/target/package
+rm -rf dist target/package
 mkdir -p dist
 
-# Resolves publish order itself (core -> calendars/normalize -> wasm/cli).
-cargo package --workspace
+# The five pure-Rust crates, verify build included.
+cargo package --workspace --exclude edtf-postgres
 
-# --no-verify: the verify build runs pgrx's build script, which needs an
-# initialized $PGRX_HOME that this runner does not have. ci.yml's postgres
-# job runs `cargo package` WITH the verify build on a runner that does, so
-# this is backed by a real check rather than assumed (issue #54).
-cargo package --no-verify --manifest-path "${PG_MANIFEST}"
+# edtf-postgres separately with --no-verify: the verify build runs pgrx's
+# build script, which needs an initialized $PGRX_HOME that this runner does
+# not have. ci.yml's postgres job runs `cargo package` WITH the verify build
+# on runners that do — against every Postgres major — so this is backed by a
+# real check rather than assumed (issue #54).
+cargo package -p edtf-postgres --no-verify
 
-for name in "${WORKSPACE_CRATES[@]}"; do
+# One workspace now, so every .crate lands in the same target/package.
+for name in "${PURE_RUST_CRATES[@]}" edtf-postgres; do
   src="target/package/${name}-${VERSION}.crate"
   if [[ ! -f ${src} ]]; then
     echo "::error::expected ${src} to exist"
@@ -38,13 +39,6 @@ for name in "${WORKSPACE_CRATES[@]}"; do
   fi
   cp "${src}" "dist/${name}-${VERSION}.crate"
 done
-
-pg_src="crates/edtf-postgres/target/package/edtf-postgres-${VERSION}.crate"
-if [[ ! -f ${pg_src} ]]; then
-  echo "::error::expected ${pg_src} to exist"
-  exit 1
-fi
-cp "${pg_src}" "dist/edtf-postgres-${VERSION}.crate"
 
 # Exactly six, nothing else.
 count=$(find dist -name '*.crate' -type f | wc -l | tr -d ' ')

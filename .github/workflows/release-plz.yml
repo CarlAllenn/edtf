@@ -54,7 +54,21 @@ concurrency:
 jobs:
   release-pr:
     name: Maintain Release PR
-    if: github.event_name == 'push'
+    # Skipped on the release commit itself. release-plz decides what is
+    # releasable by diffing against the last version ON CRATES.IO, and phase 2
+    # takes ~25 minutes to put it there — so running on the merge that STARTS
+    # a release always sees the previous version, finds the release's own
+    # manifest and lockfile changes "unreleased", and opens a spurious Release
+    # PR for the version after the one currently publishing. That produced #74
+    # after v1.1.0 and #78 after v1.1.1. The `needs: tag` ordering below fixed
+    # tag visibility, which was a real but different problem; crates.io
+    # visibility cannot be fixed by ordering within this workflow.
+    #
+    # The next ordinary push to main regenerates the Release PR against a
+    # crates.io that has caught up.
+    if: >-
+      github.event_name == 'push' &&
+      !startsWith(github.event.head_commit.message, 'chore: release')
     runs-on: ubuntu-latest
     # Must observe main AFTER the tag job has cut this version's tags, or it
     # opens a duplicate Release PR for the release in flight. See the tag

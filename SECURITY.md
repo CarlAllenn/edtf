@@ -26,6 +26,17 @@ otherwise).
 - Releases are published exclusively through the tag-immutable, trusted-
   publishing release workflow, which builds, publishes and attests in a
   single run whose git ref is the release tag.
+- `edtf-postgres` is marked `trusted` in its control file, so a non-superuser
+  with `CREATE` on a database can install it and Postgres runs the install
+  script as the bootstrap superuser. Its SQL surface is six `IMMUTABLE
+  STRICT` functions with no dynamic SQL, no filesystem or network access and
+  no `SECURITY DEFINER`, so there is nothing for a search-path attack to
+  redirect. Every release installs it as a non-superuser in a clean Postgres
+  and runs the conformance corpus against it, so the claim is tested rather
+  than asserted.
+- Prebuilt extension tarballs are compiled inside the Postgres image they
+  target, from the pgdg `pg_config` consumers actually run, and are installed
+  and exercised on two Debian releases before the release is published.
 
 ## Verifying a release
 
@@ -41,6 +52,23 @@ gh attestation verify edtf-core-1.0.1.crate \
 The three flags are the check. A bare `gh attestation verify` confirms only
 that *some* run in this repository signed those bytes — it does not tell you
 which commit they were built from, or which workflow was allowed to sign.
+
+The same command verifies a prebuilt `edtf-postgres` tarball; substitute the
+asset name. Verify **before** extracting, since the archive unpacks into `/`.
+
+### Which attestation is which
+
+Three kinds are produced, and they answer different questions:
+
+| Attestation | Subject | Answers |
+| --- | --- | --- |
+| Build provenance | each `.crate`, the npm tarball, each extension tarball, `SHA256SUMS` | which commit, ref and workflow built these bytes |
+| SBOM | each `.crate` | what that crate's dependency closure was |
+| Release | the GitHub release | which tag, commit and asset set the release contains |
+
+The first is the one to check with `gh attestation verify`. The third is
+generated automatically because releases are immutable, and is a property of
+the release rather than of any single file.
 
 **Known limitation, v1.0.0 only.** The v1.0.0 attestations record the run
 that *signed* the artifacts, not the run that *built* them: publishing

@@ -38,9 +38,11 @@ echo "ok  edtf-cli installs and runs"
 npm pack "edtf-wasm@${VERSION}" --pack-destination "${scratch}" > /dev/null
 echo "ok  edtf-wasm fetches from npm"
 
-# edtf-postgres is deliberately not exercised here: consuming it needs a
-# running Postgres and a pgrx toolchain. Its packaged tarball is verified
-# by ci.yml's postgres job, which has both. Prebuilt binaries and a real
-# CREATE EXTENSION smoke test are issue #55.
+# edtf-postgres is not exercised here, but it is no longer unexercised.
+# Consuming it needs a running Postgres, which this script has no business
+# starting, so its canary is a separate step: canary-extension.sh downloads
+# the tarball attached to the release, checks it against SHA256SUMS and
+# installs it into a clean Postgres. That runs after the assets are
+# attached, which is necessarily later than this script (issue #55).
 
 echo "::notice::canary passed — published artifacts consume cleanly"

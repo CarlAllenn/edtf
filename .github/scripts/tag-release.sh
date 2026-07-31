@@ -91,18 +91,24 @@ for name in "${CRATES[@]}"; do
     RELEASE_EXISTS="true"
   fi
 
+  # --draft, matching release-plz's git_release_draft on the normal path
+  # (issue #55). This script is the recovery path and is NOT covered by that
+  # setting — it calls `gh release create` directly — so the flag has to be
+  # repeated here or a recovered release would publish immediately, with no
+  # assets on it and no way to attach them once immutability applies.
+  # publish-releases.sh publishes these at the end of phase 2.
   if [[ ${RELEASE_EXISTS} == "true" ]]; then
     echo "::notice::release ${tag} already exists; leaving it alone"
   elif [[ -n ${TAG_SHA} ]]; then
     # Tag already at the right commit (an earlier partial run): release only.
     gh release create "${tag}" --repo "${GITHUB_REPOSITORY}" \
-      --title "${tag}" --notes "${notes}"
-    echo "::notice::created release ${tag} for the existing tag"
+      --draft --title "${tag}" --notes "${notes}"
+    echo "::notice::created draft release ${tag} for the existing tag"
   else
     # `gh release create --target` creates the tag and the release together.
     gh release create "${tag}" --repo "${GITHUB_REPOSITORY}" \
-      --target "${GITHUB_SHA}" --title "${tag}" --notes "${notes}"
-    echo "::notice::created ${tag} -> ${GITHUB_SHA} (tag + release)"
+      --draft --target "${GITHUB_SHA}" --title "${tag}" --notes "${notes}"
+    echo "::notice::created ${tag} -> ${GITHUB_SHA} (tag + draft release)"
   fi
 done
 

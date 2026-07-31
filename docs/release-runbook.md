@@ -20,8 +20,8 @@ the v1.0.0 attestations are misattributed forever.
 ## Architecture: two phases split by a tag
 
 **Phase 1** (`release-plz.yml`, runs on pushes to `main`) tags and cuts GitHub
-releases. It publishes nothing. Its final step pushes an umbrella tag
-`v<version>` pointing at the same commit as the per-crate tags.
+releases **as drafts**. It publishes nothing. Its final step pushes an
+umbrella tag `v<version>` pointing at the same commit as the per-crate tags.
 
 **Phase 2** (`publish.yml`, triggered by the umbrella tag) builds, publishes,
 proves and attests — in one job whose `github.ref` *is* the tag. That is the
@@ -34,6 +34,25 @@ Supporting rules:
 
 - **Tag immutability ruleset on, for all tags.** The tag is the anchor every
   verification points at; a movable anchor is no anchor.
+- **Releases are drafts until phase 2 finishes.** Immutability is applied
+  when a release is *published*, not when it is created, so every asset has
+  to be attached first. The old shape — publish in phase 1, attach SBOMs in
+  phase 2 with `gh release upload --clobber` — is refused outright once
+  immutable releases are on, because the clobber cannot touch a published
+  immutable release. Drafts are the better shape anyway: a run that dies
+  leaves nothing public, and assets appear together with the release.
+  Both paths must set it — `git_release_draft` in `release-plz.toml` for the
+  normal path, and `--draft` in `tag-release.sh`, which calls
+  `gh release create` directly and is not covered by that setting.
+- **A release published while immutable releases are off is mutable
+  forever.** It cannot be retrofitted. The obvious guard — reading
+  `GET /repos/{owner}/{repo}/immutable-releases` before publishing — is not
+  available to CI: `administration` is not a grantable workflow permission
+  scope, so `GITHUB_TOKEN` cannot read repository settings. Instead
+  `publish-releases.sh` publishes the six releases **one at a time** and
+  verifies each is immutable before continuing, so a disabled setting costs
+  one release rather than six. Check it by hand before releasing:
+  `gh api repos/<owner>/<repo>/immutable-releases`.
 - **The umbrella tag is pushed with a PAT**, not `GITHUB_TOKEN` — tags pushed
   with the default token do not trigger workflows (GitHub's recursion guard),
   and a release that silently triggers nothing looks exactly like a success.
@@ -65,8 +84,15 @@ Supporting rules:
    crates.io: per-crate Settings → Trusted Publishing (also tick "require
    trusted publishing"). npm: package Settings → Trusted Publisher.
 4. Enable the tag-immutability ruleset (all tags) and, if used, signed-commit
-   rulesets.
-5. If runners enforce an egress allowlist (harden-runner `egress-policy:
+   rulesets. Enable immutable releases too —
+   `gh api --method PUT repos/<owner>/<repo>/immutable-releases -f enabled=true`
+   — **after** the draft-release changes are merged, never before: with the
+   old publish-then-attach shape, turning it on breaks asset upload outright.
+5. If the repository ships a Postgres extension, add an upgrade script per
+   release under `crates/<ext>/sql/` — `assert-upgrade-path.sh` runs in the
+   lint gate and names the file it expects. An empty file is correct when the
+   SQL surface did not move, which `task pg:schema-snapshot` decides.
+6. If runners enforce an egress allowlist (harden-runner `egress-policy:
    block`), the publish workflow needs, beyond the registries and toolchain
    hosts: `fulcio.sigstore.dev`, `rekor.sigstore.dev`,
    `tuf-repo-cdn.sigstore.dev`, **`tuf-repo.github.com`** and
@@ -74,19 +100,29 @@ Supporting rules:
    TUF trust root and its target store — `gh attestation verify` fetches them,
    and without them self-verification fails on every artifact while the real
    error stays invisible unless stderr is surfaced.
-6. Run the rehearsal before the first release: dispatch `publish.yml` from a
-   branch with `dry_run=true`. It exercises packaging, determinism and version
-   agreement, and prints the provenance a real release would record.
+7. Run the rehearsal before the first release: dispatch `publish.yml` from a
+   branch with `dry_run=true`. It exercises packaging, determinism, version
+   agreement and the full extension build-and-smoke-test matrix, and prints
+   the provenance a real release would record. The extension matrix is the
+   newest and heaviest machinery in the pipeline, and the rehearsal is the
+   only place it can be proven without releasing.
 
 ## Normal release
 
-1. release-plz maintains the release PR. **Merging it is the commitment
-   point.** Everything downstream is automatic: phase 1 tags, the umbrella tag
-   fires phase 2, phase 2 publishes/proves/attests/verifies/canaries and
-   attaches SBOMs to the per-crate releases.
-2. Watch phase 2 to completion. Green means: registry bytes are byte-identical
-   to what the run built, and every attestation was re-verified in-run to name
-   `refs/tags/v<version>` and the tagged commit.
+1. Before merging: the release PR bumps the version, so `edtf-postgres` needs
+   its upgrade script for the new version — `assert-upgrade-path.sh` fails the
+   lint gate and names the file. Empty is correct unless
+   `task pg:schema-snapshot` shows the SQL surface moved.
+2. release-plz maintains the release PR. **Merging it is the commitment
+   point.** Everything downstream is automatic: phase 1 tags and cuts draft
+   releases, the umbrella tag fires phase 2, phase 2 builds and smoke-tests
+   the extension matrix, publishes/proves/attests/verifies/canaries, attaches
+   SBOMs and extension tarballs, and publishes the releases last.
+3. Watch phase 2 to completion. Green means: registry bytes are byte-identical
+   to what the run built, every attestation was re-verified in-run to name
+   `refs/tags/v<version>` and the tagged commit, every extension tarball
+   installed into a clean Postgres as a non-superuser on two Debian releases,
+   and all six releases are public and immutable.
 
 Afterwards, spot-check from any machine:
 
@@ -148,8 +184,15 @@ Failure modes this design now absorbs, each found during a live release:
 | Upload targeted a release that is never created | SBOM step aimed at an umbrella release; only per-crate releases exist | per-crate SBOM attachment |
 | Release-PR-merge-only tagging | any post-merge fix strands the release | phase-1 `workflow_dispatch` recovery |
 
-The meta-lesson: **every defect here was invisible to CI and appeared only
-during a real release.** Treat the first release through a new pipeline as the
+One further defect belongs in this list but not in that table, because it is
+the only one caught *before* it cost a release: enabling immutable releases
+against the publish-then-attach shape would have refused every asset upload
+and left releases uncompletable. It was found by reading the pipeline end to
+end while planning issue #55, not by shipping. That is the cheaper way to
+find them, and it is available for the asking.
+
+The meta-lesson: **every defect in the table was invisible to CI and appeared
+only during a real release.** Treat the first release through a new pipeline as the
 test it actually is — schedule it when a failed run is cheap, keep each step
 independently resumable, and make every check print the evidence for its
 verdict rather than a summary of it.

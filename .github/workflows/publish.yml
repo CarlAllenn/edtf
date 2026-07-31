@@ -41,11 +41,142 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Prebuilt edtf-postgres artifacts (issue #55). A separate job because
+  # arm64 needs its own runner — `github.ref` is scoped to the workflow run,
+  # not the job, so splitting this out does NOT weaken the provenance
+  # property the publish job depends on. What makes provenance correct is
+  # the tag trigger, not single-job-ness.
+  #
+  # It runs BEFORE publish (`needs:` below) on purpose. crates.io is
+  # irreversible and a tarball is not, so anything that can still fail
+  # cheaply must fail before the release commits to a registry. A broken
+  # tarball ends the run while everything is still recoverable, rather than
+  # stranding a half-published release.
+  extension:
+    name: Extension pg${{ matrix.pg }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    strategy:
+      # One failing cell must not hide the state of the other nine.
+      fail-fast: false
+      matrix:
+        pg: [14, 15, 16, 17, 18]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          # GA and free on public repositories, so both architectures build
+          # natively and no QEMU is involved.
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    env:
+      # Routed through env so no template expands inside run: code
+      # (zizmor template-injection, pedantic tier).
+      PG: ${{ matrix.pg }}
+      ARCH: ${{ matrix.arch }}
+    steps:
+      # The container's own egress is listed here too: apt and rustup run
+      # inside `postgres:<major>-bookworm`, and container traffic traverses
+      # the host's stack. Listing them is correct whether or not
+      # harden-runner filters it — an unlisted host that turns out to be
+      # filtered would fail the build for a reason unrelated to the code.
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            codeload.github.com:443
+            mise.jdx.dev:443
+            mise-versions.jdx.dev:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+            deb.debian.org:80
+            deb.debian.org:443
+            apt.postgresql.org:80
+            apt.postgresql.org:443
+            sh.rustup.rs:443
+            static.rust-lang.org:443
+            crates.io:443
+            index.crates.io:443
+            static.crates.io:443
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.7.12
+          # Single-purpose job: the toolchain lives inside the build
+          # container, so the runner needs only the TOML reader that derives
+          # the pins from mise.toml.
+          install_args: taplo
+          cache: false
+
+      - name: Resolve dry-run mode
+        env:
+          DRY_RUN_INPUT: ${{ inputs.dry_run }}
+        run: .github/scripts/resolve-dry-run.sh
+
+      - name: Assert publishing ref
+        run: .github/scripts/assert-publish-ref.sh
+
+      # The publish job re-derives this and additionally asserts that the tag
+      # agrees; here it only has to name the artifact.
+      - name: Resolve version
+        run: |
+          set -euo pipefail
+          version=$(taplo get -f crates/edtf-postgres/Cargo.toml 'package.version')
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+
+      - name: Build the extension tarball
+        env:
+          OUT_DIR: ${{ runner.temp }}/ext
+        run: .github/scripts/build-extension.sh
+
+      # Built on bookworm (glibc 2.36), exercised on both bookworm and
+      # trixie (2.41). Testing only where it was built would assume glibc
+      # forward compatibility rather than demonstrate it.
+      - name: Smoke test on bookworm
+        env:
+          DISTRO: bookworm
+          OUT_DIR: ${{ runner.temp }}/ext
+        run: |
+          set -euo pipefail
+          TARBALL="${OUT_DIR}/edtf_postgres-${VERSION}-pg${PG}-linux-${ARCH}.tar.gz" \
+            .github/scripts/smoke-extension.sh
+
+      - name: Smoke test on trixie
+        env:
+          DISTRO: trixie
+          OUT_DIR: ${{ runner.temp }}/ext
+        run: |
+          set -euo pipefail
+          TARBALL="${OUT_DIR}/edtf_postgres-${VERSION}-pg${PG}-linux-${ARCH}.tar.gz" \
+            .github/scripts/smoke-extension.sh
+
+      - name: Upload the tarball
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: edtf-postgres-pg${{ matrix.pg }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/ext/*.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
   publish:
     name: Publish + attest (${{ github.ref_name }})
     runs-on: ubuntu-latest
+    # Every tarball must exist and have installed cleanly before the release
+    # commits anything to a registry.
+    needs: extension
     permissions:
-      contents: write # upload SBOMs to the release
+      contents: write # upload assets to the releases, publish the drafts
       id-token: write # OIDC: crates.io + npm trusted publishing, attestations
       attestations: write # store build provenance
     steps:
@@ -132,6 +263,27 @@ jobs:
 
       - name: Build wasm package
         run: wasm-pack build crates/edtf-wasm --release
+
+      # --- collect the extension tarballs ---------------------------------
+      # STRICTLY after the determinism assertion. That step re-runs
+      # package-all.sh, which begins `rm -rf dist` — anything placed in dist/
+      # before it is deleted silently, and the run would simply proceed with
+      # fewer assets than intended.
+      #
+      # Landing them in dist/ is what wires them into the existing
+      # machinery with no new attestation plumbing: `actions/attest` already
+      # takes `subject-path: dist/*`, and self-verify-attestations.sh
+      # already loops over dist/*. The npm tarball is the precedent —
+      # verify-registry-bytes.sh copies it into dist/ for the same reason.
+      - name: Collect the extension tarballs
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: edtf-postgres-pg*
+          merge-multiple: true
+          path: dist
+
+      - name: Checksum the extension tarballs
+        run: .github/scripts/checksum-extension.sh
 
       # --- rehearsal exit ------------------------------------------------
       - name: Dry run summary
@@ -277,3 +429,32 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: .github/scripts/upload-sboms.sh
+
+      # Onto the edtf-postgres release, still a draft, alongside its SBOM.
+      - name: Attach the extension tarballs
+        if: env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/upload-extension-assets.sh
+
+      # The stranger's path for the one artifact canary.sh cannot cover:
+      # fetch what is attached to the release, prove it is what SHA256SUMS
+      # names, and install it.
+      - name: Canary — install the released extension tarball
+        if: env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/canary-extension.sh
+
+      # --- publish the releases ------------------------------------------
+      # LAST, and only here: phase 1 cut these as drafts, so nothing has been
+      # public until now. Everything above has already run — bytes proved
+      # against the registries, attestations verified against the tag, the
+      # canary consumed as a stranger, every asset attached. Publishing is
+      # the commitment, and immutability makes it permanent, so it happens
+      # once there is nothing left that could still fail.
+      - name: Publish the per-crate releases
+        if: env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/publish-releases.sh

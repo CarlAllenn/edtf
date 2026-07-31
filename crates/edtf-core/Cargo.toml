@@ -1,6 +1,6 @@
 [package]
 name = "edtf-core"
-version = "1.1.1"
+version = "1.1.2"
 description = "EDTF (ISO 8601-2:2019 Annex A) parsing, validation, bounds, temporal relations and canonical formatting, levels 0-2. no_std, zero dependencies."
 keywords = ["edtf", "date", "iso8601", "parser", "no-std"]
 categories = ["date-and-time", "parser-implementations", "no-std"]

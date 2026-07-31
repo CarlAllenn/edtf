@@ -95,6 +95,64 @@ SELECT daterange(edtf_min(production_date),
 FROM artworks;
 ```
 
+### Installing the Postgres extension
+
+Prebuilt, attested tarballs are attached to each `edtf-postgres-v*` release,
+so installing needs no Rust toolchain and no `cargo-pgrx`. **Verify before
+extracting** — the archive unpacks into `/` as root, so checking the
+signature afterwards is a postmortem, not verification.
+
+```bash
+VERSION=1.0.2
+PG=18                 # 14, 15, 16, 17 or 18
+ARCH=amd64            # amd64 or arm64 — dpkg's spelling, not uname's
+FILE="edtf_postgres-${VERSION}-pg${PG}-linux-${ARCH}.tar.gz"
+
+gh release download "edtf-postgres-v${VERSION}" --repo CarlAllenn/edtf \
+  --pattern "${FILE}" --pattern SHA256SUMS
+
+gh attestation verify "${FILE}" --repo CarlAllenn/edtf \
+  --source-ref "refs/tags/v${VERSION}" \
+  --signer-workflow CarlAllenn/edtf/.github/workflows/publish.yml
+
+sha256sum --check --ignore-missing SHA256SUMS
+
+sudo tar -xzf "${FILE}" -C /
+```
+
+Then, as any user with `CREATE` on the database — the extension is marked
+`trusted`, so superuser is not required:
+
+```sql
+CREATE EXTENSION edtf_postgres;
+```
+
+Upgrading a previously installed copy: extract the new tarball over the old
+one, then `ALTER EXTENSION edtf_postgres UPDATE;`. Extracting without
+running the update leaves the new library registered under the old version.
+If you are running `pg_upgrade`, install the extension into the **new**
+cluster before upgrading.
+
+#### Support matrix
+
+| Postgres | `amd64` | `arm64` | glibc floor |
+| --- | --- | --- | --- |
+| 14, 15, 16, 17, 18 | ✅ | ✅ | 2.36 |
+
+Built inside `postgres:<major>-bookworm` against that image's pgdg
+`pg_config`, and installed-and-exercised on both bookworm and trixie before
+release. The tested set and the shipped set are the same set.
+
+glibc 2.36 is a floor, not a target: Debian 12, Debian 13 and Ubuntu 24.04
+are all fine, Ubuntu 22.04 (2.35) is not. musl/Alpine is not covered — a
+different libc entirely. The tarball assumes the Debian pgdg layout
+(`/usr/lib/postgresql/<major>/lib`, `/usr/share/postgresql/<major>`); a
+Postgres built from source under a different prefix needs the files placed
+by hand from `pg_config --pkglibdir` and `--sharedir`.
+
+A major is dropped from the matrix as it reaches end of life; Postgres 14
+reaches EOL in November 2026.
+
 JavaScript, via the wasm package:
 
 ```js

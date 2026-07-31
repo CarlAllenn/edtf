@@ -50,6 +50,10 @@ jobs:
     name: Maintain Release PR
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    # Must observe main AFTER the tag job has cut this version's tags, or it
+    # opens a duplicate Release PR for the release in flight. See the tag
+    # job's comment.
+    needs: tag
     permissions:
       contents: write # push the release branch
       pull-requests: write # open/update the Release PR
@@ -93,6 +97,13 @@ jobs:
     name: Tag on Release PR merge
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    # Runs BEFORE release-pr (which needs: tag). These two used to run in
+    # parallel on the same push, and on a Release-PR merge commit that is a
+    # race: release-pr sees main with the version already bumped in the
+    # manifests and no tags for it yet, concludes the version is unreleased,
+    # and opens a SECOND Release PR for the version currently being
+    # released. That happened at v1.1.0 (PR #74). Serialising costs a few
+    # seconds and removes the window entirely.
     permissions:
       contents: write # push tags, create the GitHub releases
       pull-requests: read # detect the merged Release PR

@@ -1,8 +1,8 @@
 # edtf-calendars
 
 Proleptic **Julian (Old Style) ↔ Gregorian** conversion at the EDTF ingest
-boundary. Deterministic day-number arithmetic, `#![no_std]`, zero
-dependencies.
+boundary. Deterministic day-number arithmetic, `#![no_std]`, no third-party
+dependencies (only `edtf-core`).
 
 - `julian_to_gregorian` / `gregorian_to_julian` — complete dates, both
   directions, each validated under its own calendar's leap rule (Julian

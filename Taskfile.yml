@@ -64,7 +64,7 @@ tasks:
       - lint:machete
       - lint:pg-upgrade-path
       - lint:scripts-exec
-      - lint:fuzz-lock
+      - lint:fuzz
 
   lint:rust:
     desc: rustfmt (check) + clippy, warnings as errors
@@ -198,20 +198,38 @@ tasks:
     cmds:
       - .github/scripts/assert-scripts-executable.sh
 
-  lint:fuzz-lock:
-    desc: fuzz/ is outside the workspace; its lockfile must not drift from it
-    # release-plz owns the workspace lockfile but cannot see fuzz/ (excluded
-    # in the root Cargo.toml), so a version bump leaves fuzz/Cargo.lock
-    # pinning the previous version until someone remembers. `--locked` turns
-    # "remember" into a gate: it refuses to update the lock and fails.
+  lint:fuzz:
+    desc: fuzz/ is outside the workspace — lock, lints and type-check it anyway
+    # fuzz/ is `exclude`d in the root Cargo.toml, so NOTHING else reaches it:
+    # clippy, test, docs, MSRV and semver-checks all resolve from the
+    # workspace, and the nightly fuzz.yml schedule is the only thing that
+    # ever compiled it. That left three holes, closed here in one task:
+    #
+    #   lock      — release-plz cannot bump fuzz/Cargo.lock, so a version
+    #               bump left it pinning the previous edtf-core until someone
+    #               remembered. `--locked` refuses to update it and fails.
+    #   clippy    — the fuzz targets' use of edtf-core was unpinned by any
+    #               push gate, and fuzz/Cargo.toml's 36-line [lints] mirror
+    #               ("keep the three blocks in lockstep") was enforced by
+    #               nothing. Stable clippy type-checks it fine; no nightly
+    #               and no libFuzzer run are needed.
+    #   deny      — cargo-deny resolves from the root lockfile, so fuzz/'s
+    #               ten third-party crates (libfuzzer-sys, cc and friends,
+    #               both of which run build scripts) were in no graph it ever
+    #               saw. deny.toml's own comment names this exact failure
+    #               mode as having already cost the pgrx tree once.
     method: checksum
     sources:
+      - fuzz/**/*.rs
       - fuzz/Cargo.toml
       - fuzz/Cargo.lock
       - crates/*/Cargo.toml
       - Cargo.toml
+      - deny.toml
     cmds:
       - cargo metadata --manifest-path fuzz/Cargo.toml --locked --format-version 1 > /dev/null
+      - cargo clippy --manifest-path fuzz/Cargo.toml --all-targets --locked -- -D warnings
+      - cargo deny --manifest-path fuzz/Cargo.toml check -D unmatched-skip
 
   scan:secrets:
     desc: gitleaks over the full git history

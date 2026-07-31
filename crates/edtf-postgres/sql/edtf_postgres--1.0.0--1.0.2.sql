@@ -1,0 +1,20 @@
+-- edtf_postgres 1.0.0 -> 1.0.2
+--
+-- Intentionally a no-op, and retroactive: 1.0.0 was published to
+-- crates.io and installable from source long before prebuilt tarballs
+-- existed, so anyone who ran `cargo pgrx install` at that version has it in
+-- pg_extension.extversion with no route forward. This file is that route.
+-- Together with edtf_postgres--1.0.2--1.1.0.sql it connects every published
+-- version to the current one; Postgres walks the shortest path.
+--
+-- Nothing needs doing because the SQL surface has never moved: every
+-- published version declares the same six `#[pg_extern(immutable,
+-- parallel_safe, strict)]` functions with identical signatures, and
+-- `module_pathname` is set in the control file, so pgrx's versioned-.so
+-- mode is off and existing definitions keep resolving through
+-- MODULE_PATHNAME once the library is replaced.
+--
+-- The obligation is not limited to binary installs. sql/README.md's own
+-- reasoning — DROP EXTENSION either errors on the user's CHECK constraints
+-- and expression indexes, or CASCADEs them away — applies identically to a
+-- source install.

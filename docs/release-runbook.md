@@ -214,6 +214,13 @@ Failure modes this design now absorbs, each found during a live release:
 | `release-pr` raced `tag` on the merge commit | a duplicate Release PR opened for the version being released (#74) | `needs: tag` serialises phase 1 |
 | markdownlint MD024 scoped document-wide | generated changelogs went red on the first repeated section type | `siblings_only` |
 | `fuzz/` excluded, so release-plz cannot bump its lockfile | stale pin after every version bump, silently | `cargo metadata --locked` in the lint gate |
+| `--draft` releases create no git ref | recovery dispatch cut six drafts, zero tags, and exited GREEN having triggered nothing | `tag-release.sh` creates refs explicitly, then reads them back |
+| `upload-sboms.sh` clobbered unconditionally | any resume after a partial publish died on an immutable release, permanently | read-back-and-skip, no `--clobber` |
+| Assets skipped by NAME on resume | rebuilt tarballs are not bit-identical, so the release would carry run 1's bytes beside run 2's `SHA256SUMS` | overwrite while the release is a draft |
+| Canary compared published bytes to LOCAL checksums | could not see a stale or mis-attached manifest — the one thing it existed to catch | both sides downloaded from the release |
+| Upgrade path asserted by filename only | 0.2.0, 1.0.0 and 1.0.1 had no route to 1.1.0 while the gate stayed green | reachability over the whole graph, plus `pg_extension_update_paths` in the smoke test |
+| `release-pr` raced `tag`; one pending run per group | a duplicate Release PR, and a merge commit's run could be displaced silently | `needs: tag`, and a per-commit concurrency group |
+| cargo-deny skips were exact versions | every Renovate lockfile patch bump turned the gate red | ranges over the lagging minor |
 
 Two further defects belong in this list but not in that table, because they
 were caught *before* they cost a release. The first: enabling immutable releases

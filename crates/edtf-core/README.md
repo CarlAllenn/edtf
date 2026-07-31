@@ -21,7 +21,7 @@ use edtf_core::Edtf;
 
 let d: Edtf = "1985-04-XX".parse()?;
 assert_eq!(d.to_string(), "1985-04-XX");
-# Ok::<(), edtf_core::Error>(())
+# Ok::<(), edtf_core::ParseError>(())
 ```
 
 This is the core of a small family — CLI (`edtf-cli`), WebAssembly/npm

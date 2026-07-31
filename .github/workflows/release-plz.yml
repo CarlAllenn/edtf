@@ -39,10 +39,16 @@ name: Release
 
 permissions: {}
 
-# Serialize, never skip: a queued release must still run (release-plz canon),
-# so cancel-in-progress stays false — the queue is the concurrency limit.
+# Keyed per COMMIT, not per ref. `cancel-in-progress: false` queues a
+# superseded run rather than cancelling it, but GitHub holds only ONE pending
+# run per group — a second push while one is queued discards the first. On a
+# busy main that silently drops whichever run was waiting, and if the dropped
+# one is the Release-PR merge commit, the release is never tagged and nothing
+# reports a failure. Per-sha groups make displacement impossible; concurrent
+# runs on distinct commits are already safe, because release-plz derives its
+# decisions from registry and tag state and `needs: tag` orders the two jobs.
 concurrency:
-  group: release-plz-${{ github.ref }}
+  group: release-plz-${{ github.sha }}
   cancel-in-progress: false
 
 jobs:

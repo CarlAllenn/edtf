@@ -72,6 +72,11 @@ BEGIN
     ASSERT edtf_relation('junk', '1985') IS NULL, 'relation with an invalid operand is NULL';
 
     -- Intended usage: index-friendly range overlap ------------------------
+    -- Bounds pinned first, deliberately: daterange(NULL, NULL, '[]') is
+    -- UNBOUNDED and therefore contains every date, so the containment
+    -- assertions below would pass even if both functions returned NULL.
+    ASSERT edtf_min('196X')::text = '1960-01-01', 'decade floor';
+    ASSERT edtf_max('196X')::text = '1969-12-31', 'decade ceiling';
     ASSERT NOT (daterange(edtf_min('156X'), edtf_max('156X'), '[]') @> DATE '1965-06-15'),
         '1965 is outside the 1560s';
     ASSERT daterange(edtf_min('196X'), edtf_max('196X'), '[]') @> DATE '1965-06-15',

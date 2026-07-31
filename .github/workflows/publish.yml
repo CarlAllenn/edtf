@@ -304,6 +304,23 @@ jobs:
       - name: Checksum the extension tarballs
         run: .github/scripts/checksum-extension.sh
 
+      # Before the publish, and unguarded: nothing here depends on anything
+      # being published, so running it in the rehearsal turns the `cp` loop
+      # and cargo-cyclonedx's output layout into a cheap pre-publish
+      # failure. The attest steps that CONSUME sbom/*.cdx.json stay where
+      # they are, after the proof.
+      - name: Generate SBOMs
+        run: |
+          set -euo pipefail
+          cargo cyclonedx --format json --spec-version 1.5
+          cargo cyclonedx --format json --spec-version 1.5 \
+            --manifest-path crates/edtf-postgres/Cargo.toml
+          mkdir -p sbom
+          for name in edtf-core edtf-calendars edtf-normalize edtf-wasm edtf-cli edtf-postgres; do
+            cp "crates/${name}/${name}.cdx.json" "sbom/${name}.cdx.json"
+          done
+          ls -1 sbom/
+
       # --- rehearsal exit ------------------------------------------------
       - name: Dry run summary
         if: env.DRY_RUN == 'true'
@@ -375,18 +392,6 @@ jobs:
       # cargo-cyclonedx emits one SBOM per package, next to that package's
       # manifest. edtf-postgres needs its own invocation — separate
       # workspace, so the root run does not see it.
-      - name: Generate SBOMs
-        if: env.DRY_RUN != 'true'
-        run: |
-          set -euo pipefail
-          cargo cyclonedx --format json --spec-version 1.5
-          cargo cyclonedx --format json --spec-version 1.5 \
-            --manifest-path crates/edtf-postgres/Cargo.toml
-          mkdir -p sbom
-          for name in edtf-core edtf-calendars edtf-normalize edtf-wasm edtf-cli edtf-postgres; do
-            cp "crates/${name}/${name}.cdx.json" "sbom/${name}.cdx.json"
-          done
-          ls -1 sbom/
 
       # One SBOM per crate, attested against that crate only. `sbom-path`
       # takes a single file, so a shared step would attach one crate's

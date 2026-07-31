@@ -1,0 +1,66 @@
+# Dependency policy for the fuzz workspace.
+#
+# fuzz/ is `exclude`d from the root workspace (root Cargo.toml), so
+# cargo-deny run from the root resolves the root lockfile and never sees
+# these ten crates — libfuzzer-sys, cc and friends, two of which run build
+# scripts. The root deny.toml's own comment names this exact failure mode as
+# having already cost the pgrx tree once: "the crate sat outside the
+# workspace and its ~150 dependencies were never seen by this gate at all."
+# The same sentence was still true of fuzz/ until this file existed.
+#
+# A separate config rather than reusing the root one, because the root's
+# strict "everything must be encountered" settings — unmatched-skip,
+# unused-allowed-license, unused-ignored-advisory — describe the WORKSPACE
+# graph. Pointed at this much smaller graph they fail on every skip, licence
+# and advisory that is legitimately absent here. Two graphs, two policies.
+#
+# cargo-deny picks this up automatically for `--manifest-path fuzz/Cargo.toml`
+# because fuzz/ is its own workspace root. `task lint:fuzz` runs it.
+
+[graph]
+all-features = true
+targets = ["aarch64-apple-darwin", "x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
+
+[advisories]
+yanked = "deny"
+# Unmaintained advisories fail for the whole graph, as at the root: a
+# transitive unmaintained crate is the same supply-chain exposure whether or
+# not it is in the shipped artifact. Nothing is ignored here — if that
+# changes, add the entry with a reason, as the root file does.
+unmaintained = "all"
+unused-ignored-advisory = "deny"
+
+[licenses]
+# Exactly what this graph carries today, fail-closed. NCSA is required and
+# non-optional: libfuzzer-sys is `(MIT OR Apache-2.0) AND NCSA`, the NCSA
+# part covering the LLVM libFuzzer runtime it wraps. r-efi also offers
+# LGPL-2.1-or-later, but as one arm of an OR, so MIT is selected and LGPL
+# never needs allowing.
+allow = ["MIT", "Apache-2.0", "NCSA"]
+unused-allowed-license = "deny"
+unused-license-exception = "deny"
+private = { ignore = true }
+
+[bans]
+multiple-versions = "deny"
+multiple-versions-include-dev = true
+wildcards = "deny"
+allow-wildcard-paths = true
+# No skips: this graph is ten crates deep and currently carries no
+# duplicates. An entry here would be a real finding, not ecosystem lag.
+
+[bans.build]
+# Enumerated from fuzz/Cargo.lock, each one structural: cc compiles the C
+# shim, libfuzzer-sys compiles and links LLVM's libFuzzer runtime, and
+# libc probes the target at build time. A fuzzing harness cannot exist
+# without them. New entries arrive via CI failure -> review -> addition,
+# as at the root.
+allow-build-scripts = ["cc", "libc", "libfuzzer-sys"]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+required-git-spec = "rev"
+unused-allowed-source = "deny"
+unused-allowed-org = "deny"

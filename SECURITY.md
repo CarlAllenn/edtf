@@ -43,9 +43,9 @@ otherwise).
 Verify an artifact against the tag it claims to come from:
 
 ```sh
-gh attestation verify edtf-core-1.0.1.crate \
+gh attestation verify edtf-core-<version>.crate \
   --repo CarlAllenn/edtf \
-  --source-ref refs/tags/v1.0.1 \
+  --source-ref refs/tags/v<version> \
   --signer-workflow CarlAllenn/edtf/.github/workflows/publish.yml
 ```
 

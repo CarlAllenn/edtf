@@ -80,7 +80,7 @@ for name in "${CRATES[@]}"; do
     echo "::error::${tag}: expected draft=false immutable=true, got '${AFTER:-unreadable}'"
     echo "::error::immutable releases appear to be DISABLED on ${GITHUB_REPOSITORY}"
     echo "::error::enable it, then re-dispatch this tag — the remaining releases are still drafts:"
-    echo "::error::  gh api --method PUT repos/${GITHUB_REPOSITORY}/immutable-releases -f enabled=true"
+    echo "::error::  gh api --method PUT repos/${GITHUB_REPOSITORY}/immutable-releases"
     exit 1
   fi
 

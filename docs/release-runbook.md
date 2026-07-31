@@ -85,9 +85,12 @@ Supporting rules:
    trusted publishing"). npm: package Settings → Trusted Publisher.
 4. Enable the tag-immutability ruleset (all tags) and, if used, signed-commit
    rulesets. Enable immutable releases too —
-   `gh api --method PUT repos/<owner>/<repo>/immutable-releases -f enabled=true`
-   — **after** the draft-release changes are merged, never before: with the
-   old publish-then-attach shape, turning it on breaks asset upload outright.
+   `gh api --method PUT repos/<owner>/<repo>/immutable-releases`, a bodyless
+   PUT; passing `-f enabled=true` is rejected with
+   `"enabled" is not a permitted key` — **after** the draft-release changes
+   are merged, never before: with the old publish-then-attach shape, turning
+   it on breaks asset upload outright. Confirm with
+   `gh api repos/<owner>/<repo>/immutable-releases`.
 5. If the repository ships a Postgres extension, add an upgrade script per
    release under `crates/<ext>/sql/` — `assert-upgrade-path.sh` runs in the
    lint gate and names the file it expects. An empty file is correct when the

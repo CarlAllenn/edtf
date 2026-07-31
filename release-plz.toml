@@ -15,6 +15,14 @@ semver_check = true
 changelog_update = true
 git_release_enable = true
 git_tag_enable = true
+# Releases are cut as DRAFTS and published by phase 2, once every asset is
+# attached and verified (issue #55). Immutability is enforced at publish, not
+# at creation: publishing here and attaching assets later is refused outright
+# once immutable releases are on, because `gh release upload --clobber`
+# cannot touch a published immutable release. Drafts are also the honest
+# shape — a release that strands leaves nothing public, and assets plus
+# release become visible together.
+git_release_draft = true
 # Tag and cut releases, but never publish: `cargo publish` belongs to
 # publish.yml, where the run's ref is the tag it is signing for.
 publish = false

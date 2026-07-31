@@ -69,6 +69,23 @@ Supporting rules:
 
 ## One-time setup for a new repository
 
+**What is portable, and what is not.** These scripts are generic:
+`package-all`, `assert-deterministic`, `assert-publish-ref`,
+`assert-nothing-published`, `assert-scripts-executable`, `resolve-*`,
+`snapshot-registry-state`, `publish-crates`, `publish-npm`,
+`verify-registry-bytes`, `self-verify-attestations`, `canary`,
+`upload-sboms`, `tag-release`, `push-umbrella-tag`, `publish-releases` —
+along with both workflows and `release-plz.toml`. Crate names are enumerated
+inside them deliberately (a glob is what silently skipped a crate at
+v1.0.0), so every one needs its list edited.
+
+These are edtf-specific and should be deleted unless the repository also
+ships a Postgres extension: `build-extension*`, `smoke-extension`,
+`checksum-extension`, `upload-extension-assets`, `canary-extension`,
+`assert-upgrade-path`, `schema-snapshot`, the `sql/` directory, the
+`extension` matrix job, and the extension half of `prepare-release`. The
+`lint:fuzz` gate goes too if there is no `fuzz/`.
+
 1. Copy `release-plz.toml`, `.github/workflows/release-plz.yml`,
    `.github/workflows/publish.yml` and `.github/scripts/` (the tag, publish,
    verification and canary scripts). Enumerate your crates explicitly in the
@@ -216,7 +233,7 @@ Failure modes this design now absorbs, each found during a live release:
 | Script committed `100644` | release died at `Permission denied` after crates.io and npm had published (v1.1.0) | `assert-scripts-executable.sh` gates the git index mode |
 | `releases/tags/{tag}` 404s on drafts | the step that publishes drafts could not read the drafts it exists to publish | list endpoint, which returns drafts and exposes `.immutable` |
 | Docker Hub blob host unlisted | image pull refused against a bare IP; the hostname appears only in harden-runner's log | both `cloudflare` and `cloudfront` listed, in every job that runs docker |
-| `release-pr` raced `tag` on the merge commit | a duplicate Release PR opened for the version being released (#74) | `needs: tag` serialises phase 1 |
+| `release-pr` ran on the release commit | a duplicate Release PR for the version currently publishing (#74, #78) — release-plz diffs against crates.io, which lags by the whole ~25-minute publish | `release-pr` skips release commits; `needs: tag` was a real but *different* fix |
 | markdownlint MD024 scoped document-wide | generated changelogs went red on the first repeated section type | `siblings_only` |
 | `fuzz/` excluded, so release-plz cannot bump its lockfile | stale pin after every version bump, silently | `cargo metadata --locked` in the lint gate |
 | `--draft` releases create no git ref | recovery dispatch cut six drafts, zero tags, and exited GREEN having triggered nothing | `tag-release.sh` creates refs explicitly, then reads them back |
@@ -226,6 +243,8 @@ Failure modes this design now absorbs, each found during a live release:
 | Upgrade path asserted by filename only | 0.2.0, 1.0.0 and 1.0.1 had no route to 1.1.0 while the gate stayed green | reachability over the whole graph, plus `pg_extension_update_paths` in the smoke test |
 | `release-pr` raced `tag`; one pending run per group | a duplicate Release PR, and a merge commit's run could be displaced silently | `needs: tag`, and a per-commit concurrency group |
 | cargo-deny skips were exact versions | every Renovate lockfile patch bump turned the gate red | ranges over the lagging minor |
+| SBOM generation hoisted above the publish | cargo-cyclonedx writes beside each manifest, so the tree was dirty and `cargo publish` refused on the FIRST crate (v1.1.1, nothing published) | files are moved, not copied, and a clean-tree assertion runs before the publish |
+| Two chores release-plz cannot do | the upgrade script and `fuzz/Cargo.lock` failed the gate on every single release PR | `task release:prepare` does both and proves the result |
 
 Two further defects belong in this list but not in that table, because they
 were caught *before* they cost a release. The first: enabling immutable releases
@@ -241,7 +260,21 @@ does not enforce egress on the arm64 runners. A green arm64 job is not
 evidence that an allowlist is complete; judge egress on amd64.
 
 The meta-lesson: **every defect in the table was invisible to CI and appeared
-only during a real release.** Treat the first release through a new pipeline as the
+only during a real release.**
+
+Note what that means for anyone copying this. The rows below the v1.0.x block
+were all found in a single day, and three of them were introduced by the very
+changes that fixed the others — each time in the half of the pipeline that
+nothing can exercise except a live release: tag creation, asset upload,
+draft publishing, recovery. The build half is covered by CI and by the
+rehearsal; the release half is covered by nothing.
+
+So this document transfers an architecture and a list of paid-for mistakes.
+It does not transfer a *tested* pipeline, and it should not be read as one.
+The missing piece is a scratch repository with throwaway crates where the
+whole thing — including the recovery paths — can run end to end against real
+GitHub APIs. Every defect added to this table today would have died there in
+minutes instead of costing a release. Treat the first release through a new pipeline as the
 test it actually is — schedule it when a failed run is cheap, keep each step
 independently resumable, and make every check print the evidence for its
 verdict rather than a summary of it.

@@ -27,6 +27,15 @@ name: Release
 "on":
   push:
     branches: [main]
+  # Recovery path (issue #66, defect 2): release-plz refuses to tag unless
+  # the current commit is a release-PR merge commit, so a defect fixed
+  # AFTER the release PR merges strands the release — bumped manifests,
+  # nothing tagged, nothing published, and re-running phase 1 a no-op.
+  # Dispatching this workflow (from main only) creates the per-crate tags
+  # and releases directly at the current commit, guarded by the same
+  # "is it already on crates.io / already tagged" checks as the umbrella
+  # step, then pushes the umbrella tag as usual.
+  workflow_dispatch: {}
 
 permissions: {}
 
@@ -39,6 +48,7 @@ concurrency:
 jobs:
   release-pr:
     name: Maintain Release PR
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write # push the release branch
@@ -81,6 +91,7 @@ jobs:
 
   tag:
     name: Tag on Release PR merge
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write # push tags, create the GitHub releases
@@ -113,7 +124,7 @@ jobs:
           # renovate: datasource=github-releases depName=jdx/mise
           version: 2026.7.12
           install_args: rust
-      # publish = false in release-plz.toml: this creates the five per-crate
+      # publish = false in release-plz.toml: this creates the six per-crate
       # tags and their GitHub releases, and runs cargo publish for nothing.
       - name: release-plz release (tags + GitHub releases only)
         id: release
@@ -125,6 +136,52 @@ jobs:
       # The umbrella tag is what publish.yml listens for, and it must be
       # pushed with the PAT — see the script header for why, and for the
       # guards that keep an ordinary push to main from minting one.
+      - name: Push umbrella tag
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
+        run: .github/scripts/push-umbrella-tag.sh
+
+  # Recovery: tag a fixed commit without a new release PR (issue #66).
+  # Only reachable by explicit dispatch; the script's guards make it a
+  # no-op-with-error on anything except a bumped-but-unpublished-and-
+  # untagged version at the head of main.
+  tag-dispatch:
+    name: Tag current commit (dispatch recovery)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create per-crate tags and GitHub releases
+    steps:
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            crates.io:443
+            index.crates.io:443
+            static.crates.io:443
+            static.rust-lang.org:443
+            mise.jdx.dev:443
+            mise-versions.jdx.dev:443
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.7.12
+          install_args: rust
+      # Default token: per-crate tags are meant to trigger nothing, so
+      # GitHub's recursion guard is the desired behavior here.
+      - name: Create per-crate tags and releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/tag-release.sh
+      # Identical to the push path: the umbrella tag needs the PAT so that
+      # publish.yml actually fires. The script's own guards apply unchanged.
       - name: Push umbrella tag
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}

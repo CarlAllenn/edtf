@@ -262,8 +262,10 @@ jobs:
         if: env.DRY_RUN != 'true'
         run: .github/scripts/canary.sh
 
-      - name: Attach SBOMs to the release
+      # Per-crate releases, not the umbrella tag: phase 1 never creates an
+      # umbrella release, and each SBOM describes exactly one crate anyway.
+      - name: Attach SBOMs to the per-crate releases
         if: env.DRY_RUN != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${GITHUB_REF_NAME}" sbom/*.cdx.json --clobber
+        run: .github/scripts/upload-sboms.sh

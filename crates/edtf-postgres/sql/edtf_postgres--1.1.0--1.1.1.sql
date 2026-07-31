@@ -1,0 +1,17 @@
+-- edtf_postgres 1.1.0 -> 1.1.1
+--
+-- Intentionally a no-op. `default_version` is @CARGO_VERSION@, so every
+-- release mints a new extension version whether or not the SQL surface
+-- moved; this file exists so `ALTER EXTENSION edtf_postgres UPDATE` has a
+-- path to walk, not because anything needs doing.
+--
+-- Nothing needs doing here because:
+--   * the SQL surface is unchanged — schema.snapshot.sql is identical
+--     across this bump, which is the mechanical test for exactly this
+--   * `module_pathname` is set in the control file, so pgrx's versioned-.so
+--     mode is off: the library is replaced in place and the existing
+--     function definitions keep resolving through MODULE_PATHNAME
+--
+-- 1.1.1 does change the control file (`relocatable = true`), but that is
+-- metadata Postgres reads from the .control file, not SQL to be applied by
+-- an upgrade script.

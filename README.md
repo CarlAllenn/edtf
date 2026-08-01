@@ -25,6 +25,28 @@ that is valid in your application is valid in your database — always:
 
 [pgrx]: https://github.com/pgcentralfoundation/pgrx
 
+## Why this exists
+
+This replaces an EDTF layer that ran edtf.js inside Postgres under plv8. It
+worked, but plv8 compiles V8 from source — a database build took **40
+minutes** — and the standing cost was a JIT-ing JavaScript runtime, with its
+own heap, GC and threads, resident in every Postgres backend.
+
+That constraint is what the design answers. A Postgres backend is `fork()`ed
+per connection, unwinds errors through `siglongjmp`, and allocates from
+transaction-scoped memory contexts; nothing carrying its own runtime belongs
+inside one. So `edtf-core` is `#![no_std]` with zero runtime dependencies —
+which is also precisely what lets the same code become a small WebAssembly
+bundle and a static CLI binary. One implementation, three deployment shapes,
+no divergence to reconcile. Installing the extension is now a tarball
+download and `CREATE EXTENSION`.
+
+The old engine's behaviour was not discarded, but it is an oracle rather
+than an authority: `tests/fixtures/legacy` pins its verdicts as a
+cross-check, and where they disagree with the Annex A reading in
+[docs/spec-notes.md](docs/spec-notes.md), the spec wins and the divergence
+gets a documented note.
+
 ## What "complete" means here
 
 - **Level 0**: calendar dates, reduced precision, date-times with UTC/shift,

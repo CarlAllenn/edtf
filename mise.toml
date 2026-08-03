@@ -68,7 +68,7 @@ shellcheck = "0.11.0"
 shfmt = "3.13.1"
 # runtime for markdownlint-cli2
 node = "26.5.0"
-"npm:markdownlint-cli2" = "0.23.1"
+"npm:markdownlint-cli2" = "0.23.2"
 # secret scan: staged (universal hook) + CI history job
 gitleaks = "8.30.1"
 # link check, weekly scheduled.yml only

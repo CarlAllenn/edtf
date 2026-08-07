@@ -1,0 +1,68 @@
+---
+name: Fuzz rerun
+
+# Retry infra-killed fuzz runs. Hosted runners are occasionally preempted
+# mid-job ("The runner has received a shutdown signal"), which reads as a
+# red Fuzz run despite the fuzzer finding nothing; a 20-minute CPU-pegged
+# job is maximally exposed. This workflow reruns the failed jobs of such a
+# run, gated two ways so a genuine crash can never retry-loop:
+#   - only when the run uploaded no fuzz-artifacts-* (artifacts mean a real
+#     finding — leave it red for a human);
+#   - only up to run attempt 2 (i.e. at most two automatic reruns).
+# Triage rule lives in the fuzz.yml header comment.
+
+# zizmor flags workflow_run as a dangerous trigger because it typically
+# pairs with a checkout of the triggering ref plus elevated permissions.
+# Neither applies here: no checkout, no untrusted input reaches the shell
+# (only numeric run id / attempt from the event), and the only permission
+# is actions:write on the one job that needs it.
+"on": # zizmor: ignore[dangerous-triggers]
+  workflow_run:
+    workflows: [Fuzz]
+    types: [completed]
+
+permissions: {}
+
+# One triage per completed Fuzz run; overlapping events (a rerun finishing
+# while another completes) queue rather than race the rerun API call.
+concurrency:
+  group: fuzz-rerun-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  rerun:
+    name: rerun preempted fuzz jobs
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      # Sanctioned write exception: `gh run rerun` needs it. The job runs
+      # no project code (no checkout), so the token never coexists with
+      # anything untrusted.
+      actions: write # rerun the failed Fuzz jobs
+    steps:
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: block
+          disable-sudo: true
+          # gh only; nothing else runs here.
+          allowed-endpoints: >
+            api.github.com:443
+      - name: Rerun if preempted, not crashed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$RUN_ATTEMPT" -ge 3 ]; then
+            echo "attempt $RUN_ATTEMPT: rerun budget spent, leaving red"
+            exit 0
+          fi
+          crashes=$(gh api "repos/$REPO/actions/runs/$RUN_ID/artifacts" \
+            --jq '[.artifacts[] | select(.name | startswith("fuzz-artifacts-"))] | length')
+          if [ "$crashes" -gt 0 ]; then
+            echo "crash artifacts uploaded: real finding, not rerunning"
+            exit 0
+          fi
+          echo "no crash artifacts (attempt $RUN_ATTEMPT): treating as runner preemption"
+          gh run rerun "$RUN_ID" --failed --repo "$REPO"

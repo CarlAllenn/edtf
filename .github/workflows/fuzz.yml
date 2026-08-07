@@ -7,10 +7,19 @@ name: Fuzz
 # on demand. Nightly toolchain is confined to this workflow (a sanctioned
 # exception to the everything-via-mise rule; cargo-fuzz itself is pinned in
 # mise.toml).
+#
+# Triage rule for red runs: a log ending in "The runner has received a
+# shutdown signal" with NO fuzz-artifacts-* upload is hosted-runner
+# preemption (infra noise, auto-retried by fuzz-rerun.yml); a red run WITH
+# uploaded artifacts is a real finding and needs a human.
 
 "on":
   schedule:
-    - cron: 41 5 * * *
+    # Off-peak slot: the 05:41 cron queued into the ~08:00 UTC morning
+    # peak, where runner-pool pressure repeatedly preempted these long
+    # CPU-pegged jobs (four kills, 2026-08-01..05). Odd minute per GitHub's
+    # own guidance to avoid on-the-hour congestion.
+    - cron: 41 2 * * *
   workflow_dispatch:
     inputs:
       max_total_time:

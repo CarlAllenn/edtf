@@ -19,6 +19,14 @@ CRATES=(edtf-core edtf-calendars edtf-normalize edtf-wasm edtf-cli edtf-postgres
 
 fail=0
 
+# Streamed heartbeats: lines already streamed survive a runner death.
+beat() {
+  local ts
+  ts=$(date -u +%H:%M:%S) || ts="--:--:--"
+  echo "[${ts}Z] $*"
+}
+
+beat "fetching registry checksums for ${#CRATES[@]} crates"
 for name in "${CRATES[@]}"; do
   # Fetched to a file rather than piped into the parser: the pipe shape is
   # indistinguishable from download-then-run to scanners, and this is data,
@@ -41,6 +49,7 @@ done
 # npm: pack the same directory that was published and compare against the
 # tarball the registry actually serves. npm names it <name>-<version>.tgz,
 # so the filename is derived rather than globbed.
+beat "comparing the npm tarball against the registry's bytes"
 npm pack crates/edtf-wasm/pkg/ --pack-destination "${RUNNER_TEMP}" > /dev/null
 local_tgz="${RUNNER_TEMP}/edtf-wasm-${VERSION}.tgz"
 published_tgz="${RUNNER_TEMP}/published.tgz"

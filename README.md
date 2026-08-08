@@ -25,6 +25,12 @@ that is valid in your application is valid in your database — always:
 
 [pgrx]: https://github.com/pgcentralfoundation/pgrx
 
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) (how to
+contribute, the enforced coding standard, DCO), [GOVERNANCE.md](GOVERNANCE.md)
+(decision-making and continuity), the [roadmap](docs/roadmap.md), the
+[security policy](SECURITY.md) and the
+[security assurance case](docs/assurance-case.md).
+
 ## Why this exists
 
 This replaces an EDTF layer that ran edtf.js inside Postgres under plv8. It

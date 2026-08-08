@@ -421,3 +421,88 @@ fn notes_cite_decisions() {
             .any(|note| note.decision() == Some("N3") && !note.message().is_empty())
     );
 }
+
+// Every variant, and a match that stops compiling if one is added without
+// extending this list — the guard that keeps the metadata assertions below
+// exhaustive rather than drifting.
+const ALL_NOTES: &[Note] = &[
+    Note::AlreadyValidEdtf,
+    Note::CenturyPartInterval,
+    Note::ModifierDropped,
+    Note::CenturyMask,
+    Note::BcCenturyInterval,
+    Note::AstronomicalYear,
+    Note::ElidedEndYear,
+    Note::NumericUnambiguous,
+    Note::NumericResolvedByOption,
+    Note::NumericResolvedByLocale,
+    Note::NumericOrderIrrelevant,
+    Note::NumericOrderAmbiguous,
+    Note::DecadeAmbiguity,
+    Note::DefaultCenturyApplied,
+    Note::SeasonCode,
+    Note::OpenInterval,
+    Note::MissingYearMasked,
+    Note::QualifierDistributed,
+    Note::OrAlternatives,
+    Note::SeasonRangeCollision,
+    Note::RomanCentury,
+    Note::DecadeOfCentury,
+    Note::EndpointYearDistributed,
+    Note::CrossYearSeason,
+];
+
+const fn _every_note_is_listed(note: Note) {
+    match note {
+        Note::AlreadyValidEdtf
+        | Note::CenturyPartInterval
+        | Note::ModifierDropped
+        | Note::CenturyMask
+        | Note::BcCenturyInterval
+        | Note::AstronomicalYear
+        | Note::ElidedEndYear
+        | Note::NumericUnambiguous
+        | Note::NumericResolvedByOption
+        | Note::NumericResolvedByLocale
+        | Note::NumericOrderIrrelevant
+        | Note::NumericOrderAmbiguous
+        | Note::DecadeAmbiguity
+        | Note::DefaultCenturyApplied
+        | Note::SeasonCode
+        | Note::OpenInterval
+        | Note::MissingYearMasked
+        | Note::QualifierDistributed
+        | Note::OrAlternatives
+        | Note::SeasonRangeCollision
+        | Note::RomanCentury
+        | Note::DecadeOfCentury
+        | Note::EndpointYearDistributed
+        | Note::CrossYearSeason => {},
+    }
+}
+
+// Every note's metadata is held against the decision register itself: a
+// cited decision must exist as a numbered entry in normalize-notes.md, so
+// renumbering or deleting a decision without updating the code fails here
+// rather than shipping a citation to nowhere.
+#[test]
+fn note_metadata_is_complete_and_cites_real_decisions() {
+    let register = include_str!("../../../docs/normalize-notes.md");
+
+    let mut messages = std::collections::BTreeSet::new();
+    for &note in ALL_NOTES {
+        let message = note.message();
+        assert!(!message.is_empty(), "{note:?} has an empty message");
+        assert!(
+            messages.insert(message),
+            "{note:?} shares its message with another note"
+        );
+
+        if let Some(decision) = note.decision() {
+            assert!(
+                register.contains(&format!("**{decision} ")),
+                "{note:?} cites {decision}, which has no entry in normalize-notes.md"
+            );
+        }
+    }
+}

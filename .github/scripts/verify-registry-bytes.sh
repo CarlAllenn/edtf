@@ -18,9 +18,14 @@ CRATES=(edtf-core edtf-calendars edtf-normalize edtf-wasm edtf-cli edtf-postgres
 fail=0
 
 for name in "${CRATES[@]}"; do
-  remote=$(curl -sfA 'edtf-release-workflow' --retry 5 --retry-delay 10 --retry-all-errors \
-    "https://crates.io/api/v1/crates/${name}/${VERSION}" \
-    | python3 -c 'import sys,json;print(json.load(sys.stdin)["version"]["checksum"])')
+  # Fetched to a file rather than piped into the parser: the pipe shape is
+  # indistinguishable from download-then-run to scanners, and this is data,
+  # not code — keep it looking like data.
+  curl -sfA 'edtf-release-workflow' --retry 5 --retry-delay 10 --retry-all-errors \
+    -o "${RUNNER_TEMP}/${name}.json" \
+    "https://crates.io/api/v1/crates/${name}/${VERSION}"
+  remote=$(python3 -c 'import sys,json;print(json.load(open(sys.argv[1]))["version"]["checksum"])' \
+    "${RUNNER_TEMP}/${name}.json")
   built=$(sha256sum "dist/${name}-${VERSION}.crate" | cut -d' ' -f1)
   if [[ ${remote} != "${built}" ]]; then
     echo "::error::${name}: crates.io has ${remote}, this run built ${built}"

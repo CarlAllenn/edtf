@@ -179,7 +179,7 @@ version = "0.13.2"
 backend = "cargo:cargo-fuzz"
 
 [[tools."cargo:cargo-pgrx"]]
-version = "0.19.1"
+version = "0.19.2"
 backend = "cargo:cargo-pgrx"
 
 [[tools.editorconfig-checker]]

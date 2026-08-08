@@ -390,7 +390,7 @@ jobs:
       # already loops over dist/*. The npm tarball is the precedent —
       # verify-registry-bytes.sh copies it into dist/ for the same reason.
       - name: Collect the extension tarballs
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: edtf-postgres-pg*
           merge-multiple: true
@@ -518,6 +518,7 @@ jobs:
       # implementations here. Provenance is this action's default predicate.
       - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         if: env.DRY_RUN != 'true'
+        id: attest-provenance
         with:
           subject-path: dist/*
 
@@ -533,31 +534,37 @@ jobs:
       # loop, and silent breakage here is a false SBOM claim.
       - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         if: env.DRY_RUN != 'true'
+        id: attest-sbom-edtf-core
         with:
           subject-path: dist/edtf-core-${{ env.VERSION }}.crate
           sbom-path: sbom/edtf-core.cdx.json
       - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         if: env.DRY_RUN != 'true'
+        id: attest-sbom-edtf-calendars
         with:
           subject-path: dist/edtf-calendars-${{ env.VERSION }}.crate
           sbom-path: sbom/edtf-calendars.cdx.json
       - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         if: env.DRY_RUN != 'true'
+        id: attest-sbom-edtf-normalize
         with:
           subject-path: dist/edtf-normalize-${{ env.VERSION }}.crate
           sbom-path: sbom/edtf-normalize.cdx.json
       - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         if: env.DRY_RUN != 'true'
+        id: attest-sbom-edtf-wasm
         with:
           subject-path: dist/edtf-wasm-${{ env.VERSION }}.crate
           sbom-path: sbom/edtf-wasm.cdx.json
       - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         if: env.DRY_RUN != 'true'
+        id: attest-sbom-edtf-cli
         with:
           subject-path: dist/edtf-cli-${{ env.VERSION }}.crate
           sbom-path: sbom/edtf-cli.cdx.json
       - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         if: env.DRY_RUN != 'true'
+        id: attest-sbom-edtf-postgres
         with:
           subject-path: dist/edtf-postgres-${{ env.VERSION }}.crate
           sbom-path: sbom/edtf-postgres.cdx.json
@@ -585,6 +592,43 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: .github/scripts/upload-sboms.sh
+
+      # The attestations live in GitHub's attestation store, which is where
+      # `gh attestation verify` looks — but a consumer (or Scorecard's
+      # Signed-Releases check) inspecting the RELEASE sees nothing signed.
+      # Publish the same Sigstore bundles as release assets. Collected via
+      # each attest step's bundle-path output, routed through env so no
+      # template expands inside run: code (zizmor template-injection).
+      - name: Collect attestation bundles
+        if: env.DRY_RUN != 'true'
+        env:
+          BUNDLE_DIR: ${{ runner.temp }}/bundles
+          PROVENANCE_BUNDLE: ${{ steps.attest-provenance.outputs.bundle-path }}
+          SBOM_BUNDLE_EDTF_CORE: ${{ steps.attest-sbom-edtf-core.outputs.bundle-path }}
+          SBOM_BUNDLE_EDTF_CALENDARS: ${{ steps.attest-sbom-edtf-calendars.outputs.bundle-path }}
+          SBOM_BUNDLE_EDTF_NORMALIZE: ${{ steps.attest-sbom-edtf-normalize.outputs.bundle-path }}
+          SBOM_BUNDLE_EDTF_WASM: ${{ steps.attest-sbom-edtf-wasm.outputs.bundle-path }}
+          SBOM_BUNDLE_EDTF_CLI: ${{ steps.attest-sbom-edtf-cli.outputs.bundle-path }}
+          SBOM_BUNDLE_EDTF_POSTGRES: ${{ steps.attest-sbom-edtf-postgres.outputs.bundle-path }}
+        run: |
+          set -euo pipefail
+          mkdir -p "${BUNDLE_DIR}"
+          # The provenance attest covered every dist/* subject in one call,
+          # so each release receives a copy of the same bundle; the subjects
+          # named inside it are what scope it, not the filename.
+          for name in edtf-core edtf-calendars edtf-normalize edtf-wasm edtf-cli edtf-postgres; do
+            cp "${PROVENANCE_BUNDLE}" "${BUNDLE_DIR}/${name}-${VERSION}.provenance.intoto.jsonl"
+            var="SBOM_BUNDLE_$(tr '[:lower:]-' '[:upper:]_' <<< "${name}")"
+            cp "${!var}" "${BUNDLE_DIR}/${name}-${VERSION}.sbom.intoto.jsonl"
+          done
+          ls -1 "${BUNDLE_DIR}"
+
+      - name: Attach attestation bundles to the per-crate releases
+        if: env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BUNDLE_DIR: ${{ runner.temp }}/bundles
+        run: .github/scripts/upload-attestation-bundles.sh
 
       # Onto the edtf-postgres release, still a draft, alongside its SBOM.
       - name: Attach the extension tarballs

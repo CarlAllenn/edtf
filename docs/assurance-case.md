@@ -97,11 +97,14 @@ browser hosting the code.
   errors on every commit, and CodeQL (Rust and Actions packs) on every
   pull request and weekly on `main`.
 - **Supply-chain weaknesses**: SHA-pinned actions, hash-verified
-  toolchain downloads, lockfile-pinned tools with provenance
+  toolchain downloads, digest-pinned build and test container images
+  (kept current by Renovate), lockfile-pinned tools with provenance
   verification (mise `locked` mode), harden-runner egress blocking,
   signed commits, immutable tags and releases, and Sigstore attestations
-  covering every published artifact — published both in GitHub's
-  attestation store and as `*.intoto.jsonl` release assets.
+  covering every published artifact — provenance on all, and each
+  crate's SBOM bound to the binary artifacts built from its dependency
+  closure — published both in GitHub's attestation store and as
+  `*.intoto.jsonl` release assets.
 
 ## Why this is believed sufficient
 

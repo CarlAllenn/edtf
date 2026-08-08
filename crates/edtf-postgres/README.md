@@ -22,7 +22,9 @@ CREATE EXTENSION edtf_postgres;
 ```
 
 The extension is `trusted`, so any user with `CREATE` on the database can
-install it. Full instructions, the support matrix and the glibc floor are in
+install it. The shipped library is stripped; a `-dbgsym` tarball with the
+full debug info sits beside each tarball for crash analysis. Full
+instructions, the support matrix and the glibc floor are in
 the [repository README](https://github.com/CarlAllenn/edtf#installing-the-postgres-extension).
 
 An OCI image is also published to `ghcr.io/carlallenn/edtf-postgres`,

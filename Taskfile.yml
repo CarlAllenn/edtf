@@ -57,6 +57,7 @@ tasks:
       - lint:toml
       - lint:yaml
       - lint:md
+      - lint:citation
       - lint:spell
       - lint:ec
       - lint:actions
@@ -128,6 +129,30 @@ tasks:
       - mise.lock
     cmds:
       - markdownlint-cli2
+
+  lint:citation:
+    desc: CITATION.cff against the Citation File Format 1.2.0 schema
+    # lint:yaml proves the file is YAML. This proves it is CFF — a different
+    # question, and the one that catches the edits which actually break it:
+    # a misspelled key, a wrong `authors` shape, an `identifiers:` block with
+    # the wrong fields (issue #142 adds one by hand once Zenodo has minted
+    # the concept DOI).
+    #
+    # The failure it guards is silent: an invalid file breaks no build and no
+    # user, GitHub just stops rendering "Cite this repository" and nobody
+    # finds out until they go looking for a citation.
+    #
+    # check-jsonschema ships the CFF schema as a builtin, so this gate is
+    # offline and deterministic like the rest and carries no vendored schema
+    # copy to drift. cffconvert is the format's canonical validator and was
+    # rejected on age: last release 2021 (issue #149).
+    method: checksum
+    sources:
+      - CITATION.cff
+      - mise.toml
+      - mise.lock
+    cmds:
+      - check-jsonschema --builtin-schema vendor.citation-file-format CITATION.cff
 
   lint:spell:
     desc: codespell over the repository

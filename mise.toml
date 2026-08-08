@@ -59,6 +59,11 @@ yamllint = "1.38.0"
 editorconfig-checker = "3.8.0"
 uv = "0.12.1"
 "pipx:codespell" = "2.4.3"
+# CITATION.cff against the CFF schema (yamllint only proves it is YAML).
+# Ships the schema as a builtin, so the gate stays offline and there is no
+# vendored schema copy here to drift. cffconvert is the canonical validator
+# and was rejected: last release 2021.
+"pipx:check-jsonschema" = "0.37.4"
 "aqua:EmbarkStudios/cargo-deny" = "0.20.2"
 # unused deps (metadata mode); not in aqua
 "github:bnjbvr/cargo-machete" = "0.9.2"

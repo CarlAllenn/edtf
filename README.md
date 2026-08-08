@@ -155,6 +155,14 @@ Then, as any user with `CREATE` on the database — the extension is marked
 CREATE EXTENSION edtf_postgres;
 ```
 
+From **v1.2.0** the shipped library is stripped; each cell also publishes an
+`edtf_postgres-dbgsym-…` tarball carrying the full debug info. It is only
+needed for debugging a crash: extract it into `/` and gdb finds the
+symbols via the library's `.gnu_debuglink` under `/usr/lib/debug`. From
+the same release each crate's CycloneDX SBOM is attested against the
+tarball bytes — `gh attestation verify` as above proves both provenance
+and the dependency list.
+
 Upgrading a previously installed copy: extract the new tarball over the old
 one, then `ALTER EXTENSION edtf_postgres UPDATE;`. Extracting without
 running the update leaves the new library registered under the old version.

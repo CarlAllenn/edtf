@@ -80,10 +80,12 @@ inside them deliberately (a glob is what silently skipped a crate at
 v1.0.0), so every one needs its list edited.
 
 These are edtf-specific and should be deleted unless the repository also
-ships a Postgres extension: `build-extension*`, `smoke-extension`,
-`upload-extension-assets`, `canary-extension`,
+ships a Postgres extension: `base-images` (the digest-pin table the
+build and smoke scripts source), `build-extension*`, `smoke-extension`,
+`upgrade-smoke-extension`, `upload-extension-assets`, `canary-extension`,
 `assert-upgrade-path`, `schema-snapshot`, the `sql/` directory, the
-`extension` matrix job, and the extension half of `prepare-release`. The
+`extension` matrix job, and the extension half of `prepare-release` —
+plus the "pinned base images" custom manager in `renovate.json`. The
 same goes for the CLI binary leg (`build-cli`, `upload-cli-assets`, the
 `cli` matrix job) if there is no binary to ship; `checksum-artifacts`
 serves both legs and needs its target lists edited. The

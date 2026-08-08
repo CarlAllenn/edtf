@@ -33,3 +33,16 @@
 # `npm view edtf-wasm` works. Scoped to this one URL rather than the whole
 # host, so a genuinely dead npm link elsewhere would still be caught.
 ^https://www\.npmjs\.com/package/edtf\-wasm$
+
+# The two http:// URLs inside the Apache-2.0 licence text, which appears
+# verbatim in both LICENSE-APACHE and LICENSES/Apache-2.0.txt. They resolve
+# (301 to https), so this is not rot — `require_https = true` in lychee.toml
+# is flagging them, correctly, as insecure-HTTP links.
+#
+# They cannot be fixed at source. The licence text is canonical: REUSE
+# checks LICENSES/*.txt against the upstream wording, and editing a licence
+# to satisfy a link checker is not a thing to do regardless. Both URLs are
+# `$`-anchored, so any other http:// apache.org link — one we actually
+# wrote — would still be caught.
+^http://www\.apache\.org/licenses/$
+^http://www\.apache\.org/licenses/LICENSE\-2\.0$

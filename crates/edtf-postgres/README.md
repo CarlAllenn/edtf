@@ -25,6 +25,22 @@ The extension is `trusted`, so any user with `CREATE` on the database can
 install it. Full instructions, the support matrix and the glibc floor are in
 the [repository README](https://github.com/CarlAllenn/edtf#installing-the-postgres-extension).
 
+An OCI image is also published to `ghcr.io/carlallenn/edtf-postgres`,
+built from the released tarballs and attested the same way. Tags are
+extension version × Postgres major (`1.1.2-pg18`) plus a floating major
+tag (`pg18`); pin the digest. The intended use is as a build stage:
+
+```dockerfile
+FROM ghcr.io/carlallenn/edtf-postgres:1.1.2-pg18 AS ext
+FROM postgres:18-trixie
+COPY --from=ext /usr/lib/postgresql/18/lib/edtf_postgres.so /usr/lib/postgresql/18/lib/
+COPY --from=ext /usr/share/postgresql/18/extension/ /usr/share/postgresql/18/extension/
+```
+
+Running it directly also works — it is the official `postgres` image with
+the extension installed. The tarballs remain the primary artifact; the
+image is a wrapper around them, never a replacement.
+
 Building from source instead needs `cargo-pgrx` and an initialised
 `$PGRX_HOME`; see the repository for the development workflow.
 

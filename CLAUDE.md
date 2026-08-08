@@ -71,5 +71,5 @@ across it is a hard error). Reach it explicitly:
 - Branch from `origin/main`; `git add` explicit paths only, never `-A`.
 - Releases go through release-plz → `publish.yml`; the runbook is
   `docs/release-runbook.md`. On a release branch, `task release:prepare`
-  does the two things release-plz can't (extension upgrade SQL,
-  `fuzz/Cargo.lock`).
+  does the three things release-plz can't (extension upgrade SQL,
+  `fuzz/Cargo.lock`, `CITATION.cff`).

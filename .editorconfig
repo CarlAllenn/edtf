@@ -31,3 +31,9 @@ indent_size = unset
 indent_style = tab
 
 # Repo-local blocks (e.g. [*.sql] indent_size = 4) go below this line.
+
+# CITATION.cff is YAML wearing a non-YAML extension, so the config-formats
+# glob above — which is canon, and drift-audited — cannot reach it, and it
+# would otherwise inherit the Rust repos' 4.
+[*.cff]
+indent_size = 2

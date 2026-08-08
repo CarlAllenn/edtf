@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: Copyright (c) the edtf contributors
 # SPDX-License-Identifier: MIT OR Apache-2.0
-# Do the two things a Release PR always needs and release-plz cannot do.
+# Do the three things a Release PR always needs and release-plz cannot do.
 #
-# release-plz bumps manifests, changelogs and the workspace lockfile. Two
-# things sit outside its reach, and both fail the lint gate on every single
-# release PR until a human does them by hand:
+# release-plz bumps manifests, changelogs and the workspace lockfile. Three
+# things sit outside its reach:
 #
 #   1. The extension upgrade script. `default_version` is @CARGO_VERSION@, so
 #      every release mints a new extension version and needs an
@@ -13,9 +12,16 @@
 #      a path. Empty is correct whenever the SQL surface did not move.
 #   2. fuzz/Cargo.lock. fuzz/ is `exclude`d from the workspace, so release-plz
 #      cannot see it and its edtf-core pin goes stale on every bump.
+#   3. CITATION.cff. Its `version` and `date-released` describe the release
+#      being cut, and nothing else updates them.
 #
-# Doing them by hand, twice per release, is exactly the recurring chore this
-# repository is supposed to have stopped having. Run this on the release
+# The first two fail the lint gate on every release PR until a human does
+# them by hand. The third does not fail anything — it just quietly goes on
+# claiming an older version, which is the worse failure mode of the two: a
+# citation that names the wrong version is worse than no citation at all.
+#
+# Doing them by hand, three times per release, is exactly the recurring chore
+# this repository is supposed to have stopped having. Run this on the release
 # branch instead:
 #
 #     task release:prepare
@@ -28,6 +34,7 @@ set -euo pipefail
 CRATE_DIR="crates/edtf-postgres"
 SQL_DIR="${CRATE_DIR}/sql"
 GATE=".github/scripts/assert-upgrade-path.sh"
+CITATION="CITATION.cff"
 
 VERSION=""
 VERSION=$(cargo pkgid --manifest-path "${CRATE_DIR}/Cargo.toml" | sed 's/.*[@#]//')
@@ -93,7 +100,21 @@ fi
 cargo metadata --manifest-path fuzz/Cargo.toml --format-version 1 > /dev/null
 echo "ok  refreshed fuzz/Cargo.lock"
 
+# 4. CITATION.cff, which release-plz cannot reach either. `date-released` is
+# the date this script runs — the release-branch date, which is the same day
+# as the publish or one day before it. Precise to the day is what a citation
+# needs; pretending to know the publish timestamp in advance is not.
+TODAY=""
+TODAY=$(date -u +%F)
+sed -i.bak \
+  -e "s/^version: .*$/version: ${VERSION}/" \
+  -e "s/^date-released: .*$/date-released: '${TODAY}'/" \
+  "${CITATION}"
+rm -f "${CITATION}.bak"
+echo "ok  CITATION.cff -> ${VERSION} (${TODAY})"
+
 # Prove it, rather than announce it.
 "${GATE}"
 cargo metadata --manifest-path fuzz/Cargo.toml --locked --format-version 1 > /dev/null
+grep -q "^version: ${VERSION}$" "${CITATION}"
 echo "::notice::release ${VERSION} prepared — commit these changes to the release PR"

@@ -106,11 +106,17 @@ tasks:
     sources:
       - "**/*.yml"
       - "**/*.yaml"
+      - CITATION.cff
       - .yamllint
       - mise.toml
       - mise.lock
     cmds:
-      - yamllint --strict .
+      # CITATION.cff is named explicitly: yamllint discovers *.yml and *.yaml
+      # only, so the citation file — which is YAML, and breaks GitHub's
+      # "Cite this repository" rendering when it is malformed — would
+      # otherwise go unlinted. Syntax only; the CFF schema itself is not
+      # gated here (issue #142).
+      - yamllint --strict . CITATION.cff
 
   lint:md:
     desc: markdownlint over all Markdown
@@ -232,11 +238,12 @@ tasks:
       - cargo deny --manifest-path fuzz/Cargo.toml check -D unmatched-skip
 
   release:prepare:
-    desc: Do the two things every Release PR needs that release-plz cannot
-    # The extension upgrade script and fuzz/Cargo.lock both sit outside
-    # release-plz's reach and both fail the lint gate on every release until
-    # someone does them by hand. Run this once on the release branch.
-    # It refuses to invent SQL if the surface actually moved.
+    desc: Do the three things every Release PR needs that release-plz cannot
+    # The extension upgrade script, fuzz/Cargo.lock and CITATION.cff all sit
+    # outside release-plz's reach. The first two fail the lint gate on every
+    # release until someone does them by hand; the third goes stale silently,
+    # which is worse. Run this once on the release branch. It refuses to
+    # invent SQL if the surface actually moved.
     cmds:
       - .github/scripts/prepare-release.sh
 

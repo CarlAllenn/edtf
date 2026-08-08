@@ -4,6 +4,7 @@
 [![crates.io](https://img.shields.io/crates/v/edtf-core.svg)](https://crates.io/crates/edtf-core)
 [![docs.rs](https://img.shields.io/docsrs/edtf-core)](https://docs.rs/edtf-core)
 [![npm](https://img.shields.io/npm/v/edtf-wasm.svg)](https://www.npmjs.com/package/edtf-wasm)
+[![coverage](https://img.shields.io/codecov/c/github/CarlAllenn/edtf)](https://codecov.io/gh/CarlAllenn/edtf)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/CarlAllenn/edtf/badge)](https://scorecard.dev/viewer/?uri=github.com/CarlAllenn/edtf)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13992/badge)](https://www.bestpractices.dev/projects/13992)
 [![REUSE status](https://api.reuse.software/badge/github.com/CarlAllenn/edtf)](https://api.reuse.software/info/github.com/CarlAllenn/edtf)

@@ -476,6 +476,9 @@ jobs:
     runs-on: ubuntu-latest
     # Hang guard, not a budget: observed ~1m.
     timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # OIDC: Codecov upload, so no CODECOV_TOKEN secret exists
     env:
       MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:
@@ -487,13 +490,21 @@ jobs:
           egress-policy: block
           disable-sudo: true
           # Derived from the audit run plus the GitHub-owned
-          # cold-cache set (mise tool installs on cache miss).
+          # cold-cache set (mise tool installs on cache miss). The codecov.io
+          # hosts and keybase.io are the upload path: the action fetches the
+          # Codecov CLI from cli.codecov.io, verifies its GPG signature
+          # against keybase.io, then reports to api.codecov.io and pushes the
+          # payload to the storage URL that hands back.
           allowed-endpoints: >
+            api.codecov.io:443
             api.github.com:443
+            cli.codecov.io:443
+            codecov.io:443
             codeload.github.com:443
             crates.io:443
             github.com:443
             index.crates.io:443
+            keybase.io:443
             mise-versions.jdx.dev:443
             mise.jdx.dev:443
             objects.githubusercontent.com:443
@@ -501,6 +512,7 @@ jobs:
             release-assets.githubusercontent.com:443
             static.crates.io:443
             static.rust-lang.org:443
+            storage.googleapis.com:443
             tuf-repo-cdn.sigstore.dev:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -534,3 +546,23 @@ jobs:
         with:
           name: coverage-lcov
           path: lcov.info
+      # Publication, not a gate. .github/codecov.yml turns off the project
+      # and patch commit statuses Codecov posts by default — those are the
+      # merge-blocking threshold the comment above rejects, wearing a
+      # different hat. What is left is the README badge and the PR comment.
+      #
+      # Fork PRs get no OIDC token; the action detects the fork and skips the
+      # upload rather than failing. fail_ci_if_error stays false for the same
+      # reason this job is not a gate: a Codecov outage must not redden a PR
+      # that has nothing to do with coverage. The cost of that choice is that
+      # a persistently failing upload is quiet — this step's own log is where
+      # it shows.
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          use_oidc: true
+          files: lcov.info
+          # Report exactly the file the step above produced; no tree scan.
+          disable_search: true
+          codecov_yml_path: .github/codecov.yml
+          fail_ci_if_error: false

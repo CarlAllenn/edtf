@@ -1,0 +1,22 @@
+---
+# Codecov is visibility only, and this file is what keeps it that way.
+#
+# The coverage job in ci.yml is titled "visibility, no threshold" on purpose:
+# a number that gates merges gets gamed rather than improved, so drops are
+# reviewed by humans (issue #8). Codecov's defaults contradict that — it
+# posts `codecov/project` and `codecov/patch` commit statuses against an
+# auto-computed target, which is a merge-blocking threshold in everything but
+# name. Both are off below. What survives is the badge and the PR comment:
+# the number, published, for a person to read.
+coverage:
+  status:
+    project: 'off'
+    patch: 'off'
+
+# Must stay in step with `--ignore-filename-regex 'crates/edtf-postgres/'` in
+# the coverage job. edtf-postgres' tests run inside the pgrx harness across
+# the pg14-pg18 matrix, which llvm-cov cannot instrument, so its source never
+# reaches lcov.info. Without this entry Codecov would treat those files as
+# present-and-uncovered and report a gap that does not exist.
+ignore:
+  - crates/edtf-postgres/**

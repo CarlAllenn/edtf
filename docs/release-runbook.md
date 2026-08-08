@@ -81,7 +81,8 @@ v1.0.0), so every one needs its list edited.
 
 These are edtf-specific and should be deleted unless the repository also
 ships a Postgres extension: `base-images` (the digest-pin table the
-build and smoke scripts source), `build-extension*`, `smoke-extension`,
+build and smoke scripts source), `verify-rustup-pin` (and its rustup
+custom manager in `renovate.json`), `build-extension*`, `smoke-extension`,
 `upgrade-smoke-extension`, `upload-extension-assets`, `canary-extension`,
 `assert-upgrade-path`, `schema-snapshot`, the `sql/` directory, the
 `extension` matrix job, and the extension half of `prepare-release` —

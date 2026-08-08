@@ -89,7 +89,7 @@ Three kinds are produced, and they answer different questions:
 | Attestation | Subject | Answers |
 | --- | --- | --- |
 | Build provenance | each `.crate`, the npm tarball, each extension tarball, `SHA256SUMS` | which commit, ref and workflow built these bytes |
-| SBOM | each `.crate` | what that crate's dependency closure was |
+| SBOM | each `.crate` and, from v1.2.0, the binary artifacts built from it (extension tarballs, CLI binaries, the npm tarball) | what that artifact's dependency closure was |
 | Release | the GitHub release | which tag, commit and asset set the release contains |
 
 The first is the one to check with `gh attestation verify`. The third is

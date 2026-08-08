@@ -363,6 +363,10 @@ url = "https://nodejs.org/dist/v26.5.1/node-v26.5.1-darwin-arm64.tar.gz"
 version = "0.23.2"
 backend = "npm:markdownlint-cli2"
 
+[[tools."pipx:check-jsonschema"]]
+version = "0.37.4"
+backend = "pipx:check-jsonschema"
+
 [[tools."pipx:codespell"]]
 version = "2.4.3"
 backend = "pipx:codespell"

@@ -139,6 +139,29 @@ serves both legs and needs its target lists edited. The
    the provenance a real release would record. The extension matrix is the
    newest and heaviest machinery in the pipeline, and the rehearsal is the
    only place it can be proven without releasing.
+8. **Optional — Zenodo archival, for a citable DOI.** Worth doing only for
+   software people actually cite; for edtf they do, since its users are
+   libraries, archives and digital-humanities projects. Sign in to
+   [Zenodo](https://zenodo.org) with GitHub, authorise the integration, and
+   switch the repository on in
+   [Settings → GitHub](https://zenodo.org/account/settings/github/). Every
+   GitHub release then deposits a snapshot and mints a **version DOI**, under
+   a stable **concept DOI** that always resolves to the newest version.
+
+   The concept DOI is the one that belongs in the README badge and in
+   `CITATION.cff` — a version DOI in either place is wrong within one
+   release. Zenodo shows both on the deposit page; the concept one is
+   labelled as resolving to all versions.
+
+   Two facts set the order of operations. Zenodo archives only releases
+   created *after* the switch is flipped, so the DOI does not exist until the
+   next release — enabling this does nothing retroactively. And the deposit's
+   metadata is read from the archived tree, so `CITATION.cff` wants to be in
+   place first, or the first deposit records a guess made from the repository
+   name. A `.zenodo.json` would override `CITATION.cff` and give finer
+   control; it is deliberately absent, because two metadata files describing
+   one project is a drift problem waiting to happen, and `CITATION.cff` is
+   the one GitHub and every citation tool already read.
 
 ## Normal release
 

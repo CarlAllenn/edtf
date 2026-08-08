@@ -39,6 +39,11 @@ jobs:
   fuzz:
     name: cargo fuzz (${{ matrix.target }})
     runs-on: ubuntu-latest
+    # Hang guard sized to the DEFAULT max_total_time (1200s fuzz + ~2m
+    # build/corpus overhead observed). GitHub expressions cannot do
+    # arithmetic, so this cannot track the input: a dispatch with a
+    # budget beyond ~35 minutes needs this raised in the same breath.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:

@@ -63,6 +63,12 @@ documented review against these requirements is
 - Prebuilt extension tarballs are compiled inside the Postgres image they
   target, from the pgdg `pg_config` consumers actually run, and are installed
   and exercised on two Debian releases before the release is published.
+- Advisories against dependencies that do not affect this project are
+  recorded as `not_affected` statements in the OpenVEX document at
+  [`.vex/edtf.openvex.json`](.vex/edtf.openvex.json), mirroring the guarded
+  ignores in `deny.toml` (which fail the build if they go stale). One such
+  record exists: RUSTSEC-2021-0127, an unmaintained-crate notice reached
+  only via pgrx.
 
 ## Verifying a release
 

@@ -5,6 +5,7 @@
 [![docs.rs](https://img.shields.io/docsrs/edtf-core)](https://docs.rs/edtf-core)
 [![npm](https://img.shields.io/npm/v/edtf-wasm.svg)](https://www.npmjs.com/package/edtf-wasm)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/CarlAllenn/edtf/badge)](https://scorecard.dev/viewer/?uri=github.com/CarlAllenn/edtf)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13992/badge)](https://www.bestpractices.dev/projects/13992)
 [![license](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE-MIT)
 
 A complete, spec-exact Rust implementation of **EDTF** — the Extended

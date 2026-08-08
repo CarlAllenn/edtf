@@ -1,6 +1,6 @@
 # Settings block: canonical baseline from CarlAllenn/renovate-config
 # templates/mise/settings.toml — drift-audited, do not edit locally.
-min_version = "2026.7.12"
+min_version = "2026.7.18"
 
 [settings]
 lockfile = true                 # mise.lock records resolved versions + checksums
@@ -76,7 +76,7 @@ lychee = "0.24.2"
 
 # Build/CI tools (previously ad-hoc `cargo install` in workflows / unpinned)
 # postgres extension harness (ci.yml matrix)
-"cargo:cargo-pgrx" = "0.19.1"
+"cargo:cargo-pgrx" = "0.19.2"
 # per-PR coverage visibility (no threshold gate)
 "aqua:taiki-e/cargo-llvm-cov" = "0.8.7"
 # libFuzzer driver (fuzz.yml); runs cargo +nightly itself

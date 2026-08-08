@@ -19,5 +19,6 @@ skip = .git,.claude,target,mise.lock,Cargo.lock,./tests/fixtures/legacy,spec,./f
 # ignore-words-list is repo-local: add the key only when a repo needs it
 # (an empty value is an argparse error), case-sensitive as written in the
 # dictionary, keep minimal. "nd" is the English ordinal suffix ("2nd") in
-# edtf-normalize's pattern tables.
-ignore-words-list = crate,nd
+# edtf-normalize's pattern tables. "intoto" is the in-toto attestation
+# framework (*.intoto.jsonl bundles in the publish pipeline).
+ignore-words-list = crate,nd,intoto

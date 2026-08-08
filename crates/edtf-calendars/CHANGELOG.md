@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0](https://github.com/CarlAllenn/edtf/compare/edtf-calendars-v1.1.2...edtf-calendars-v1.2.0) - 2026-08-08
+
+### Other
+
+- close the statement and branch coverage gaps ([#105](https://github.com/CarlAllenn/edtf/pull/105))
+- SPDX headers, code-review standard, small tasks, security review ([#101](https://github.com/CarlAllenn/edtf/pull/101))
+
 ## [1.1.1](https://github.com/CarlAllenn/edtf/compare/edtf-calendars-v1.1.0...edtf-calendars-v1.1.1) - 2026-07-31
 
 ### Fixed

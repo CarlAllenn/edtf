@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0](https://github.com/CarlAllenn/edtf/compare/edtf-postgres-v1.1.2...edtf-postgres-v1.2.0) - 2026-08-08
+
+### Added
+
+- publish edtf-postgres as an OCI image ([#82](https://github.com/CarlAllenn/edtf/pull/82)) ([#96](https://github.com/CarlAllenn/edtf/pull/96))
+
+### Other
+
+- bring the pipeline descriptions up to date with #108 ([#109](https://github.com/CarlAllenn/edtf/pull/109))
+- SPDX headers, code-review standard, small tasks, security review ([#101](https://github.com/CarlAllenn/edtf/pull/101))
+
 ## [1.1.1](https://github.com/CarlAllenn/edtf/compare/edtf-postgres-v1.1.0...edtf-postgres-v1.1.1) - 2026-07-31
 
 ### Fixed

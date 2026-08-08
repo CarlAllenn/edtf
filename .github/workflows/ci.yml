@@ -26,6 +26,8 @@ jobs:
   check:
     name: Lint + test (workspace)
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~1.5m.
+    timeout-minutes: 15
     env:
       # Heavy source-built tools this job never invokes.
       MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
@@ -92,6 +94,8 @@ jobs:
   reuse:
     name: REUSE compliance
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~15s.
+    timeout-minutes: 10
     steps:
       # First step of every job, before checkout: runtime egress audit —
       # enforcement per issue #6 canon.
@@ -120,6 +124,8 @@ jobs:
   secrets:
     name: gitleaks history scan
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~15s.
+    timeout-minutes: 10
     steps:
       # First step of every job, before checkout: runtime egress audit —
       # enforcement per issue #6 canon (allowlist derived from audit run;
@@ -158,6 +164,8 @@ jobs:
   semver:
     name: cargo-semver-checks (published crates)
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~1m.
+    timeout-minutes: 15
     steps:
       # First step of every job, before checkout: runtime egress audit —
       # enforcement per issue #6 canon (allowlist derived from audit run;
@@ -204,6 +212,8 @@ jobs:
     # never duplicated.
     name: MSRV check
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~30s.
+    timeout-minutes: 10
     steps:
       # First step of every job, before checkout: runtime egress audit —
       # enforcement per issue #6 canon (allowlist derived from audit run;
@@ -246,6 +256,8 @@ jobs:
   wasm:
     name: WebAssembly build + native tests
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~45s.
+    timeout-minutes: 15
     steps:
       # First step of every job, before checkout: runtime egress audit —
       # enforcement per issue #6 canon (allowlist derived from audit run;
@@ -287,6 +299,8 @@ jobs:
   postgres:
     name: pgrx extension tests (Postgres ${{ matrix.pg }})
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~3.5m per major.
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -406,6 +420,8 @@ jobs:
   docs:
     name: rustdoc (warnings are errors) + doc tests
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~1m.
+    timeout-minutes: 15
     env:
       MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
       # The docs.rs page is a shipped artifact: broken intra-doc links and
@@ -451,6 +467,8 @@ jobs:
   coverage:
     name: Coverage (visibility, no threshold)
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~1m.
+    timeout-minutes: 15
     env:
       MISE_DISABLE_TOOLS: cargo:cargo-pgrx,cargo:cargo-fuzz,aqua:rustwasm/wasm-pack
     steps:

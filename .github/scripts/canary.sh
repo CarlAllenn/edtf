@@ -42,12 +42,22 @@ trap 'rm -rf "${scratch}"' EXIT
 # anything this job already has.
 export CARGO_HOME="${scratch}/cargo"
 
+# The scaffold is the first cargo invocation in the job, and until v1.2.2
+# it was the one call here with neither a heartbeat before it nor a bound
+# around it — so a stall produced a step that ran to the job timeout having
+# printed nothing at all. Four v1.2.x releases died in this step with an
+# empty log, and the absence of any heartbeat was read as "the script never
+# started" when it is equally consistent with "the script stopped here".
+# It is local work and should take milliseconds (0.03s at v1.1.2), but the
+# whole point of the bounds is that the cheap calls get them too.
+beat "probe 0/4: scaffolding the consumer crate"
+timeout 60 cargo new --lib "${scratch}/probe" > /dev/null
+
 # Library crates: resolve and compile against the published versions.
 # Resolution alone is retried: the sparse index can lag a just-published
 # version by a few seconds, and that lag is the registry's to spend, not a
 # defect in the release. A compile failure is never retried — it would fail
 # identically every time and the retry would only blur the report.
-cargo new --lib "${scratch}/probe" > /dev/null
 resolved=0
 for attempt in 1 2 3; do
   beat "probe 1/4: resolving library crates from crates.io (attempt ${attempt})"

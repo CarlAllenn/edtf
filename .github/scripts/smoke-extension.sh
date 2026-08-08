@@ -127,9 +127,9 @@ echo "ok  extversion ${INSTALLED} matches the release"
 # and chain them. pg_extension_update_paths reads the installed .sql files,
 # so a missing or misnamed script shows up as a NULL path.
 #
-# Applying a real ALTER EXTENSION UPDATE needs the PREVIOUS release's tarball
-# installed first, which needs a previous release that shipped one — v1.1.0
-# is the first. From the next release onward that leg becomes possible.
+# Applying a real ALTER EXTENSION UPDATE needs the PREVIOUS release's
+# tarball installed first — that leg is upgrade-smoke-extension.sh, which
+# runs after this script in the release matrix.
 PATHS=""
 PATHS=$(docker exec "${container}" psql -U smoke -d smokedb -tAc \
   "SELECT count(*) FROM pg_extension_update_paths('edtf_postgres') WHERE path IS NOT NULL;")

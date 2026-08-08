@@ -85,3 +85,7 @@ lychee = "0.24.2"
 "aqua:rustwasm/wasm-pack" = "0.15.0"
 # CycloneDX SBOMs for the published crates (publish.yml); not in aqua
 "cargo:cargo-cyclonedx" = "0.5.9"
+# report-only CVE scan of the published image (publish.yml image leg);
+# canon: renovate-config templates/trivy — the gate shape is report-only on
+# the publish path, never blocking
+"aqua:aquasecurity/trivy" = "0.72.0"

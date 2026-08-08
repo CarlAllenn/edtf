@@ -666,3 +666,351 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: .github/scripts/publish-releases.sh
+
+  # The OCI image leg (issue #82; canon: renovate-config templates/publish).
+  # Release-driven adaptation of the publish-image skeleton: the image is a
+  # PUBLICATION of the released tarballs — built from the release assets by
+  # URL with the released SHA256SUMS as the checksum source, never from
+  # source — so it inherits the tarballs' proof rather than needing its own
+  # build path. Runs strictly after `publish` because the assets it consumes
+  # must be public first, and it inherits the tag ref, so its attestation
+  # names the release like everything else's.
+  #
+  # No cosign: the repo's one signing mechanism is GitHub attestations
+  # (issue #55 rejected sidecar signatures so there would not be two
+  # mechanisms and two sets of instructions), and the #82 checklist asks for
+  # attest + push-to-registry, which is what the manifest job does.
+  #
+  # Skipped entirely on dry runs: a rehearsal has no published assets to
+  # build from, and drafts are not fetchable by URL.
+  image:
+    name: Image pg${{ matrix.pg }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    needs: publish
+    permissions:
+      contents: read # checkout + release asset download
+      packages: write # push the per-architecture image by digest
+    strategy:
+      # One failing cell must not hide the state of the other nine.
+      fail-fast: false
+      matrix:
+        pg: [14, 15, 16, 17, 18]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          # Native hardware per architecture, no QEMU — emulation would
+          # test the image on the wrong machine (the publish invariant).
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    env:
+      # Routed through env so no template expands inside run: code
+      # (zizmor template-injection, pedantic tier).
+      PG: ${{ matrix.pg }}
+      ARCH: ${{ matrix.arch }}
+      IMAGE: ghcr.io/carlallenn/edtf-postgres
+    steps:
+      # Buildkit's network namespace may not be governed by harden-runner at
+      # all — its endpoints (the base pull, the release-asset ADD) are
+      # allowlisted anyway rather than relying on that being true (canon:
+      # templates/publish egress lore).
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            codeload.github.com:443
+            mise.jdx.dev:443
+            mise-versions.jdx.dev:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+            production.cloudfront.docker.com:443
+            mirror.gcr.io:443
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Resolve dry-run mode
+        env:
+          DRY_RUN_INPUT: ${{ inputs.dry_run }}
+        run: .github/scripts/resolve-dry-run.sh
+
+      - name: Assert publishing ref
+        run: .github/scripts/assert-publish-ref.sh
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+        if: env.DRY_RUN != 'true'
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.7.12
+          # Single-purpose job: only the TOML reader that derives the
+          # version. No tool cache in the publishing workflow (zizmor
+          # cache-poisoning, high).
+          install_args: taplo
+          cache: false
+
+      - name: Resolve version
+        if: env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          version=$(taplo get -f crates/edtf-postgres/Cargo.toml 'package.version')
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+
+      # The checksum BuildKit verifies must come from the RELEASE, not this
+      # run: the image is the stranger's path, end to end.
+      - name: Resolve the released tarball checksum
+        if: env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/resolve-image-tarball-sha.sh
+
+      # Bootstrap buildkit from Google's Docker Hub mirror: the default pull
+      # from Hub's CDN dials past DNS on a hosted runner and is rightly
+      # refused by egress block (canon: templates/publish egress lore).
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+        if: env.DRY_RUN != 'true'
+        with:
+          driver-opts: image=mirror.gcr.io/moby/buildkit:buildx-stable-1
+
+      - name: Log in to GHCR
+        if: env.DRY_RUN != 'true'
+        uses: docker/login-action@abd2ef45e78c5afb21d64d4ca52ee8550d9572c7 # v4.5.1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Loaded, not pushed: build-push-action's combined build-and-push has
+      # no moment where a testable image exists un-published (the publish
+      # invariant). No `platforms:` input on purpose — the runner IS the
+      # target architecture.
+      - name: Build for testing (loaded, not pushed)
+        if: env.DRY_RUN != 'true'
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: docker/edtf-postgres.Dockerfile
+          build-args: |
+            PG=${{ matrix.pg }}
+            VERSION=${{ env.VERSION }}
+            TARBALL_SHA256=${{ env.TARBALL_SHA256 }}
+          tags: edtf-postgres:candidate
+          load: true
+
+      - name: Smoke-test the candidate
+        if: env.DRY_RUN != 'true'
+        run: .github/scripts/smoke-image.sh edtf-postgres:candidate
+
+      # Same builder, same inputs: this resolves from the in-job build above
+      # rather than rebuilding, so the published bytes are the tested bytes.
+      - name: Push by digest
+        if: env.DRY_RUN != 'true'
+        id: push
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: docker/edtf-postgres.Dockerfile
+          build-args: |
+            PG=${{ matrix.pg }}
+            VERSION=${{ env.VERSION }}
+            TARBALL_SHA256=${{ env.TARBALL_SHA256 }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          provenance: true
+          sbom: true
+
+      - name: Record the digest
+        if: env.DRY_RUN != 'true'
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          set -euo pipefail
+          mkdir -p digests
+          echo "${DIGEST}" > "digests/pg${PG}-${ARCH}"
+
+      - name: Publish the digest for the manifest job
+        if: env.DRY_RUN != 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: image-digest-pg${{ matrix.pg }}-${{ matrix.arch }}
+          path: digests/pg${{ matrix.pg }}-${{ matrix.arch }}
+          if-no-files-found: error
+          retention-days: 1
+
+  # One manifest list per postgres major, under a single tag — two
+  # arch-suffixed tags is the common wrong answer and breaks `docker run`
+  # on arm (the #82 checklist). Tagging policy: extension version × pg
+  # major (`1.1.2-pg18`) plus the floating major tag (`pg18`) consumers
+  # watch for digest updates; everything downstream pins the digest.
+  image-manifest:
+    name: Image manifest pg${{ matrix.pg }}
+    runs-on: ubuntu-latest
+    needs: image
+    permissions:
+      contents: read # checkout + attestation verify
+      packages: write # push the manifest list
+      id-token: write # OIDC: sign the attestation
+      attestations: write # store it
+    strategy:
+      fail-fast: false
+      matrix:
+        pg: [14, 15, 16, 17, 18]
+    env:
+      PG: ${{ matrix.pg }}
+      IMAGE: ghcr.io/carlallenn/edtf-postgres
+    steps:
+      # tuf-repo.github.com + tmaproduction.blob.core.windows.net: the
+      # stranger's `gh attestation verify` fetches GitHub's TUF trust root
+      # and its target store — absent, every artifact reports "provenance
+      # does not match" while the real error stays invisible (issue #66).
+      # mirror.gcr.io doubles as trivy's DB source.
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            codeload.github.com:443
+            mise.jdx.dev:443
+            mise-versions.jdx.dev:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            mirror.gcr.io:443
+            fulcio.sigstore.dev:443
+            rekor.sigstore.dev:443
+            timestamp.sigstore.dev:443
+            tuf-repo-cdn.sigstore.dev:443
+            tuf-repo.github.com:443
+            tmaproduction.blob.core.windows.net:443
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Resolve dry-run mode
+        env:
+          DRY_RUN_INPUT: ${{ inputs.dry_run }}
+        run: .github/scripts/resolve-dry-run.sh
+
+      - name: Assert publishing ref
+        run: .github/scripts/assert-publish-ref.sh
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+        if: env.DRY_RUN != 'true'
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.7.12
+          # taplo derives the version; trivy runs the report-only scan.
+          install_args: taplo aqua:aquasecurity/trivy
+          cache: false
+
+      - name: Resolve version
+        if: env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          version=$(taplo get -f crates/edtf-postgres/Cargo.toml 'package.version')
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+        if: env.DRY_RUN != 'true'
+        with:
+          driver-opts: image=mirror.gcr.io/moby/buildkit:buildx-stable-1
+
+      - name: Log in to GHCR
+        if: env.DRY_RUN != 'true'
+        uses: docker/login-action@abd2ef45e78c5afb21d64d4ca52ee8550d9572c7 # v4.5.1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Collect this major's per-architecture digests
+        if: env.DRY_RUN != 'true'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: image-digest-pg${{ matrix.pg }}-*
+          merge-multiple: true
+          path: digests
+
+      - name: Create and push the manifest list
+        if: env.DRY_RUN != 'true'
+        id: manifest
+        run: |
+          set -euo pipefail
+          refs=()
+          for f in digests/*; do
+            refs+=("${IMAGE}@$(cat "${f}")")
+          done
+          if [[ ${#refs[@]} -ne 2 ]]; then
+            echo "::error::expected 2 architecture digests for pg${PG}, found ${#refs[@]}"
+            exit 1
+          fi
+          docker buildx imagetools create \
+            --tag "${IMAGE}:${VERSION}-pg${PG}" \
+            --tag "${IMAGE}:pg${PG}" \
+            "${refs[@]}"
+          digest=$(docker buildx imagetools inspect "${IMAGE}:${VERSION}-pg${PG}" \
+            --format '{{.Manifest.Digest}}')
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+          echo "published ${IMAGE}@${digest}"
+
+      # Prove the PUBLISHED bytes, not a local twin: pull the manifest back
+      # by digest (this runner resolves its amd64 leg) and boot it. Both
+      # architectures were smoke-tested pre-push on native hardware; this
+      # re-proof covers the publish step itself, one leg sufficing for the
+      # same reason canary-extension.sh re-fetches one asset.
+      - name: Pull the published image back and smoke it
+        if: env.DRY_RUN != 'true'
+        env:
+          DIGEST: ${{ steps.manifest.outputs.digest }}
+        run: |
+          set -euo pipefail
+          docker pull "${IMAGE}@${DIGEST}"
+          .github/scripts/smoke-image.sh "${IMAGE}@${DIGEST}"
+
+      # Report-only: the CVE gate belongs on pull requests, never on the
+      # publish path (canon: templates/trivy) — a CVE published tomorrow
+      # must not retroactively kill a release. The scan exists so every
+      # published digest has its package-CVE state on the run log.
+      - name: Scan the published image (report-only)
+        if: env.DRY_RUN != 'true'
+        env:
+          DIGEST: ${{ steps.manifest.outputs.digest }}
+        run: |
+          set -euo pipefail
+          trivy image --config /dev/null --scanners vuln \
+            --exit-code 0 --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL \
+            "${IMAGE}@${DIGEST}"
+
+      # Attested the same way as everything else in this repository —
+      # GitHub attestations, no cosign sidecar (issue #55): subject-name is
+      # the untagged image, and push-to-registry stores the attestation
+      # where docker/gh tooling discovers it.
+      - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        if: env.DRY_RUN != 'true'
+        with:
+          subject-name: ghcr.io/carlallenn/edtf-postgres
+          subject-digest: ${{ steps.manifest.outputs.digest }}
+          push-to-registry: true
+
+      # Verify the way a stranger would, immediately: an attest step that
+      # succeeded is not the same as an attestation that verifies against
+      # the identity consumers will check.
+      - name: Verify the attestation as a consumer would
+        if: env.DRY_RUN != 'true'
+        env:
+          DIGEST: ${{ steps.manifest.outputs.digest }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh attestation verify "oci://${IMAGE}@${DIGEST}" \
+            --repo CarlAllenn/edtf \
+            --signer-workflow 'CarlAllenn/edtf/.github/workflows/publish.yml'

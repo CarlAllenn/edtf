@@ -70,6 +70,8 @@ jobs:
       github.event_name == 'push' &&
       !startsWith(github.event.head_commit.message, 'chore: release')
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~40s.
+    timeout-minutes: 15
     # Must observe main AFTER the tag job has cut this version's tags, or it
     # opens a duplicate Release PR for the release in flight. See the tag
     # job's comment.
@@ -117,6 +119,8 @@ jobs:
     name: Tag on Release PR merge
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~40s.
+    timeout-minutes: 15
     # Runs BEFORE release-pr (which needs: tag). These two used to run in
     # parallel on the same push, and on a Release-PR merge commit that is a
     # race: release-pr sees main with the version already bumped in the
@@ -180,6 +184,8 @@ jobs:
     name: Tag current commit (dispatch recovery)
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~40s.
+    timeout-minutes: 15
     permissions:
       contents: write # create per-crate tags and GitHub releases
     steps:

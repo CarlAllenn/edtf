@@ -55,6 +55,9 @@ jobs:
   extension:
     name: Extension pg${{ matrix.pg }} (${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
+    # Hang guard, not a budget: observed ~5m per cell (v1.2.0). Without it a
+    # stalled step holds the release for GitHub's 360-minute default.
+    timeout-minutes: 30
     permissions:
       contents: read
     strategy:
@@ -200,6 +203,8 @@ jobs:
   cli:
     name: CLI ${{ matrix.target }}
     runs-on: ${{ matrix.runner }}
+    # Hang guard, not a budget: observed ~1.5m per cell (v1.2.0).
+    timeout-minutes: 15
     permissions:
       contents: read
     strategy:
@@ -288,6 +293,11 @@ jobs:
   publish:
     name: Publish + attest (${{ github.ref_name }})
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed 9m46s green (v1.1.2). Sized so a
+    # slow registry never kills a live release, while a genuine hang dies as
+    # a step failure with surviving logs — v1.2.0 hung ~40m in the canary
+    # and the runner death destroyed them.
+    timeout-minutes: 75
     # Every tarball must exist — and the extension must have installed
     # cleanly, the CLI passed its suite on every target — before the
     # release commits anything to a registry.
@@ -716,6 +726,8 @@ jobs:
   image:
     name: Image pg${{ matrix.pg }} (${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
+    # Hang guard, not a budget: observed ~5m per cell (v1.1.2).
+    timeout-minutes: 30
     needs: publish
     permissions:
       contents: read # checkout + release asset download
@@ -884,6 +896,8 @@ jobs:
   image-manifest:
     name: Image manifest pg${{ matrix.pg }}
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~2m per major (v1.1.2).
+    timeout-minutes: 20
     needs: image
     permissions:
       contents: read # checkout + attestation verify

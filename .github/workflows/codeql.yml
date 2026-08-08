@@ -32,6 +32,8 @@ jobs:
   analyze:
     name: analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~2m (rust).
+    timeout-minutes: 20
     permissions:
       contents: read # checkout
       security-events: write # upload SARIF to code scanning

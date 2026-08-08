@@ -373,6 +373,8 @@ impl Edtf {
             Self::Interval(iv) => iv.start.date().is_some_and(&f) || iv.end.date().is_some_and(&f),
             Self::Set(s) => s.elements.iter().any(|e| match e {
                 SetElement::Date(d) | SetElement::OnOrBefore(d) | SetElement::OnOrAfter(d) => f(d),
+                // Range endpoints parse unqualified and fully specified, so
+                // today every predicate is false here; stay structural.
                 SetElement::Range(a, b) => f(a) || f(b),
             }),
         }

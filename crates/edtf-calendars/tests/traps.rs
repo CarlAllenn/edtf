@@ -149,3 +149,37 @@ fn spans_feed_edtf_intervals() {
     assert_eq!(interval, "1917-01-14/1918-01-13");
     assert!(edtf_core::is_valid(&interval));
 }
+
+/// Errors and dates render for diagnostics; the negative-year form keeps the
+/// astronomical sign and four-digit padding.
+#[test]
+fn display_forms() {
+    assert_eq!(
+        CalendarError::InvalidDate.to_string(),
+        "not a valid calendar date"
+    );
+    assert_eq!(
+        CalendarError::OutOfRange.to_string(),
+        "converted year out of range"
+    );
+    assert_eq!(j(1917, 10, 25).to_string(), "1917-10-25");
+    assert_eq!(j(-44, 3, 15).to_string(), "-0044-03-15");
+}
+
+/// Every rejection clause of the calendar-day check, separately.
+#[test]
+fn calendar_check_rejects_each_clause() {
+    assert_eq!(
+        convert(1917, Some(0), None),
+        Err(CalendarError::InvalidDate)
+    );
+    assert_eq!(
+        convert(1917, Some(1), Some(0)),
+        Err(CalendarError::InvalidDate)
+    );
+    // Straight through the day-precision entry point too.
+    assert_eq!(
+        julian_to_gregorian(j(1917, 13, 1)),
+        Err(CalendarError::InvalidDate)
+    );
+}

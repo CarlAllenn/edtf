@@ -204,6 +204,8 @@ pub(crate) fn significant_range(
         return Some((value, value));
     };
     let sweep = width.saturating_sub(p);
+    // A valuable year magnitude fits i64, capping width at 19 and sweep at
+    // 18 (p >= 1), so 10^sweep always fits; stay total if that ever broke.
     let Some(modulus) = 10i64.checked_pow(sweep) else {
         return Some((value, value));
     };
@@ -310,6 +312,8 @@ fn year_completions(digits: [Option<u8>; 4], ascending: bool) -> impl Iterator<I
 /// advance further are leap-sensitive (a February 29 that the first
 /// candidate year lacks), which validation guarantees resolve eventually.
 fn extremum(d: &Date, ascending: bool) -> Option<BoundDate> {
+    // Only Standard-year dates reach here: `date_bounds` returns early for
+    // Y-prefixed and exponential years, which are year-precision anyway.
     if let YearKind::Standard { digits, .. } = d.year.kind {
         if d.year.value().is_none() {
             return year_completions(digits, ascending)
@@ -453,6 +457,8 @@ fn min_bound(a: Bound, b: Bound) -> Bound {
     match (a, b) {
         (Bound::NegativeInfinity, _) | (_, Bound::NegativeInfinity) => Bound::NegativeInfinity,
         (Bound::Unknown, _) | (_, Bound::Unknown) => Bound::Unknown,
+        // No element shape yields a +infinity EARLIEST bound; keep the
+        // match total anyway.
         (Bound::PositiveInfinity, x) | (x, Bound::PositiveInfinity) => x,
         (Bound::Date(x), Bound::Date(y)) => Bound::Date(x.min(y)),
     }
@@ -462,6 +468,8 @@ fn max_bound(a: Bound, b: Bound) -> Bound {
     match (a, b) {
         (Bound::PositiveInfinity, _) | (_, Bound::PositiveInfinity) => Bound::PositiveInfinity,
         (Bound::Unknown, _) | (_, Bound::Unknown) => Bound::Unknown,
+        // No element shape yields a -infinity LATEST bound; keep the
+        // match total anyway.
         (Bound::NegativeInfinity, x) | (x, Bound::NegativeInfinity) => x,
         (Bound::Date(x), Bound::Date(y)) => Bound::Date(x.max(y)),
     }

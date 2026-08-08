@@ -391,10 +391,8 @@ mod tests {
 
         let j = normalize("12/04/1985", None).unwrap();
         assert!(j.contains("\"kind\":\"ambiguous\""), "{j}");
-        assert!(
-            j.contains("\"1985-04-12\"") && j.contains("\"1985-12-04\""),
-            "{j}"
-        );
+        assert!(j.contains("\"1985-04-12\""), "{j}");
+        assert!(j.contains("\"1985-12-04\""), "{j}");
         assert!(j.contains("\"decision\":\"N5\""), "{j}");
 
         let j = normalize("no idea", None).unwrap();
@@ -431,6 +429,41 @@ mod tests {
         assert!(normalize("около 1920", Some(String::from("{\"lang\":\"ru\"}"))).is_none());
         // Out-of-domain defaultCentury is an option error, not a noMatch.
         assert!(normalize("the 80s", Some(String::from("{\"defaultCentury\":12345}"))).is_none());
+    }
+
+    #[test]
+    fn summary_kinds_and_precisions() {
+        let s = summarize("../1985").unwrap();
+        assert_eq!(s.earliest.as_deref(), Some("-infinity"));
+        let s = summarize("1985-04-12T10:00:00Z").unwrap();
+        assert_eq!(s.kind, "datetime");
+        assert_eq!(s.precision, Some("day"));
+        let s = summarize("[1985,1987]").unwrap();
+        assert_eq!(s.kind, "set");
+        assert_eq!(s.precision, None);
+        for (input, precision) in [
+            ("1985", "year"),
+            ("1985-04", "month"),
+            ("2001-21", "season"),
+        ] {
+            assert_eq!(summarize(input).unwrap().precision, Some(precision));
+        }
+    }
+
+    #[test]
+    fn month_first_option_and_invalid_order() {
+        let mf = Some(String::from("{\"numericOrder\":\"monthFirst\"}"));
+        let j = normalize("12/04/1985", mf).unwrap();
+        assert!(j.contains("\"edtf\":\"1985-12-04\""), "{j}");
+        // An out-of-domain value is an option error, never a noMatch.
+        let bad = Some(String::from("{\"numericOrder\":\"yearFirst\"}"));
+        assert!(normalize("12/04/1985", bad).is_none());
+    }
+
+    #[test]
+    fn canonical_form() {
+        assert_eq!(canonical("?2004-?06-?11").as_deref(), Some("2004-06-11?"));
+        assert!(canonical("1985-02-30").is_none());
     }
 
     #[test]

@@ -164,6 +164,9 @@ impl<'a> Cur<'a> {
     reason = "one linear scan; splitting scatters the offset bookkeeping"
 )]
 pub(crate) fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
+    // Every caller (dispatcher, interval endpoints, set elements) rejects
+    // empty slices with its own message first; a graceful error beats a
+    // panic if that invariant ever breaks.
     if s.is_empty() {
         return Err(err(base, "empty date"));
     }
@@ -384,6 +387,8 @@ fn validate_month_day(
 fn month_candidates(m: DateField) -> Vec<u8> {
     match m.value() {
         Some(v) if (1..=12).contains(&v) => vec![v],
+        // Callers run after month validation (sub-year codes with a day are
+        // already rejected), so this arm only guards against misuse.
         Some(_) => Vec::new(),
         None => (1..=12).filter(|v| field_matches(m, *v)).collect(),
     }

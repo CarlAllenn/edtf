@@ -181,22 +181,45 @@ re-dispatch at the tag — `gh workflow run publish.yml --ref v<version>
 attest steps re-run, so artifacts can carry duplicate byte-identical
 attestations. Harmless, but prefer fixing forward over redundant dispatches.
 
-v1.2.0 is the worked example for the *runner* dying rather than a step
-failing. The hosted runner was lost mid-canary ("The hosted runner lost
-communication with the server") after ~40 minutes of silence, and the
-archived step log died with it — `gh run view --log-failed` answers `log
-not found`, so the root cause is permanently unknowable. Three lessons.
+v1.2.0, v1.2.1 and v1.2.2 all died mid-canary, and the cause was the same
+every time: `canary.sh` exported `CARGO_HOME` to an empty scratch directory
+and then invoked the toolchain. mise installs Rust **through rustup** and
+provisions it against `CARGO_HOME`, so that hangs the first cargo call.
+That call was `cargo new`, which sat *before* the script's first heartbeat
+— which is why five deaths across three releases produced completely empty
+step logs. Fixed by removing the repoint; v1.2.3 published clean, canary in
+9s. `finish` runs on a fresh runner that never builds, so the job boundary
+supplies the cold-fetch guarantee the repoint used to buy.
+
+Four lessons, and the last three cost a day each.
+
 First, the stranded state is identical whether the canary *fails* or the
 runner *dies during* it: registries published and attested, six draft
 releases with no assets — the same recovery dispatch covers both, so do not
-let the messier failure mode suggest a different procedure. Second, only
-lines already streamed to the Actions page survive a dead runner, which is
-why the release scripts heartbeat their phase; when reading a dead run,
-trust the stream, not the archive. Third, harden-runner's egress agent is a
-known cause of hosted-runner communication loss; it cannot be proved or
-acquitted without logs, so if the same job loses its runner again, re-run
-once with `egress-policy: audit` to discriminate before blaming anything
-else.
+let the messier failure mode suggest a different procedure.
+
+Second, only lines already streamed to the Actions page survive a dead
+runner, which is why the release scripts heartbeat their phase; when
+reading a dead run, trust the stream, not the archive.
+
+Third, **an empty log does not mean the step never started.** It was read
+that way here for three releases. It is equally consistent with the step
+stopping before its first write — so every call, including the cheap local
+ones, needs a marker before it and a bound around it. `cargo new` had
+neither because it looked too trivial to matter.
+
+Fourth, **when production evidence is destroyed, stop reading production.**
+Five failed releases taught nothing. Four lab jobs varying one thing each
+settled it in ten minutes. Reach for `edtf-release-lab` on the second
+unexplained failure, not the fifth.
+
+Three theories were pursued and disproved. Record them so nobody spends the
+day again: it was not runner memory exhaustion (the one "Out of memory."
+annotation on v1.2.0 was real but incidental); it was not the CI provider
+(the lab ran green *while* production hung); and it was not egress
+enforcement — `block` and `audit` were measured identical, both stalling.
+**Do not re-run a release with `egress-policy: audit` to discriminate.** It
+discriminates nothing and costs a version number.
 
 **A defect was found after the release PR merged** (the release is stranded:
 manifests bumped, nothing tagged, nothing published): merge the fix as an
@@ -275,7 +298,9 @@ Failure modes this design now absorbs, each found during a live release:
 | cargo-deny skips were exact versions | every Renovate lockfile patch bump turned the gate red | ranges over the lagging minor |
 | SBOM generation hoisted above the publish | cargo-cyclonedx writes beside each manifest, so the tree was dirty and `cargo publish` refused on the FIRST crate (v1.1.1, nothing published) | files are moved, not copied, and a clean-tree assertion runs before the publish |
 | Two chores release-plz cannot do | the upgrade script and `fuzz/Cargo.lock` failed the gate on every single release PR | `task release:prepare` does both and proves the result |
-| No deadline on any network fetch or job | the v1.2.0 canary sat ~40 minutes on unbounded registry probes, then the runner died and took the archived logs with it | per-job `timeout-minutes`; `CARGO_HTTP_TIMEOUT` + `timeout` caps and bounded retries on every fetch; streamed heartbeats so a dead runner leaves a last known position |
+| No deadline on any network fetch or job | the v1.2.0 canary sat ~40 minutes, then the runner died and took the archived logs with it | per-job `timeout-minutes`; `CARGO_HTTP_TIMEOUT` + `timeout` caps and bounded retries on every fetch; streamed heartbeats so a dead runner leaves a last known position |
+| The canary's bounds and heartbeats started at probe 1 | `cargo new` — the scaffold, judged too trivial to instrument — was the call that actually stalled, so three releases died with an empty log and the cause stayed invisible | every call gets a marker before it and a bound around it, cheap local ones included |
+| The canary repointed `CARGO_HOME` at an empty directory | mise provisions the Rust toolchain against `CARGO_HOME`, so the next cargo call hung forever; it cost v1.2.0, v1.2.1 and v1.2.2 | removed — `finish` runs on a fresh runner that never builds, so the job boundary already guarantees a cold fetch |
 
 Two further defects belong in this list but not in that table, because they
 were caught *before* they cost a release. The first: enabling immutable releases

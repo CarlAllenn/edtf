@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Execute a real ALTER EXTENSION UPDATE from the previous release to this
 # build (issue #83, gap 1).
 #

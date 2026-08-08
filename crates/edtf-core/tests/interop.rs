@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Interop cross-check against the test suites of the reference
 //! implementations the ecosystem runs: edtf.js (`LoC`'s de facto reference)
 //! and python-edtf. Rules, same as the `LoC` corpus: ISO 8601-2:2019 Annex A

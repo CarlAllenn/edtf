@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Deterministic fuzz tests: the parser must never panic on any input, and
 //! every accepted input must survive the canonicalize-reparse round trip.
 //!

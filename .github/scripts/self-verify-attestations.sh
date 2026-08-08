@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Prove the attestations this run just produced say what they should.
 #
 # This is the check that would have caught v1.0.0 automatically. A bare

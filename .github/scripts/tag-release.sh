@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Recovery path (issue #66): create the six per-crate tags and GitHub
 # releases for the manifest version, from a workflow_dispatch on main.
 #

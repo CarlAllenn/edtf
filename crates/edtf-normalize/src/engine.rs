@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! The language-neutral pattern grammar: preprocessing, qualifier stripping,
 //! and the ordered match arms. Everything language-specific comes in through
 //! a [`Lang`] table set. Whole-input only — no substring extraction (N11);

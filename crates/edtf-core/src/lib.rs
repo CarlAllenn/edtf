@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! EDTF (Extended Date/Time Format, ISO 8601-2:2019 Annex A) parsing,
 //! validation, level classification, calendar bounds, three-valued temporal
 //! relations, value enumeration, and canonical formatting — conformance

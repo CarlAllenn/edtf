@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Three-valued temporal relations between EDTF expressions.
 //!
 //! [`Edtf::relation`] answers "how does A relate to B in time?" honestly

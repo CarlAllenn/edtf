@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! WebAssembly bindings for [`edtf_core`] — the same validator the database
 //! runs, compiled for JavaScript. The app imports this in place of edtf.js.
 //!

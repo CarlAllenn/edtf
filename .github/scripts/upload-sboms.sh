@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Attach each crate's SBOM to that crate's GitHub release.
 #
 # Per-crate, not umbrella (issue #66, defect 1): phase 1 creates only the

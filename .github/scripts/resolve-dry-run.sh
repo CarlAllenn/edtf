@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Decide whether this run is a rehearsal, explicitly.
 #
 # Not derived from `${{ inputs.dry_run || 'false' }}`. GitHub's documentation

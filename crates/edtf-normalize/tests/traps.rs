@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! The acceptance trap list from issue #20, plus the grammar edges each
 //! N-decision in docs/normalize-notes.md commits to. Every expected string
 //! here must parse in edtf-core at the asserted level — enforced inline.

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Publish the six per-crate releases, last, once every asset is attached —
 # one at a time, verifying immutability before moving to the next.
 #

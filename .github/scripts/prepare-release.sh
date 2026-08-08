@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Do the two things a Release PR always needs and release-plz cannot do.
 #
 # release-plz bumps manifests, changelogs and the workspace lockfile. Two

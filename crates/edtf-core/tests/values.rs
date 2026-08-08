@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Pinned enumeration semantics: every Clause 6 expansion example, the
 //! §9.2.2 mask denotations, §4.4.3 sweeps, the D24–D29 decisions, and the
 //! D27 parse-time range-endpoint rules (docs/spec-notes.md).

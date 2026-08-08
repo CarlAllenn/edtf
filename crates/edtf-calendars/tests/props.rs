@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Generative invariants (issue #21's test ceremony): round-trip identity
 //! in both directions, offset monotonicity, and span lengths that match
 //! the Julian calendar's own day counts.

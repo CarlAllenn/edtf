@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Model-side property tests: generate random *valid* EDTF values as
 //! structured data and check invariants over every one of them.
 //!

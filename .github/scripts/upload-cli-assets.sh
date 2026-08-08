@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Attach the CLI tarballs and SHA256SUMS to the edtf-cli release.
 #
 # Per-crate, like the SBOMs and the extension tarballs: these artifacts are

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Attach the extension tarballs and SHA256SUMS to the edtf-postgres release.
 #
 # Per-crate, like the SBOMs: these artifacts are edtf-postgres and nothing

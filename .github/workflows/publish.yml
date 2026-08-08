@@ -298,6 +298,18 @@ jobs:
     # a step failure with surviving logs — v1.2.0 hung ~40m in the canary
     # and the runner death destroyed them.
     timeout-minutes: 75
+    # Deployment environment, reviewer-less: its purpose is to narrow the
+    # OIDC subject claim, not to add a manual gate. With the registries'
+    # trusted-publisher configs pinning this environment name, a token
+    # exchange is possible only from THIS job of THIS workflow — any other
+    # workflow in the repository, compromised or merely mistaken, presents
+    # the wrong claim and is refused by crates.io and npm at issuance.
+    # Registry side: crates.io per-crate Settings -> Trusted Publishing ->
+    # environment `publish`; npm package Settings -> Trusted Publisher ->
+    # environment `publish`. Set those AFTER this lands on main (an
+    # unset environment field accepts any claim, so the transition is safe
+    # in this order and broken in the other).
+    environment: publish
     # Every tarball must exist — and the extension must have installed
     # cleanly, the CLI passed its suite on every target — before the
     # release commits anything to a registry.

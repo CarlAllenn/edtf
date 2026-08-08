@@ -106,6 +106,13 @@ serves both legs and needs its target lists edited. The
    `Trusted Publishing config … does not match the workflow filename`.
    crates.io: per-crate Settings → Trusted Publishing (also tick "require
    trusted publishing"). npm: package Settings → Trusted Publisher.
+   Pin the **environment** too (`publish` here): the publish job runs in a
+   reviewer-less deployment environment purely so the OIDC claim can be
+   narrowed to that one job — with the environment named on the registry
+   side, no other workflow in the repository can mint a publish token.
+   Order matters: create the environment and merge the workflow change
+   first, then set the environment on the registries; an unset registry
+   field accepts any claim, so this order is safe and the reverse is not.
 4. Enable the tag-immutability ruleset (all tags) and, if used, signed-commit
    rulesets. Enable immutable releases too —
    `gh api --method PUT repos/<owner>/<repo>/immutable-releases`, a bodyless

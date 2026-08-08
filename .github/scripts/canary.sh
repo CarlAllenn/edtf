@@ -13,6 +13,18 @@ set -euo pipefail
 
 VERSION="${VERSION:?VERSION must be set}"
 
+# Every probe here is a fresh network consumer, and none of them carries a
+# deadline of its own — cargo and npm will wait on a stalled transfer
+# indefinitely. The v1.2.0 release died in this script: ~40 minutes of
+# silence, then the runner itself was lost and the logs with it. Two bounds
+# fix that. CARGO_HTTP_TIMEOUT aborts a transfer that stops making progress
+# (cargo's per-connection stall detector); the `timeout` wrappers cap each
+# probe's total wall clock so no single hang can outlive the step. The caps
+# are generous multiples of observed time (whole script: ~2m at v1.1.2) —
+# they exist to convert a hang into a failure with logs, not to race the
+# canary.
+export CARGO_HTTP_TIMEOUT=60
+
 scratch=$(mktemp -d)
 trap 'rm -rf "${scratch}"' EXIT
 
@@ -21,23 +33,42 @@ trap 'rm -rf "${scratch}"' EXIT
 export CARGO_HOME="${scratch}/cargo"
 
 # Library crates: resolve and compile against the published versions.
+# Resolution alone is retried: the sparse index can lag a just-published
+# version by a few seconds, and that lag is the registry's to spend, not a
+# defect in the release. A compile failure is never retried — it would fail
+# identically every time and the retry would only blur the report.
 cargo new --lib "${scratch}/probe" > /dev/null
+resolved=0
+for attempt in 1 2 3; do
+  if (
+    cd "${scratch}/probe"
+    timeout 300 cargo add "edtf-core@=${VERSION}" > /dev/null
+    timeout 300 cargo add "edtf-calendars@=${VERSION}" > /dev/null
+    timeout 300 cargo add "edtf-normalize@=${VERSION}" > /dev/null
+  ); then
+    resolved=1
+    break
+  fi
+  echo "resolution attempt ${attempt} failed; index may be lagging, retrying in 30s"
+  sleep 30
+done
+if [[ ${resolved} -ne 1 ]]; then
+  echo "::error::library crates did not resolve after 3 attempts"
+  exit 1
+fi
 (
   cd "${scratch}/probe"
-  cargo add "edtf-core@=${VERSION}" > /dev/null
-  cargo add "edtf-calendars@=${VERSION}" > /dev/null
-  cargo add "edtf-normalize@=${VERSION}" > /dev/null
-  cargo build --quiet
+  timeout 600 cargo build --quiet
 )
 echo "ok  edtf-core, edtf-calendars, edtf-normalize resolve and compile"
 
 # Binary crate: the [[bin]] is named `edtf`, not `edtf-cli`.
-cargo install "edtf-cli@${VERSION}" --root "${scratch}/cli" --quiet
+timeout 900 cargo install "edtf-cli@${VERSION}" --root "${scratch}/cli" --quiet
 "${scratch}/cli/bin/edtf" --version
 echo "ok  edtf-cli installs and runs"
 
 # npm package: fetch the published tarball as a consumer would.
-npm pack "edtf-wasm@${VERSION}" --pack-destination "${scratch}" > /dev/null
+timeout 300 npm pack "edtf-wasm@${VERSION}" --pack-destination "${scratch}" > /dev/null
 echo "ok  edtf-wasm fetches from npm"
 
 # edtf-postgres is not exercised here, but it is no longer unexercised.

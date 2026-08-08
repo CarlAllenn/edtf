@@ -74,7 +74,8 @@ fi
 echo "::notice::upgrade test: ${PREV} -> ${VERSION} (pg${PG}, ${ARCH})"
 
 prev_dir=$(mktemp -d)
-gh release download "edtf-postgres-v${PREV}" --repo "${GITHUB_REPOSITORY}" \
+# Bounded: gh has no transfer deadline of its own (v1.2.0 hang lesson).
+timeout 300 gh release download "edtf-postgres-v${PREV}" --repo "${GITHUB_REPOSITORY}" \
   --pattern "edtf_postgres-${PREV}-pg${PG}-linux-${ARCH}.tar.gz" \
   --dir "${prev_dir}"
 

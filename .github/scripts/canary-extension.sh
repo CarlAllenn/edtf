@@ -45,9 +45,11 @@ trap 'rm -rf "${scratch}"' EXIT
 # so these are authenticated fetches rather than anonymous ones. What is
 # being proved is the integrity of the attached bytes, not the anonymity of
 # the fetch.
-gh release download "${EXT_TAG}" --repo "${GITHUB_REPOSITORY}" \
+# Bounded: gh has no transfer deadline of its own, and an unbounded fetch
+# here is the same hang class that killed the v1.2.0 run one step earlier.
+timeout 600 gh release download "${EXT_TAG}" --repo "${GITHUB_REPOSITORY}" \
   --pattern 'edtf_postgres-*.tar.gz' --pattern SHA256SUMS --dir "${scratch}"
-gh release download "${CLI_TAG}" --repo "${GITHUB_REPOSITORY}" \
+timeout 300 gh release download "${CLI_TAG}" --repo "${GITHUB_REPOSITORY}" \
   --pattern 'edtf-cli-*.tar.gz' --dir "${scratch}"
 
 if [[ ! -f "${scratch}/SHA256SUMS" ]]; then

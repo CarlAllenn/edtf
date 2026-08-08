@@ -22,7 +22,8 @@ CRATES=(edtf-core edtf-calendars edtf-normalize edtf-wasm edtf-cli edtf-postgres
 
 for name in "${CRATES[@]}"; do
   body=""
-  body=$(curl -sfA 'edtf-release-workflow' \
+  body=$(curl -sfA 'edtf-release-workflow' --retry 3 --retry-delay 5 \
+    --max-time 60 \
     "https://crates.io/api/v1/crates/${name}/${VERSION}" 2> /dev/null) || body=""
   if [[ ${body} == *'"num"'* ]]; then
     echo "${name} present" >> "${out}"
@@ -32,7 +33,7 @@ for name in "${CRATES[@]}"; do
 done
 
 npm_version=""
-npm_version=$(npm view "edtf-wasm@${VERSION}" version 2> /dev/null) || npm_version=""
+npm_version=$(timeout 120 npm view "edtf-wasm@${VERSION}" version 2> /dev/null) || npm_version=""
 if [[ ${npm_version} == "${VERSION}" ]]; then
   echo "edtf-wasm(npm) present" >> "${out}"
 else

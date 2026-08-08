@@ -34,7 +34,7 @@ auditable rather than asserted.
 | 5 | The CLI was the one artifact with no prebuilt, attested binaries, forcing a checksum-less, provenance-less pin downstream | Fixed — native-built, tested, attested binaries for four targets ([#95](https://github.com/CarlAllenn/edtf/pull/95)) |
 | 6 | RUSTSEC-2021-0127 (`serde_cbor` unmaintained, via pgrx) | Accepted — not exploitable exposure but an unmaintained-crate notice; documented ignore in `deny.toml` with upstream pointer, guarded so a stale ignore fails the build; re-reviewed when pgrx moves |
 | 7 | The v1.0.0 attestations permanently misattribute their build commit | Accepted, documented — Sigstore is append-only; SECURITY.md documents the limitation and pinned verification correctly fails against v1.0.0 |
-| 8 | `strip = "none"` on the shipped `.so` rests on a wrong rationale (dlsym uses `.dynsym`, which strip preserves) | Open — tracked as [#83](https://github.com/CarlAllenn/edtf/issues/83) item 2; a deliberate decision (strip + separate debug artifacts, or keep with a corrected comment) is pending |
+| 8 | `strip = "none"` on the shipped `.so` rests on a wrong rationale (dlsym uses `.dynsym`, which strip preserves) | Fixed — the shipped library is stripped at packaging and the debug info ships as a `-dbgsym` tarball per cell, Debian-style; the corrected rationale lives in `Cargo.toml` ([#108](https://github.com/CarlAllenn/edtf/pull/108)) |
 | 9 | Branch protection lacked linear history and conversation resolution | Fixed — enabled 2026-08-08 |
 | 10 | Statement coverage measured 90.0%; `edtf-normalize/src/lib.rs` is the weakest file (50%) | Noted — above the stated bars; the weak file is tracked as test-improvement work |
 

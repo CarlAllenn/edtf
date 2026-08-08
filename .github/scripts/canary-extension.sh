@@ -45,8 +45,17 @@ trap 'rm -rf "${scratch}"' EXIT
 # so these are authenticated fetches rather than anonymous ones. What is
 # being proved is the integrity of the attached bytes, not the anonymity of
 # the fetch.
+# Streamed heartbeats (see canary.sh): a dead runner's archived log is
+# lost, but streamed lines survive.
+beat() {
+  local ts
+  ts=$(date -u +%H:%M:%S) || ts="--:--:--"
+  echo "[${ts}Z] $*"
+}
+
 # Bounded: gh has no transfer deadline of its own, and an unbounded fetch
 # here is the same hang class that killed the v1.2.0 run one step earlier.
+beat "downloading release assets from ${EXT_TAG} and ${CLI_TAG}"
 timeout 600 gh release download "${EXT_TAG}" --repo "${GITHUB_REPOSITORY}" \
   --pattern 'edtf_postgres-*.tar.gz' --pattern SHA256SUMS --dir "${scratch}"
 timeout 300 gh release download "${CLI_TAG}" --repo "${GITHUB_REPOSITORY}" \
@@ -82,6 +91,7 @@ if [[ ${downloaded} -ne ${manifest_lines} ]]; then
   exit 1
 fi
 
+beat "verifying ${manifest_lines} downloaded artifacts against SHA256SUMS"
 (cd "${scratch}" && sha256sum --check --strict --quiet SHA256SUMS)
 echo "ok  all ${manifest_lines} released artifacts match the released SHA256SUMS"
 
@@ -89,6 +99,7 @@ echo "ok  all ${manifest_lines} released artifacts match the released SHA256SUMS
 # natively. Byte-identity above already ties every other cell's published
 # bytes to the tarball its own matrix job installed and exercised on native
 # hardware before upload.
+beat "installing the released pg${PG}/${ARCH} tarball into a clean Postgres"
 PG="${PG}" VERSION="${VERSION}" DISTRO=trixie \
   TARBALL="${scratch}/${ASSET}" \
   .github/scripts/smoke-extension.sh

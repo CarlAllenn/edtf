@@ -10,6 +10,13 @@ set -euo pipefail
 
 VERSION="${VERSION:?VERSION must be set}"
 
+# Streamed heartbeats: lines already streamed survive a runner death.
+beat() {
+  local ts
+  ts=$(date -u +%H:%M:%S) || ts="--:--:--"
+  echo "[${ts}Z] $*"
+}
+
 if [[ "$(timeout 120 npm view "edtf-wasm@${VERSION}" version 2> /dev/null || true)" == "${VERSION}" ]]; then
   echo "::notice::edtf-wasm ${VERSION} already on npm; skipping"
 else
@@ -22,11 +29,12 @@ fi
 # Polled, not checked once: at v1.0.1 the publish succeeded and the very
 # next `npm view` still missed it — the registry read path lags the write
 # path by a few seconds, and that lag failed the release (issue #66).
-for _ in $(seq 1 12); do
+for attempt in $(seq 1 12); do
   if [[ "$(timeout 120 npm view "edtf-wasm@${VERSION}" version 2> /dev/null || true)" == "${VERSION}" ]]; then
     echo "::notice::edtf-wasm ${VERSION} present on npm"
     exit 0
   fi
+  beat "npm read path has not caught up (poll ${attempt}/12)"
   sleep 10
 done
 

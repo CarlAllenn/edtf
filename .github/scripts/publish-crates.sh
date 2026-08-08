@@ -34,6 +34,7 @@ check_published() {
   local name="$1"
   local body=""
   body=$(curl -sfA 'edtf-release-workflow' --retry 3 --retry-delay 5 \
+    --max-time 60 \
     "https://crates.io/api/v1/crates/${name}/${VERSION}" 2> /dev/null) || body=""
   if [[ ${body} == *'"num"'* ]]; then
     PUBLISHED="yes"

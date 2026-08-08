@@ -10,7 +10,7 @@ set -euo pipefail
 
 VERSION="${VERSION:?VERSION must be set}"
 
-if [[ "$(npm view "edtf-wasm@${VERSION}" version 2> /dev/null || true)" == "${VERSION}" ]]; then
+if [[ "$(timeout 120 npm view "edtf-wasm@${VERSION}" version 2> /dev/null || true)" == "${VERSION}" ]]; then
   echo "::notice::edtf-wasm ${VERSION} already on npm; skipping"
 else
   echo "publishing edtf-wasm ${VERSION} to npm"
@@ -23,7 +23,7 @@ fi
 # next `npm view` still missed it — the registry read path lags the write
 # path by a few seconds, and that lag failed the release (issue #66).
 for _ in $(seq 1 12); do
-  if [[ "$(npm view "edtf-wasm@${VERSION}" version 2> /dev/null || true)" == "${VERSION}" ]]; then
+  if [[ "$(timeout 120 npm view "edtf-wasm@${VERSION}" version 2> /dev/null || true)" == "${VERSION}" ]]; then
     echo "::notice::edtf-wasm ${VERSION} present on npm"
     exit 0
   fi

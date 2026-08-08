@@ -17,7 +17,8 @@ GITHUB_ENV="${GITHUB_ENV:?GITHUB_ENV must be set}"
 
 TAG="edtf-postgres-v${VERSION}"
 
-gh release download "${TAG}" --pattern SHA256SUMS \
+# Bounded: gh has no transfer deadline of its own (v1.2.0 hang lesson).
+timeout 120 gh release download "${TAG}" --pattern SHA256SUMS \
   --dir "${RUNNER_TEMP}/sums" --clobber
 
 name="edtf_postgres-${VERSION}-pg${PG}-linux-${ARCH}.tar.gz"

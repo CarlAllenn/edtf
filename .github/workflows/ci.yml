@@ -89,6 +89,34 @@ jobs:
       # audits move to the scanner baseline (renovate-config issue #7).
       - run: task ci
 
+  reuse:
+    name: REUSE compliance
+    runs-on: ubuntu-latest
+    steps:
+      # First step of every job, before checkout: runtime egress audit —
+      # enforcement per issue #6 canon.
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: block
+          disable-sudo: true
+          # The action pulls its docker image from Docker Hub; blob serving
+          # picks between cloudflare and cloudfront per request (same lore
+          # as publish.yml).
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            auth.docker.io:443
+            registry-1.docker.io:443
+            production.cloudflare.docker.com:443
+            production.cloudfront.docker.com:443
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      # Every file carries SPDX info: .rs/.sh via in-file headers (PR #101),
+      # everything else via REUSE.toml. The fsfe action is the canonical
+      # `reuse lint` runner — no toolchain, one docker image.
+      - uses: fsfe/reuse-action@676e2d560c9a403aa252096d99fcab3e1132b0f5 # v6.0.0
+
   secrets:
     name: gitleaks history scan
     runs-on: ubuntu-latest

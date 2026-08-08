@@ -90,3 +90,15 @@ fn roundtrip_all_fixture_strings() {
         }
     }
 }
+
+#[test]
+fn qualifier_groups_and_hour_only_shifts() {
+    // Year and month share '?': one group marker, the day stays quiet.
+    assert_eq!(canon("?2004-?06-11"), "2004-06?-11");
+    // Hour-only shifts stay hour-only; minuted shifts keep their minutes.
+    assert_eq!(canon("1985-04-12T23:20:30+05"), "1985-04-12T23:20:30+05");
+    assert_eq!(
+        canon("1985-04-12T23:20:30+05:30"),
+        "1985-04-12T23:20:30+05:30"
+    );
+}

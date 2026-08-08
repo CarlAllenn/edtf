@@ -659,25 +659,13 @@ fn numeric_token(t: &str, opts: Options, lang: &Lang) -> Option<Single> {
                 2 => {
                     let b_u8 = u8::try_from(b).ok()?;
                     let elided = y / 100 * 100 + i32::from(b_u8);
-                    if elided <= y || b <= 12 {
+                    // 01-12 already matched the year-month arm above, and 00
+                    // can never elide forward — only elided <= y remains.
+                    if elided <= y {
                         return None;
                     }
                     if (21..=41).contains(&b) {
-                        Some(Single::Many(vec![
-                            Candidate {
-                                expr: Expr::Date(Date {
-                                    month: Some(quiet(b_u8)),
-                                    ..date_y(y)?
-                                }),
-                                reading: format!("sub-year code {b} ({})", season_name(b_u8)),
-                                notes: vec![Note::SeasonRangeCollision],
-                            },
-                            Candidate {
-                                expr: interval(date_y(y)?, date_y(elided)?),
-                                reading: format!("year range {y}/{elided}"),
-                                notes: vec![Note::ElidedEndYear, Note::SeasonRangeCollision],
-                            },
-                        ]))
+                        season_range_collision(y, b_u8)
                     } else {
                         Some(Single::One(
                             interval(date_y(y)?, date_y(elided)?),
@@ -692,6 +680,27 @@ fn numeric_token(t: &str, opts: Options, lang: &Lang) -> Option<Single> {
     }
 }
 
+/// Both readings of `NNNN-NN` where NN is a sub-year code 21–41 AND a
+/// plausible elided end year (N13). Callers have checked both conditions.
+fn season_range_collision(y: i32, code: u8) -> Option<Single> {
+    let elided = y / 100 * 100 + i32::from(code);
+    Some(Single::Many(vec![
+        Candidate {
+            expr: Expr::Date(Date {
+                month: Some(quiet(code)),
+                ..date_y(y)?
+            }),
+            reading: format!("sub-year code {code} ({})", season_name(code)),
+            notes: vec![Note::SeasonRangeCollision],
+        },
+        Candidate {
+            expr: interval(date_y(y)?, date_y(elided)?),
+            reading: format!("year range {y}/{elided}"),
+            notes: vec![Note::ElidedEndYear, Note::SeasonRangeCollision],
+        },
+    ]))
+}
+
 // ---------------------------------------------------------------------------
 // The single-expression grammar
 
@@ -702,10 +711,9 @@ fn numeric_token(t: &str, opts: Options, lang: &Lang) -> Option<Single> {
     reason = "the ordered arms ARE the grammar (N11); order carries meaning"
 )]
 fn parse_single(s: &str, opts: Options, lang: &Lang, in_range: bool) -> Option<Single> {
+    // An empty token list (callers never produce one) falls through every
+    // arm to the final `_ => None`.
     let toks: Vec<&str> = s.split(' ').filter(|t| !t.is_empty()).collect();
-    if toks.is_empty() {
-        return None;
-    }
 
     // Trailing era phrase, if any ("500 bc", "xix век до н. э.").
     let (era, mut core_toks) = match split_era(&toks, lang) {
@@ -1054,7 +1062,9 @@ fn endpoint_pair(left: &str, right: &str, opts: Options, lang: &Lang) -> Option<
             if elided <= y || v <= 12 {
                 return None;
             }
-            if (21..=41).contains(&v) && ld.month.is_none() && ld.day.is_none() {
+            // No grammar arm builds a day without a month, so a month-less
+            // left endpoint is a bare year — no day check needed.
+            if (21..=41).contains(&v) && ld.month.is_none() {
                 let mut season = *ld;
                 season.month = Some(quiet(v_u8));
                 qualify_date(&mut season, lq);
@@ -1124,7 +1134,9 @@ fn endpoint_pair(left: &str, right: &str, opts: Options, lang: &Lang) -> Option<
                     })
                 })
                 .collect();
-            (out.len() == total && !out.is_empty()).then_some(Single::Many(out))
+            // `Many` is never built empty, so `out.len() == total` also
+            // guarantees at least one candidate survives.
+            (out.len() == total).then_some(Single::Many(out))
         },
         (Single::Many(cands), Single::One(Expr::Date(rd), rn)) => {
             let total = cands.len();
@@ -1142,7 +1154,9 @@ fn endpoint_pair(left: &str, right: &str, opts: Options, lang: &Lang) -> Option<
                     })
                 })
                 .collect();
-            (out.len() == total && !out.is_empty()).then_some(Single::Many(out))
+            // `Many` is never built empty, so `out.len() == total` also
+            // guarantees at least one candidate survives.
+            (out.len() == total).then_some(Single::Many(out))
         },
         // A two-sided ambiguity would be a 4-way product — refuse to guess.
         _ => None,
@@ -1190,8 +1204,9 @@ fn cross_year_season(
     build: &impl Fn(&Date, &Date) -> Option<Expr>,
 ) -> Option<Single> {
     const WINTER: u8 = 24;
-    if ld.month.and_then(DateField::value) != Some(WINTER) || rd.month.is_some() || rd.day.is_some()
-    {
+    // No grammar arm builds a day without a month, so a month-less right
+    // endpoint is a bare year — no day check needed.
+    if ld.month.and_then(DateField::value) != Some(WINTER) || rd.month.is_some() {
         return None;
     }
     let (a, b) = (ld.year.value()?, rd.year.value()?);
@@ -1270,11 +1285,10 @@ fn qualify_expr(e: &mut Expr, q: Qualifier) {
     match e {
         Expr::Date(d) => qualify_date(d, q),
         Expr::Interval(iv) => {
+            // The grammar only builds `Date` and `Open` endpoints; the
+            // set-only `OnOrBefore`/`OnOrAfter` shapes never occur here.
             for ep in [&mut iv.start, &mut iv.end] {
-                if let IntervalEndpoint::Date(d)
-                | IntervalEndpoint::OnOrBefore(d)
-                | IntervalEndpoint::OnOrAfter(d) = ep
-                {
+                if let IntervalEndpoint::Date(d) = ep {
                     qualify_date(d, q);
                 }
             }
@@ -1343,19 +1357,18 @@ fn outcome_from(single: Single, q: Qualifier, base_notes: Vec<Note>) -> Outcome 
             if interps.len() < total {
                 return no_match(NoMatchReason::ImpossibleDate);
             }
-            match interps.len() {
-                0 => no_match(NoMatchReason::ImpossibleDate),
-                1 => {
-                    let i = interps.remove(0);
-                    Outcome::Normalized(Normalized {
-                        edtf: i.edtf,
-                        value: i.value,
-                        notes: i.notes,
-                    })
-                },
-                _ => Outcome::Ambiguous(Ambiguous {
+            // `Many` is never built empty, so at least one reading survives.
+            if interps.len() == 1 {
+                let i = interps.remove(0);
+                Outcome::Normalized(Normalized {
+                    edtf: i.edtf,
+                    value: i.value,
+                    notes: i.notes,
+                })
+            } else {
+                Outcome::Ambiguous(Ambiguous {
                     interpretations: interps,
-                }),
+                })
             }
         },
     }
@@ -1383,7 +1396,7 @@ pub(crate) fn run(input: &str, opts: Options) -> Outcome {
 
     // "1914-21" is valid EDTF (spring 1914) AND a plausible elided range —
     // the collision must surface before the passthrough swallows it (N13).
-    if let Some(outcome) = collision_check(&dashed, opts, lang) {
+    if let Some(outcome) = collision_check(&dashed) {
         return outcome;
     }
 
@@ -1433,7 +1446,7 @@ pub(crate) fn run(input: &str, opts: Options) -> Outcome {
 }
 
 /// `NNNN-NN` with a sub-year code 21–41 and a plausible elided range (N13).
-fn collision_check(s: &str, opts: Options, lang: &Lang) -> Option<Outcome> {
+fn collision_check(s: &str) -> Option<Outcome> {
     let b = s.as_bytes();
     if b.len() != 7 || b[4] != b'-' {
         return None;
@@ -1446,8 +1459,6 @@ fn collision_check(s: &str, opts: Options, lang: &Lang) -> Option<Outcome> {
     if !(21..=41).contains(&code) || year / 100 * 100 + i32::try_from(code).ok()? <= year {
         return None;
     }
-    match numeric_token(s, opts, lang)? {
-        many @ Single::Many(_) => Some(outcome_from(many, Qualifier::default(), Vec::new())),
-        _ => None,
-    }
+    let many = season_range_collision(year, u8::try_from(code).ok()?)?;
+    Some(outcome_from(many, Qualifier::default(), Vec::new()))
 }

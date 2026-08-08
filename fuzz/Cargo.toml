@@ -8,6 +8,12 @@ license = "MIT OR Apache-2.0"
 [package.metadata]
 cargo-fuzz = true
 
+# Explicitly its own workspace root. The main manifest's `exclude = ["fuzz"]`
+# only shields the primary checkout; from a git worktree nested inside the
+# repository directory, cargo's upward walk would otherwise escape to the
+# primary checkout's manifest and claim this package.
+[workspace]
+
 # Lint canon: renovate-config templates/rust-lints/Cargo-lints.toml —
 # mirrored from the main workspace (this manifest is its own workspace, so
 # it cannot inherit). Keep the three blocks in lockstep.

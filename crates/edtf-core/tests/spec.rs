@@ -211,3 +211,43 @@ fn error_offsets_point_at_the_problem() {
     assert_eq!(offset_of("{1960,1985-00}"), 11); // bad month inside a set
     assert_eq!(offset_of("../1985-13"), 8); // bad month after '..' prefix
 }
+
+#[test]
+fn rejection_edges_carry_precise_errors() {
+    fn message_of(s: &str) -> String {
+        Edtf::parse(s).unwrap_err().to_string()
+    }
+    // Exponent domain cap (the exponent itself, not the resulting year).
+    assert!(message_of("Y1E100001").contains("exponent out of supported range"));
+    // Shift minutes are a separate field from shift magnitude (±14:00).
+    assert!(message_of("1985-04-12T10:00:00+05:60").contains("shift minutes must be 00-59"));
+    // A set range is a single '..' between two dates.
+    assert!(message_of("[1985..1990..1995]").contains("multiple '..'"));
+}
+
+#[test]
+fn component_flags_reach_into_sets() {
+    // The `any_date` sweep must see every set element shape.
+    assert!(Edtf::parse("[1985?]").unwrap().is_uncertain());
+    assert!(Edtf::parse("[..1985~]").unwrap().is_approximate());
+    assert!(Edtf::parse("[198X]").unwrap().has_unspecified());
+    // Range endpoints reject qualifiers and masks at parse time, so the
+    // sweep across a range can only ever come back clean.
+    assert!(!Edtf::parse("[1985..1990]").unwrap().is_uncertain());
+}
+
+#[test]
+fn edtf_implements_fromstr() {
+    let v: Edtf = "1985-04".parse().unwrap();
+    assert_eq!(v.to_string(), "1985-04");
+    assert!("1985-13".parse::<Edtf>().is_err());
+}
+
+#[test]
+fn component_flags_reach_into_interval_endpoints() {
+    // Open/unknown endpoints carry no date: the sweep must fall through to
+    // the other endpoint, and short-circuit when the first already matches.
+    assert!(Edtf::parse("../1985?").unwrap().is_uncertain());
+    assert!(Edtf::parse("1985?/..").unwrap().is_uncertain());
+    assert!(!Edtf::parse("../1985").unwrap().is_uncertain());
+}

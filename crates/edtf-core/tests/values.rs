@@ -299,3 +299,19 @@ fn d27_keeps_every_spec_exemplified_range_valid() {
         assert!(Edtf::parse(s).is_ok(), "{s} must stay valid");
     }
 }
+
+#[test]
+fn unenumerable_reasons_display() {
+    assert_eq!(
+        unenumerable("2004/2005").to_string(),
+        "intervals denote an extent, not enumerable values"
+    );
+    assert_eq!(
+        unenumerable("[1985..]").to_string(),
+        "'..'-open set elements denote unbounded value sets"
+    );
+    assert_eq!(
+        unenumerable("{Y1E19..Y1E19}").to_string(),
+        "year range exceeds the computable range"
+    );
+}

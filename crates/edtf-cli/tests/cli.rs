@@ -157,9 +157,112 @@ fn from_julian_month_and_negative_year() {
 
 #[test]
 fn from_julian_rejects_garbage() {
-    for bad in ["1917-13", "1917-02-30", "1917-2-3", "191A", "1917-10-25-01"] {
+    for bad in [
+        "1917-13",
+        "1917-02-30",
+        "1917-2-3",
+        "191A",
+        "1917-10-25-01",
+        "",
+        "1917-aa",
+    ] {
         let (_, stderr, ok) = edtf(&["from-julian", bad]);
         assert!(!ok, "{bad} must be rejected");
         assert!(stderr.contains(bad));
     }
+}
+
+#[test]
+fn unknown_command() {
+    let (_, stderr, ok) = edtf(&["frobnicate"]);
+    assert!(!ok);
+    assert!(stderr.contains("unknown command \"frobnicate\""));
+    assert!(stderr.contains("USAGE"));
+}
+
+#[test]
+fn stdin_read_errors_fail_the_run() {
+    // Invalid UTF-8 makes `lines()` return an Err — the run must stop with
+    // a diagnostic rather than skipping silently.
+    let mut child = Command::new(env!("CARGO_BIN_EXE_edtf"))
+        .args(["validate", "-"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("binary runs");
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(b"\xff\xfe\n")
+        .unwrap();
+    let out = child.wait_with_output().unwrap();
+    assert!(!out.status.success());
+    assert!(String::from_utf8(out.stderr).unwrap().contains("stdin:"));
+}
+
+#[test]
+fn info_covers_every_kind_and_bound_shape() {
+    // Open start: earliest is -infinity.
+    let (stdout, _, ok) = edtf(&["info", "../1985"]);
+    assert!(ok);
+    let v: serde_json::Value = serde_json::from_str(stdout.trim()).unwrap();
+    assert_eq!(v["earliest"], "-infinity");
+    // Unknown end (empty endpoint): latest is null.
+    let (stdout, _, ok) = edtf(&["info", "1985/"]);
+    assert!(ok);
+    let v: serde_json::Value = serde_json::from_str(stdout.trim()).unwrap();
+    assert_eq!(v["latest"], serde_json::Value::Null);
+    // Datetime and set kinds.
+    let (stdout, _, ok) = edtf(&["info", "1985-04-12T10:00:00Z"]);
+    assert!(ok);
+    let v: serde_json::Value = serde_json::from_str(stdout.trim()).unwrap();
+    assert_eq!(v["kind"], "datetime");
+    assert_eq!(v["precision"], "day");
+    let (stdout, _, ok) = edtf(&["info", "[1985,1987]"]);
+    assert!(ok);
+    let v: serde_json::Value = serde_json::from_str(stdout.trim()).unwrap();
+    assert_eq!(v["kind"], "set");
+    // Year, month and season precisions on plain dates.
+    for (input, precision) in [
+        ("1985", "year"),
+        ("1985-04", "month"),
+        ("2001-21", "season"),
+    ] {
+        let (stdout, _, ok) = edtf(&["info", input]);
+        assert!(ok);
+        let v: serde_json::Value = serde_json::from_str(stdout.trim()).unwrap();
+        assert_eq!(v["precision"], precision, "{input}");
+    }
+}
+
+#[test]
+fn no_args_reads_empty_stdin() {
+    // `.output()` wires stdin to null (immediate EOF): nothing to validate
+    // is a successful, silent run.
+    let (stdout, stderr, ok) = edtf(&["validate"]);
+    assert!(ok);
+    assert!(stdout.is_empty());
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn blank_stdin_lines_are_skipped() {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_edtf"))
+        .args(["level", "-"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("binary runs");
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(b"\n1985\n\n")
+        .unwrap();
+    let out = child.wait_with_output().unwrap();
+    assert!(out.status.success());
+    assert_eq!(String::from_utf8(out.stdout).unwrap(), "0\n");
 }

@@ -456,15 +456,20 @@ jobs:
       - run: rustup component add llvm-tools
       # Deliberately NOT a gate: thresholds rot into gaming. The number is
       # published on every PR; drops are reviewed by humans (issue #8).
+      # edtf-postgres is excluded from the metric: its tests run inside the
+      # pgrx harness (pg14-18 matrix jobs), which llvm-cov cannot
+      # instrument, so counting its source would only report a false gap.
       - name: Coverage summary
         run: |
           {
             echo '## Coverage (lines)'
             echo '```'
-            cargo llvm-cov --all-features
+            cargo llvm-cov --all-features --ignore-filename-regex 'crates/edtf-postgres/'
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-      - run: cargo llvm-cov report --lcov --output-path lcov.info
+      - run: >
+          cargo llvm-cov report --lcov --output-path lcov.info
+          --ignore-filename-regex 'crates/edtf-postgres/'
       - name: Upload lcov artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

@@ -107,6 +107,8 @@ impl Display for Date {
 
         // Longest qualified prefix sharing the year's qualifier becomes one
         // group marker; anything after it gets individual (left) qualifiers.
+        // Fully uniform dates took the branch above, so this scan always
+        // stops at an unequal part before running off the end.
         let q0 = parts[0].1;
         let prefix_end = if q0.is_qualified() {
             let mut end = 0;
@@ -147,6 +149,8 @@ impl Display for Time {
                 let sign = if minutes < 0 { '-' } else { '+' };
                 let mag = minutes.unsigned_abs();
                 let (h, m) = (mag / 60, mag % 60);
+                // The parser only sets `hours_only` for ±hh forms, whose
+                // minutes are zero by construction.
                 if hours_only && m == 0 {
                     write!(f, "{sign}{h:02}")
                 } else {

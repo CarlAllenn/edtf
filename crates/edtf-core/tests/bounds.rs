@@ -148,3 +148,38 @@ fn interval_ordering_enforced() {
     assert!(edtf_core::is_valid("198X/1985")); // 1980 ≤ 1985 possible
     assert!(edtf_core::is_valid("2004-02-01/2005-02-08"));
 }
+
+#[test]
+fn unvaluable_set_elements_poison_set_bounds() {
+    // Y1E19 exceeds the computable year range: its bounds are Unknown, and
+    // Unknown absorbs every neighbour in a set sweep — in either order.
+    for s in ["[Y1E19,1985]", "[1985,Y1E19]"] {
+        let b = Edtf::parse(s).unwrap().bounds();
+        assert_eq!(b.earliest, Bound::Unknown, "{s}");
+        assert_eq!(b.latest, Bound::Unknown, "{s}");
+    }
+}
+
+#[test]
+fn masked_leap_day_bounds_search_year_completions() {
+    // XXXX-02-29 exists only in leap years: the extremum walk must find the
+    // first and last leap completions (0000 and 9996).
+    let b = Edtf::parse("XXXX-02-29").unwrap().bounds();
+    let (Bound::Date(e), Bound::Date(l)) = (b.earliest, b.latest) else {
+        panic!("expected date bounds");
+    };
+    assert_eq!((e.year, e.month, e.day), (0, 2, 29));
+    assert_eq!((l.year, l.month, l.day), (9996, 2, 29));
+}
+
+#[test]
+fn significant_digit_sweep_overflow_bounds_to_unknown() {
+    // Y9E18S1 sweeps 18 digits above a magnitude near i64::MAX: the top of
+    // the swept range does not exist, so the bounds are honestly Unknown.
+    let b = Edtf::parse("Y9E18S1").unwrap().bounds();
+    assert_eq!(b.earliest, Bound::Unknown);
+    assert_eq!(b.latest, Bound::Unknown);
+    // One significant digit more and the sweep fits again.
+    let b = Edtf::parse("Y9E18S2").unwrap().bounds();
+    assert!(matches!(b.earliest, Bound::Date(_)));
+}

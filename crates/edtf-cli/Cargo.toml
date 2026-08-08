@@ -1,6 +1,6 @@
 [package]
 name = "edtf-cli"
-version = "1.2.1"
+version = "1.2.2"
 readme = "README.md"
 description = "Command-line EDTF (ISO 8601-2) validator: validate, canonicalize, level, bounds, temporal relations and Julian (Old Style) conversion."
 keywords = ["edtf", "date", "iso8601", "cli", "validator"]

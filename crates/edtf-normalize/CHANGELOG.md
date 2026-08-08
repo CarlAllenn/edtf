@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2](https://github.com/CarlAllenn/edtf/compare/edtf-normalize-v1.2.1...edtf-normalize-v1.2.2) - 2026-08-08
+
+### Other
+
+- No code changes. Completes the 1.2.x line with full release assets:
+  the v1.2.0 and v1.2.1 publish runs were lost to runner memory
+  exhaustion during a CI provider incident, after their crates
+  reached the registries. Both remain valid, verifiable versions on
+  crates.io/npm; this is the release that carries the assets,
+  through the split pipeline that makes the failure unrepeatable.
+
 ## [1.2.1](https://github.com/CarlAllenn/edtf/compare/edtf-normalize-v1.2.0...edtf-normalize-v1.2.1) - 2026-08-08
 
 ### Other

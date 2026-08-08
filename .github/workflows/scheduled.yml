@@ -30,6 +30,8 @@ jobs:
   zizmor-online:
     name: zizmor online audits
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~30s.
+    timeout-minutes: 10
     steps:
       - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
@@ -73,6 +75,8 @@ jobs:
   scorecard:
     name: OpenSSF Scorecard
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~30s.
+    timeout-minutes: 10
     permissions:
       contents: read # analyze the repository
       id-token: write # OIDC: proves to the OpenSSF API these results are ours
@@ -106,6 +110,8 @@ jobs:
   links:
     name: lychee
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~1m; lychee is network-bound.
+    timeout-minutes: 15
     steps:
       # audit, not block — the only such job in any workflow. A link
       # checker's purpose is arbitrary egress; a meaningful allowlist would

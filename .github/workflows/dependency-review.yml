@@ -22,6 +22,8 @@ jobs:
   dependency-review:
     name: Dependency review
     runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~15s.
+    timeout-minutes: 10
     steps:
       # First step of every job, before checkout: runtime egress audit —
       # enforcement per issue #6 canon (allowlist derived from audit run;

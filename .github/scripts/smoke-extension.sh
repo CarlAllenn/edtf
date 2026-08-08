@@ -44,6 +44,9 @@
 #      assume glibc forward compatibility rather than demonstrate it.
 set -euo pipefail
 
+# shellcheck source=.github/scripts/base-images.sh
+. "$(dirname "${BASH_SOURCE[0]}")/base-images.sh"
+
 PG="${PG:?PG must be set (e.g. 18)}"
 VERSION="${VERSION:?VERSION must be set}"
 TARBALL="${TARBALL:?TARBALL must be set}"
@@ -60,6 +63,9 @@ if [[ ! -f ${CORPUS} ]]; then
   exit 1
 fi
 
+SMOKE_IMAGE=""
+SMOKE_IMAGE=$(base_image "${PG}" "${DISTRO}")
+
 container="edtf-smoke-pg${PG}-${DISTRO}-$$"
 
 cleanup() {
@@ -75,7 +81,7 @@ echo "::notice::smoke test: pg${PG} on ${DISTRO}"
 docker run --detach \
   --name "${container}" \
   --env POSTGRES_PASSWORD=smoke \
-  "postgres:${PG}-${DISTRO}" > /dev/null
+  "${SMOKE_IMAGE}" > /dev/null
 
 READY="false"
 for _ in $(seq 1 60); do
@@ -87,7 +93,7 @@ for _ in $(seq 1 60); do
 done
 
 if [[ ${READY} != "true" ]]; then
-  echo "::error::postgres:${PG}-${DISTRO} did not become ready"
+  echo "::error::${SMOKE_IMAGE} did not become ready"
   docker logs "${container}" 2>&1 | tail -20 || true
   exit 1
 fi

@@ -7,5 +7,20 @@
       "matchPackageNames": ["pgrx", "pgrx-tests", "cargo-pgrx"],
       "groupName": "pgrx"
     }
+  ],
+  "customManagers": [
+    {
+      "description": "Pinned base images (issue #83, gap 3): keep the sha256 digests in base-images.sh and the buildkit bootstrap pin in publish.yml current as their tags are republished",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/scripts/base-images\\.sh$/",
+        "/^\\.github/workflows/publish\\.yml$/"
+      ],
+      "matchStrings": [
+        "\"(?<depName>postgres):(?<currentValue>\\d+-[a-z]+)@(?<currentDigest>sha256:[a-f0-9]{64})\"",
+        "image=mirror\\.gcr\\.io/(?<depName>moby/buildkit):(?<currentValue>[a-z0-9.-]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    }
   ]
 }

@@ -17,6 +17,9 @@
 # describes — because "nothing to upgrade from" is a fact, not a failure.
 set -euo pipefail
 
+# shellcheck source=.github/scripts/base-images.sh
+. "$(dirname "${BASH_SOURCE[0]}")/base-images.sh"
+
 PG="${PG:?PG must be set}"
 ARCH="${ARCH:?ARCH must be set}"
 VERSION="${VERSION:?VERSION must be set}"
@@ -85,10 +88,13 @@ trap cleanup EXIT
 
 # trixie, the newer distro: the fresh-install legs already cover both; the
 # upgrade mechanics are distro-independent SQL script resolution.
+UPGRADE_IMAGE=""
+UPGRADE_IMAGE=$(base_image "${PG}" trixie)
+
 docker run --detach \
   --name "${container}" \
   --env POSTGRES_PASSWORD=smoke \
-  "postgres:${PG}-trixie" > /dev/null
+  "${UPGRADE_IMAGE}" > /dev/null
 
 READY="false"
 for _ in $(seq 1 60); do
@@ -100,7 +106,7 @@ for _ in $(seq 1 60); do
 done
 
 if [[ ${READY} != "true" ]]; then
-  echo "::error::postgres:${PG}-trixie did not become ready"
+  echo "::error::${UPGRADE_IMAGE} did not become ready"
   docker logs "${container}" 2>&1 | tail -20 || true
   exit 1
 fi

@@ -545,6 +545,14 @@ jobs:
       # edtf-core's (empty) dependency set describes edtf-cli. Enumerated
       # rather than looped because a GitHub Action cannot be run in a shell
       # loop, and silent breakage here is a false SBOM claim.
+      #
+      # Where a crate also ships binary artifacts, those are subjects of the
+      # SAME attestation (issue #83, gap 5): the tarballs are compiled from
+      # exactly the dependency closure the crate's SBOM records, and without
+      # the binding a consumer verifying a tarball could obtain provenance
+      # but no attested dependency list for those bytes. The wasm npm
+      # tarball is in dist/ by now — verify-registry-bytes.sh put it there
+      # after proving it identical to what the registry serves.
       - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         if: env.DRY_RUN != 'true'
         id: attest-sbom-edtf-core
@@ -567,19 +575,28 @@ jobs:
         if: env.DRY_RUN != 'true'
         id: attest-sbom-edtf-wasm
         with:
-          subject-path: dist/edtf-wasm-${{ env.VERSION }}.crate
+          subject-path: |
+            dist/edtf-wasm-${{ env.VERSION }}.crate
+            dist/edtf-wasm-${{ env.VERSION }}.tgz
           sbom-path: sbom/edtf-wasm.cdx.json
       - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         if: env.DRY_RUN != 'true'
         id: attest-sbom-edtf-cli
         with:
-          subject-path: dist/edtf-cli-${{ env.VERSION }}.crate
+          subject-path: |
+            dist/edtf-cli-${{ env.VERSION }}.crate
+            dist/edtf-cli-${{ env.VERSION }}-*.tar.gz
           sbom-path: sbom/edtf-cli.cdx.json
       - uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         if: env.DRY_RUN != 'true'
         id: attest-sbom-edtf-postgres
         with:
-          subject-path: dist/edtf-postgres-${{ env.VERSION }}.crate
+          # Both tarball families: the stripped libraries and their -dbgsym
+          # siblings are compiled from the same closure the SBOM records.
+          subject-path: |
+            dist/edtf-postgres-${{ env.VERSION }}.crate
+            dist/edtf_postgres-${{ env.VERSION }}-*.tar.gz
+            dist/edtf_postgres-dbgsym-${{ env.VERSION }}-*.tar.gz
           sbom-path: sbom/edtf-postgres.cdx.json
 
       # --- prove the attestation itself ----------------------------------
@@ -658,9 +675,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: .github/scripts/upload-cli-assets.sh
 
-      # The stranger's path for the one artifact canary.sh cannot cover:
-      # fetch what is attached to the release, prove it is what SHA256SUMS
-      # names, and install it.
+      # The stranger's path for the artifacts canary.sh cannot cover:
+      # fetch every tarball attached to the draft releases, prove each is
+      # what the released SHA256SUMS names, and install one natively.
       - name: Canary — install the released extension tarball
         if: env.DRY_RUN != 'true'
         env:
@@ -787,10 +804,13 @@ jobs:
       # Bootstrap buildkit from Google's Docker Hub mirror: the default pull
       # from Hub's CDN dials past DNS on a hosted runner and is rightly
       # refused by egress block (canon: templates/publish egress lore).
+      # Digest-pinned like every other build input (issue #83, gap 3); the
+      # custom manager in renovate.json keeps the digest current.
       - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
         if: env.DRY_RUN != 'true'
         with:
-          driver-opts: image=mirror.gcr.io/moby/buildkit:buildx-stable-1
+          # yamllint disable-line rule:line-length
+          driver-opts: image=mirror.gcr.io/moby/buildkit:buildx-stable-1@sha256:2f5adac4ecd194d9f8c10b7b5d7bceb5186853db1b26e5abd3a657af0b7e26ec
 
       - name: Log in to GHCR
         if: env.DRY_RUN != 'true'
@@ -935,7 +955,8 @@ jobs:
       - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
         if: env.DRY_RUN != 'true'
         with:
-          driver-opts: image=mirror.gcr.io/moby/buildkit:buildx-stable-1
+          # yamllint disable-line rule:line-length
+          driver-opts: image=mirror.gcr.io/moby/buildkit:buildx-stable-1@sha256:2f5adac4ecd194d9f8c10b7b5d7bceb5186853db1b26e5abd3a657af0b7e26ec
 
       - name: Log in to GHCR
         if: env.DRY_RUN != 'true'

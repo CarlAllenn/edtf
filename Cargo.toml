@@ -115,11 +115,16 @@ panic = "unwind"
 [profile.dev]
 panic = "unwind"
 
-# A Postgres extension is the opposite of the wasm artifact: Postgres loads
-# it as a shared library and resolves its functions by name, so it wants
-# speed and its symbol table intact, not minimum bytes. Per-package
-# overrides accept opt-level and strip (unlike panic/lto/rpath), which is
-# exactly what makes membership possible.
+# A Postgres extension is the opposite of the wasm artifact: it wants speed,
+# not minimum bytes — hence opt-level 3. `strip = "none"` is NOT what makes
+# the library loadable: Postgres resolves its functions with dlsym against
+# the dynamic symbol table (.dynsym), which stripping never touches. The
+# symbols are kept at link time so the packaging step
+# (build-extension-inner.sh) can split the full debug info into the -dbgsym
+# tarball and stamp a .gnu_debuglink before stripping the shipped .so —
+# a backend crash then gets a real backtrace from the sibling artifact.
+# Per-package overrides accept opt-level and strip (unlike panic/lto/rpath),
+# which is exactly what makes membership possible.
 [profile.release.package.edtf-postgres]
 opt-level = 3
 strip = "none"

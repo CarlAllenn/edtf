@@ -21,6 +21,14 @@
         "image=mirror\\.gcr\\.io/(?<depName>moby/buildkit):(?<currentValue>[a-z0-9.-]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
       ],
       "datasourceTemplate": "docker"
+    },
+    {
+      "description": "rustup-init pin in the extension build script; verify-rustup-pin.sh gates every PR so the SHA256 lines must move with the version",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/scripts/build-extension-inner\\.sh$/"],
+      "matchStrings": ["RUSTUP_VERSION=(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "rust-lang/rustup",
+      "datasourceTemplate": "github-releases"
     }
   ]
 }

@@ -29,7 +29,10 @@ apt-get install -y -qq --no-install-recommends \
 # `curl | sh` installer: sh.rustup.rs serves whatever is current, so a pipe
 # from it executes unpinned code inside the build. The checksums are the
 # published rustup-init.sha256 values for this version; a new rustup means
-# updating all three lines together.
+# updating all three lines together. The version line is kept current by
+# the "rustup-init pin" custom manager in renovate.json, and
+# verify-rustup-pin.sh runs on every PR to prove the checksums moved with
+# it — a bump with stale checksums fails there, not on the publish path.
 RUSTUP_VERSION=1.29.0
 RUSTUP_SHA256_AMD64=4acc9acc76d5079515b46346a485974457b5a79893cfb01112423c89aeb5aa10
 RUSTUP_SHA256_ARM64=9732d6c5e2a098d3521fca8145d826ae0aaa067ef2385ead08e6feac88fa5792

@@ -51,3 +51,33 @@ base_image() {
       ;;
   esac
 }
+
+# Wait until the container's Postgres is REALLY ready — used by every
+# release-path script that boots one of the images above.
+#
+# `pg_isready` alone is a race: the official postgres entrypoint starts a
+# temporary server for init, stops it, and starts the real one. A probe
+# that lands on the temporary server reports success, and the next psql
+# then dies with "FATAL: the database system is starting up" — which is
+# exactly how the v1.2.1 release lost its first pg17 smoke cell. Readiness
+# is therefore three consecutive pg_isready successes topped by an actual
+# query, which only the final server can answer.
+wait_for_postgres() {
+  local container="$1"
+  local streak=0
+  for _ in $(seq 1 90); do
+    if docker exec "${container}" pg_isready -U postgres > /dev/null 2>&1; then
+      streak=$((streak + 1))
+    else
+      streak=0
+    fi
+    if [[ ${streak} -ge 3 ]] \
+      && docker exec "${container}" psql -U postgres -qAtc 'SELECT 1' > /dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "::error::postgres in ${container} did not become ready" >&2
+  docker logs "${container}" 2>&1 | tail -20 || true
+  return 1
+}

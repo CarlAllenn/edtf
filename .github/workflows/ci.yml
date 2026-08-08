@@ -64,6 +64,12 @@ jobs:
         with:
           # renovate: datasource=github-releases depName=jdx/mise
           version: 2026.7.12
+      # The rustup-init pin (version + two SHA256s) in the extension build
+      # script must agree with rust-lang's published checksums. Renovate
+      # bumps the version line only, so this is what turns a bump with
+      # stale checksums into a red PR instead of a publish-path failure.
+      - name: Verify the rustup-init pin
+        run: .github/scripts/verify-rustup-pin.sh
       # go-task fingerprints (Taskfile `sources:`): a hit means a gate's
       # inputs are byte-identical to a run that already passed, so it skips.
       # go-task only writes checksums after a task succeeds, and

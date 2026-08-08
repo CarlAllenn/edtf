@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.3](https://github.com/CarlAllenn/edtf/compare/edtf-cli-v1.2.2...edtf-cli-v1.2.3) - 2026-08-08
+
+### Other
+
+- No code changes. Carries the release assets the 1.2.x line never got:
+  the v1.2.0, v1.2.1 and v1.2.2 publish runs all stalled in the registry
+  canary, after their crates had reached the registries. All three remain
+  valid, verifiable versions on crates.io/npm. The cause was the canary
+  pointing CARGO_HOME at an empty directory while running a toolchain
+  mise provisions against it, which hangs the first cargo call; fixed in
+  #135 and reproduced under test before the fix landed.
+
 ## [1.2.2](https://github.com/CarlAllenn/edtf/compare/edtf-cli-v1.2.1...edtf-cli-v1.2.2) - 2026-08-08
 
 ### Other

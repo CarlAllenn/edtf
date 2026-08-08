@@ -181,6 +181,23 @@ re-dispatch at the tag — `gh workflow run publish.yml --ref v<version>
 attest steps re-run, so artifacts can carry duplicate byte-identical
 attestations. Harmless, but prefer fixing forward over redundant dispatches.
 
+v1.2.0 is the worked example for the *runner* dying rather than a step
+failing. The hosted runner was lost mid-canary ("The hosted runner lost
+communication with the server") after ~40 minutes of silence, and the
+archived step log died with it — `gh run view --log-failed` answers `log
+not found`, so the root cause is permanently unknowable. Three lessons.
+First, the stranded state is identical whether the canary *fails* or the
+runner *dies during* it: registries published and attested, six draft
+releases with no assets — the same recovery dispatch covers both, so do not
+let the messier failure mode suggest a different procedure. Second, only
+lines already streamed to the Actions page survive a dead runner, which is
+why the release scripts heartbeat their phase; when reading a dead run,
+trust the stream, not the archive. Third, harden-runner's egress agent is a
+known cause of hosted-runner communication loss; it cannot be proved or
+acquitted without logs, so if the same job loses its runner again, re-run
+once with `egress-policy: audit` to discriminate before blaming anything
+else.
+
 **A defect was found after the release PR merged** (the release is stranded:
 manifests bumped, nothing tagged, nothing published): merge the fix as an
 ordinary PR, then dispatch phase 1 — `gh workflow run release-plz.yml --ref
@@ -258,6 +275,7 @@ Failure modes this design now absorbs, each found during a live release:
 | cargo-deny skips were exact versions | every Renovate lockfile patch bump turned the gate red | ranges over the lagging minor |
 | SBOM generation hoisted above the publish | cargo-cyclonedx writes beside each manifest, so the tree was dirty and `cargo publish` refused on the FIRST crate (v1.1.1, nothing published) | files are moved, not copied, and a clean-tree assertion runs before the publish |
 | Two chores release-plz cannot do | the upgrade script and `fuzz/Cargo.lock` failed the gate on every single release PR | `task release:prepare` does both and proves the result |
+| No deadline on any network fetch or job | the v1.2.0 canary sat ~40 minutes on unbounded registry probes, then the runner died and took the archived logs with it | per-job `timeout-minutes`; `CARGO_HTTP_TIMEOUT` + `timeout` caps and bounded retries on every fetch; streamed heartbeats so a dead runner leaves a last known position |
 
 Two further defects belong in this list but not in that table, because they
 were caught *before* they cost a release. The first: enabling immutable releases

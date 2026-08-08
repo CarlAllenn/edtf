@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Package all six crates into ./dist, explicitly and reproducibly.
 #
 # Shared by publish.yml's package step and its determinism assertion, which

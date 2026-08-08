@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Consume the just-published artifacts the way a stranger would.
 #
 # Everything before this proves the bytes are what we built and signed. This

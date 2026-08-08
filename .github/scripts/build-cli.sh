@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Build, test and package the edtf-cli binary for the runner's native
 # target (issue #84). Native hardware per platform, no cross-compilation:
 # a binary released for a target must have had its tests RUN on that

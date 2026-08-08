@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Canonical formatting tests: exact renderings plus the round-trip
 //! property over every valid string in both fixture corpora.
 

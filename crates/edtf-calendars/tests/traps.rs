@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! The trap list from issue #21 — every acceptance case the crate exists
 //! to get right, pinned. Historically attested O.S./N.S. pairs live in
 //! `tests/oracle.rs`; generative invariants in `tests/props.rs`.

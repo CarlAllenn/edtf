@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Every tracked *.sh must be executable IN GIT.
 #
 # Paid for at v1.1.0. canary-extension.sh was committed 100644 while its

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Install a built tarball into a clean Postgres and prove it works.
 #
 # This is the "prove before signing" step for this artifact class. The crates

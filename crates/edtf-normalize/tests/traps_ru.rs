@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Russian-language acceptance traps: the same N-decisions exercised through
 //! the RU table set — Roman-numeral centuries, multi-token eras ("до н. э."),
 //! grammatical-case month/season forms, year-marker noise ("гг."), and the

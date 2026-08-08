@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Proleptic Julian (Old Style) → Gregorian conversion at the EDTF input
 //! boundary.
 //!

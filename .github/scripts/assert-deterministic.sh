@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Prove `cargo package` produces identical bytes twice in a row.
 #
 # The attestation names the files in dist/, but `cargo publish` re-packages

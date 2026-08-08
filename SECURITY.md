@@ -38,7 +38,9 @@ What a user can expect from this software, and what they cannot:
 
 The argument for why these requirements are met — threat model, trust
 boundaries, design principles and countered weakness classes — is the
-[security assurance case](docs/assurance-case.md).
+[security assurance case](docs/assurance-case.md). The most recent
+documented review against these requirements is
+[docs/security-review-2026.md](docs/security-review-2026.md).
 
 ## Scope notes
 

@@ -492,18 +492,24 @@ jobs:
           # Derived from the audit run plus the GitHub-owned
           # cold-cache set (mise tool installs on cache miss). The codecov.io
           # hosts and keybase.io are the upload path: the action fetches the
-          # Codecov CLI from cli.codecov.io, verifies its GPG signature
-          # against keybase.io, then reports to api.codecov.io and pushes the
-          # payload to the storage URL that hands back.
+          # Codecov CLI from cli.codecov.io and verifies its GPG signature
+          # against keybase.io, then the CLI POSTs to ingest.codecov.io and
+          # PUTs the report to the presigned storage URL that hands back.
+          #
+          # ingest.codecov.io is the host the CLI actually talks to, observed
+          # in the harden-runner log — not api.codecov.io, which the first cut
+          # of this job guessed and which is never resolved.
+          # storage.googleapis.com is the second leg and is still unproven:
+          # the first run never got past the blocked POST. Trim it by audit
+          # once an upload has completed end to end.
           allowed-endpoints: >
-            api.codecov.io:443
             api.github.com:443
             cli.codecov.io:443
-            codecov.io:443
             codeload.github.com:443
             crates.io:443
             github.com:443
             index.crates.io:443
+            ingest.codecov.io:443
             keybase.io:443
             mise-versions.jdx.dev:443
             mise.jdx.dev:443
@@ -566,3 +572,7 @@ jobs:
           disable_search: true
           codecov_yml_path: .github/codecov.yml
           fail_ci_if_error: false
+          # The CLI reports crashes to Codecov's Sentry. The egress policy
+          # blocks it either way; turning it off at source means the audit log
+          # records the upload path and nothing else.
+          disable_telem: true

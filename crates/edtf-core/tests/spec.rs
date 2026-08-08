@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Spec-derived tests beyond the legacy corpus: Annex A examples, the
 //! reject list (spec-notes §5), and the D1-D17 decisions (spec-notes §9).
 

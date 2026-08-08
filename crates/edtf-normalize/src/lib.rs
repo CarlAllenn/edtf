@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Deterministic prose-date → EDTF normalizer (GitHub issue #20).
 //!
 //! Real people typing dates into forms need instant, offline, deterministic

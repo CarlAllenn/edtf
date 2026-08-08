@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Conformance tests against the legacy corpus (built from every ISO 8601-2
 //! Annex A example + adversarial cases). The corpus is the cross-check
 //! oracle; docs/spec-notes.md is the authority on any disagreement.

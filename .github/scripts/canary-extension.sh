@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Consume the extension the way a stranger will: from the release asset.
 #
 # canary.sh proves the crates and the npm package resolve and run when

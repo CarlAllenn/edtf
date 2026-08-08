@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Diff the generated SQL surface against the checked-in snapshot.
 #
 # The contract of this crate is its SQL surface, not a Rust API — which is

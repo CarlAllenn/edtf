@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Coverage-guided round-trip property: anything the parser accepts must
 //! render to a canonical form that reparses to the same value.
 

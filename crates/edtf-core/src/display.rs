@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Canonical formatting: `Display` renders every expression in the
 //! spec-preferred form (ISO 8601-2 §8.2.4 — complete qualification over
 //! group, group over individual, no redundant qualifiers).

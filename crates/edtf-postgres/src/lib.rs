@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Postgres extension exposing [`edtf_core`] in SQL — the same validator the
 //! application runs via WebAssembly, so the two layers can never diverge.
 //!

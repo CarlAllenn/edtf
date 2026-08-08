@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! `edtf` — command-line EDTF (ISO 8601-2:2019 Annex A) validator.
 //!
 //! ```text

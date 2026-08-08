@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Bounds tests: spec-derived expectations plus the legacy corpus's
 //! earliest/latest fields wherever they are concrete dates or infinities.
 //! (Corpus rows with null bounds encode a Postgres-layer clamping convention

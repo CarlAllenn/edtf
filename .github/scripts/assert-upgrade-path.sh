@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Every PUBLISHED version must be able to reach the current one by
 # `ALTER EXTENSION edtf_postgres UPDATE`.
 #

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Runs INSIDE postgres:<major>-bookworm. Driven by build-extension.sh, which
 # explains why the build happens in a container at all.
 #

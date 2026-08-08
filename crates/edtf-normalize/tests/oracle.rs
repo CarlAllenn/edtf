@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! python-edtf natural-language oracle corpus (issue #20, same ceremony as
 //! the interop corpus of issue #12). Fixture:
 //! tests/fixtures/natlang/python-edtf-natlang.json.

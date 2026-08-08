@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Populate the fuzz seed corpora from the checked-in fixtures: every EDTF
 # string in the legacy conformance corpus (built from the Annex A examples),
 # the golden snapshot, and the LoC interop corpus. Both targets share the

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Coverage-guided never-panic target: `Edtf::parse` must return, not crash,
 //! on arbitrary UTF-8. The deterministic harness in
 //! `crates/edtf-core/tests/fuzz.rs` guards every CI push; this one digs

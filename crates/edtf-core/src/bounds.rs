@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Earliest/latest calendar-day bounds for EDTF expressions.
 //!
 //! Every EDTF expression denotes a region of the time axis. `bounds()`

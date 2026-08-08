@@ -1,0 +1,15 @@
+# REUSE (reuse.software) compliance manifest. Source files carry their own
+# SPDX headers (every .rs and .sh, since PR #101); this covers everything
+# that cannot or should not carry a header — configuration, documentation,
+# lockfiles, fixtures — with the project licence. precedence = "closest"
+# means an in-file header always wins over this blanket annotation.
+version = 1
+SPDX-PackageName = "edtf"
+SPDX-PackageSupplier = "Carl Allen"
+SPDX-PackageDownloadLocation = "https://github.com/CarlAllenn/edtf"
+
+[[annotations]]
+path = "**"
+precedence = "closest"
+SPDX-FileCopyrightText = "Copyright (c) the edtf contributors"
+SPDX-License-Identifier = "MIT OR Apache-2.0"

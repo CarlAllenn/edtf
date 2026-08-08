@@ -13,9 +13,11 @@ not a promise; when it changes, this file changes with it.
   [spec-notes.md](spec-notes.md).
 - **Grow the normaliser tables.** `edtf-normalize`'s English and Russian
   pattern tables expand as real archive prose surfaces new forms; the
-  Russian table in particular tracks an active research corpus. Every
-  addition keeps the existing contract: ambiguous input returns every
-  reading, never a guess.
+  Russian table in particular tracks an active research corpus. New
+  language tables are welcome — from anyone with a corpus to normalise —
+  under the same contract every addition keeps: ambiguous input returns
+  every reading, never a guess, and every judgement call lands as a
+  numbered N-decision in [normalize-notes.md](normalize-notes.md).
 - **Keep the deployment shapes first-class.** The Postgres extension
   (pg14–18, amd64+arm64 tarballs and the OCI image), the npm WebAssembly
   package, and the prebuilt CLI binaries all publish from the same

@@ -25,6 +25,16 @@ VERSION="${VERSION:?VERSION must be set}"
 # canary.
 export CARGO_HTTP_TIMEOUT=60
 
+# Timestamped phase markers, streamed. The v1.2.0 runner death also
+# destroyed the archived step log, but lines already STREAMED to the
+# Actions page survive — these heartbeats are what make a dead runner's
+# last position knowable next time.
+beat() {
+  local ts
+  ts=$(date -u +%H:%M:%S) || ts="--:--:--"
+  echo "[${ts}Z] $*"
+}
+
 scratch=$(mktemp -d)
 trap 'rm -rf "${scratch}"' EXIT
 
@@ -40,6 +50,7 @@ export CARGO_HOME="${scratch}/cargo"
 cargo new --lib "${scratch}/probe" > /dev/null
 resolved=0
 for attempt in 1 2 3; do
+  beat "probe 1/4: resolving library crates from crates.io (attempt ${attempt})"
   if (
     cd "${scratch}/probe"
     timeout 300 cargo add "edtf-core@=${VERSION}" > /dev/null
@@ -56,6 +67,7 @@ if [[ ${resolved} -ne 1 ]]; then
   echo "::error::library crates did not resolve after 3 attempts"
   exit 1
 fi
+beat "probe 2/4: compiling against the published library crates"
 (
   cd "${scratch}/probe"
   timeout 600 cargo build --quiet
@@ -63,11 +75,13 @@ fi
 echo "ok  edtf-core, edtf-calendars, edtf-normalize resolve and compile"
 
 # Binary crate: the [[bin]] is named `edtf`, not `edtf-cli`.
+beat "probe 3/4: cargo install edtf-cli from crates.io"
 timeout 900 cargo install "edtf-cli@${VERSION}" --root "${scratch}/cli" --quiet
 "${scratch}/cli/bin/edtf" --version
 echo "ok  edtf-cli installs and runs"
 
 # npm package: fetch the published tarball as a consumer would.
+beat "probe 4/4: npm pack edtf-wasm from the npm registry"
 timeout 300 npm pack "edtf-wasm@${VERSION}" --pack-destination "${scratch}" > /dev/null
 echo "ok  edtf-wasm fetches from npm"
 

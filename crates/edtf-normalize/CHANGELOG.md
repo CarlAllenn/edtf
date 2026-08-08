@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1](https://github.com/CarlAllenn/edtf/compare/edtf-normalize-v1.2.0...edtf-normalize-v1.2.1) - 2026-08-08
+
+### Other
+
+- No code changes. Pipeline-proof release: completes the v1.2.0 release,
+  whose publish run was lost to a CI hang after the crates reached the
+  registries ([#125](https://github.com/CarlAllenn/edtf/pull/125) records
+  the incident). v1.2.0's GitHub releases remain drafts; this release
+  carries the full assets.
+
 ## [1.2.0](https://github.com/CarlAllenn/edtf/compare/edtf-normalize-v1.1.2...edtf-normalize-v1.2.0) - 2026-08-08
 
 ### Other

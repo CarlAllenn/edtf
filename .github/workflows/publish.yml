@@ -937,6 +937,19 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: .github/scripts/resolve-image-tarball-sha.sh
 
+      # The image's base is a build input to a signed artifact like any
+      # other, so it comes from the one digest-pinned table (issue #83,
+      # gap 3) rather than a mutable tag resolved at build time.
+      - name: Resolve the pinned base image
+        if: env.DRY_RUN != 'true'
+        env:
+          PG: ${{ matrix.pg }}
+        run: |
+          set -euo pipefail
+          # shellcheck source=.github/scripts/base-images.sh
+          . .github/scripts/base-images.sh
+          echo "BASE_IMAGE=$(base_image "${PG}" trixie)" >> "$GITHUB_ENV"
+
       # Bootstrap buildkit from Google's Docker Hub mirror: the default pull
       # from Hub's CDN dials past DNS on a hosted runner and is rightly
       # refused by egress block (canon: templates/publish egress lore).
@@ -967,6 +980,7 @@ jobs:
           context: .
           file: docker/edtf-postgres.Dockerfile
           build-args: |
+            BASE_IMAGE=${{ env.BASE_IMAGE }}
             PG=${{ matrix.pg }}
             VERSION=${{ env.VERSION }}
             TARBALL_SHA256=${{ env.TARBALL_SHA256 }}
@@ -987,11 +1001,17 @@ jobs:
           context: .
           file: docker/edtf-postgres.Dockerfile
           build-args: |
+            BASE_IMAGE=${{ env.BASE_IMAGE }}
             PG=${{ matrix.pg }}
             VERSION=${{ env.VERSION }}
             TARBALL_SHA256=${{ env.TARBALL_SHA256 }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
-          provenance: true
+          # mode=max, not the default min: min records no materials, so the
+          # resolved base image digest appears nowhere in the attestation.
+          # Every build arg here is non-secret (the tarball checksum is
+          # published in the release's SHA256SUMS), so embedding the full
+          # input set costs nothing and makes the base auditable per image.
+          provenance: mode=max
           sbom: true
 
       - name: Record the digest

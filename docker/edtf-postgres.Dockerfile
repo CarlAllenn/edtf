@@ -13,18 +13,23 @@
 #   COPY --from=ext /usr/lib/postgresql/18/lib/edtf_postgres.so /usr/lib/postgresql/18/lib/
 #   COPY --from=ext /usr/share/postgresql/18/extension/ /usr/share/postgresql/18/extension/
 #
-# A consumer copying those two paths never receives this image's base
-# layers, which is why the base tag deliberately floats at build time: each
-# release resolves postgres:<major>-trixie fresh, and there is no standing
-# CVE-rebuild obligation for layers no build-stage consumer inherits.
-# Running the image directly also works — it IS the official postgres image
-# with the extension installed.
+# A consumer copying those two paths receives none of this image's base
+# layers. Running it directly also works, though — it IS the official
+# postgres image with the extension installed — and either way the base is
+# a build input to a signed, attested artifact. So it resolves through
+# base-images.sh like every other release-path image (issue #83, gap 3)
+# instead of floating on a mutable tag: the workflow looks up
+# `base_image <major> trixie` and passes the pinned reference as
+# BASE_IMAGE. One table, one lookup — the image the extension ships on
+# cannot drift from the images that built and proved it, and the custom
+# manager in renovate.json keeps the digest current as Docker Hub
+# republishes the tag.
 #
 # TARBALL_SHA256 is the per-architecture line from the release's
 # SHA256SUMS, resolved by the workflow; BuildKit verifies it before the
 # bytes are used (fail-closed on mismatch).
-ARG PG
-FROM postgres:${PG}-trixie
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 ARG PG
 ARG VERSION

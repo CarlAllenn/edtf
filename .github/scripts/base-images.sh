@@ -23,9 +23,10 @@
 # builds the extension and the images that prove it can never drift apart
 # in what they pin.
 #
-# The OCI image's own base (docker/edtf-postgres.Dockerfile) deliberately
-# does NOT resolve through this table — its header explains why its base
-# floats at build time (build-stage consumers inherit none of its layers).
+# The OCI image's base resolves through here too — publish.yml reads
+# `base_image <major> trixie` and passes it to
+# docker/edtf-postgres.Dockerfile as BASE_IMAGE, so the image the
+# extension ships on is pinned to the same table as the rest.
 
 # Usage: base_image <pg-major> <distro>  →  pinned reference on stdout.
 # Unknown pairs are a hard error: a caller asking for an unpinned image is

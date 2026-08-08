@@ -39,9 +39,12 @@ not a promise; when it changes, this file changes with it.
   `12/04/1985` returns both readings forever.
 - **No substring extraction.** The normaliser matches whole expressions;
   scanning free text for embedded dates is out of scope.
-- **No calendars beyond Julian conversion.** `edtf-calendars` converts
-  Julian ↔ proleptic Gregorian; Hebrew, Islamic, French Revolutionary and
-  friends are out of scope.
+- **No speculative calendars.** `edtf-calendars` converts Julian ↔
+  proleptic Gregorian because a real corpus needed it. Hebrew, Islamic,
+  French Revolutionary and friends stay out until a specific use case
+  appears — contributions backed by one are welcome, held to the same
+  bar: exact conversion at day precision, honest spans above it, and an
+  oracle to test against.
 - **No databases other than Postgres**, and no ORM layers; the
   extension's contract is its SQL surface.
 - **No new runtime dependencies in the core.** `edtf-core` stays

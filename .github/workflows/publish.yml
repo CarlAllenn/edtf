@@ -170,6 +170,19 @@ jobs:
           TARBALL="${OUT_DIR}/edtf_postgres-${VERSION}-pg${PG}-linux-${ARCH}.tar.gz" \
             .github/scripts/smoke-extension.sh
 
+      # A real ALTER EXTENSION UPDATE from the previous release's published
+      # tarball (issue #83) — the fresh-install legs above prove the chain
+      # resolves; this executes it. Skips cleanly when no prior release
+      # ships this cell's tarball.
+      - name: Upgrade test from the previous release
+        env:
+          OUT_DIR: ${{ runner.temp }}/ext
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TARBALL="${OUT_DIR}/edtf_postgres-${VERSION}-pg${PG}-linux-${ARCH}.tar.gz" \
+            .github/scripts/upgrade-smoke-extension.sh
+
       - name: Upload the tarball
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

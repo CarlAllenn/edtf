@@ -50,6 +50,7 @@ for pair in "x86_64-unknown-linux-gnu ${PINNED_AMD64}" \
 
   published=""
   published=$(curl --proto '=https' --tlsv1.2 -sSf \
+    --retry 3 --retry-delay 5 --max-time 60 \
     "https://static.rust-lang.org/rustup/archive/${VERSION}/${target}/rustup-init.sha256" \
     | cut -d' ' -f1)
 

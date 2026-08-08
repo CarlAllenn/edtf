@@ -24,6 +24,7 @@ for name in "${CRATES[@]}"; do
   # indistinguishable from download-then-run to scanners, and this is data,
   # not code — keep it looking like data.
   curl -sfA 'edtf-release-workflow' --retry 5 --retry-delay 10 --retry-all-errors \
+    --max-time 120 \
     -o "${RUNNER_TEMP}/${name}.json" \
     "https://crates.io/api/v1/crates/${name}/${VERSION}"
   remote=$(python3 -c 'import sys,json;print(json.load(open(sys.argv[1]))["version"]["checksum"])' \
@@ -45,6 +46,7 @@ local_tgz="${RUNNER_TEMP}/edtf-wasm-${VERSION}.tgz"
 published_tgz="${RUNNER_TEMP}/published.tgz"
 
 curl -sfL --retry 5 --retry-delay 10 --retry-all-errors \
+  --max-time 300 \
   -o "${published_tgz}" \
   "https://registry.npmjs.org/edtf-wasm/-/edtf-wasm-${VERSION}.tgz"
 

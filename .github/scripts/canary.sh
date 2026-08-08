@@ -4,11 +4,13 @@
 # Consume the just-published artifacts the way a stranger would.
 #
 # Everything before this proves the bytes are what we built and signed. This
-# proves they actually work: resolved from the registry, in a scratch
-# CARGO_HOME so nothing is satisfied from this run's own caches or the local
-# workspace. A crate can upload perfectly and still be unusable — a missing
-# file in the package, a path dependency that did not translate to a version
-# requirement — and that failure only ever shows up on a fresh consumer.
+# proves they actually work: resolved from the registry, in a job that has
+# built nothing, so nothing is satisfied from this run's own caches or the
+# local workspace. A crate can upload perfectly and still be unusable — a
+# missing file in the package, a path dependency that did not translate to a
+# version requirement — and that failure only ever shows up on a fresh
+# consumer. See the note on CARGO_HOME below for where that freshness now
+# comes from.
 set -euo pipefail
 
 VERSION="${VERSION:?VERSION must be set}"
@@ -38,9 +40,30 @@ beat() {
 scratch=$(mktemp -d)
 trap 'rm -rf "${scratch}"' EXIT
 
-# Scratch CARGO_HOME: forces a real registry fetch rather than reusing
-# anything this job already has.
-export CARGO_HOME="${scratch}/cargo"
+# NO scratch CARGO_HOME. There used to be one here, to force a real
+# registry fetch rather than reusing anything this job already had — a
+# correct goal, for a shape that no longer exists.
+#
+# It dated from when this script ran inside the publish job, which had just
+# packaged and published these very crates and therefore had them warm.
+# Since #130 the canary runs in `finish`, a job whose entire history is
+# checkout, mise, and an artifact download: it never builds, so its cargo
+# home has no edtf crate in it. The job boundary supplies the coldness the
+# repoint was buying.
+#
+# And the repoint was not merely redundant, it was the bug. mise installs
+# Rust through rustup and provisions the toolchain AGAINST CARGO_HOME
+# (mise.jdx.dev/lang/rust.html); pointing that variable at an empty
+# directory and then invoking the toolchain stalls the first cargo call
+# indefinitely. That is what killed v1.2.0 through v1.2.2 — five silent
+# deaths, no output, because the stall lands before this script's first
+# heartbeat. Reproduced in edtf-release-lab (rustup-repro): empty
+# CARGO_HOME stalls until the bound fires, the real one passes in 25s,
+# and RUSTUP_* being set or unset makes no difference.
+#
+# If the publish and finish jobs are ever merged back into one, the
+# coldness guarantee goes with the split and this needs rethinking — but
+# not by repointing CARGO_HOME.
 
 # The scaffold is the first cargo invocation in the job, and until v1.2.2
 # it was the one call here with neither a heartbeat before it nor a bound

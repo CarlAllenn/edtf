@@ -97,20 +97,9 @@ docker run --detach \
   --env POSTGRES_PASSWORD=smoke \
   "${UPGRADE_IMAGE}" > /dev/null
 
-READY="false"
-for _ in $(seq 1 60); do
-  if docker exec "${container}" pg_isready -U postgres > /dev/null 2>&1; then
-    READY="true"
-    break
-  fi
-  sleep 1
-done
-
-if [[ ${READY} != "true" ]]; then
-  echo "::error::${UPGRADE_IMAGE} did not become ready"
-  docker logs "${container}" 2>&1 | tail -20 || true
-  exit 1
-fi
+# Three consecutive pg_isready successes plus a real query — see
+# wait_for_postgres in base-images.sh for the restart race this closes.
+wait_for_postgres "${container}"
 
 # Install the PREVIOUS release and create the extension at its version —
 # the same non-superuser shape as smoke-extension.sh.

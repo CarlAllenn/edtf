@@ -84,6 +84,20 @@ jobs:
       # the host's stack. Listing them is correct whether or not
       # harden-runner filters it — an unlisted host that turns out to be
       # filtered would fail the build for a reason unrelated to the code.
+      #
+      # On the two Docker Hub CDNs below: Hub serves blobs from BOTH and
+      # picks per request — cloudflare and cloudfront, one letter apart.
+      # Listing only the first fails as `error pulling image configuration`
+      # against a raw AWS IP, with the hostname visible solely in
+      # harden-runner's own log (`domain not allowed:
+      # production.cloudfront.docker.com`). Found by the first rehearsal,
+      # and only on amd64: the arm64 runners did not enforce, so a green
+      # arm64 leg proves nothing about egress.
+      #
+      # This prose lives ABOVE the step deliberately. `allowed-endpoints:`
+      # takes a folded block scalar, which does not strip `#` — comments
+      # written inside it become part of the value and harden-runner parses
+      # each whitespace-separated word as a hostname. See the fix commit.
       - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: block
@@ -97,14 +111,6 @@ jobs:
             mise-versions.jdx.dev:443
             registry-1.docker.io:443
             auth.docker.io:443
-            # Docker Hub serves blobs from BOTH of these and picks per
-            # request — cloudflare and cloudfront, one letter apart. Listing
-            # only the first fails as `error pulling image configuration`
-            # against a raw AWS IP, with the hostname visible solely in
-            # harden-runner's own log (`domain not allowed:
-            # production.cloudfront.docker.com`). Found by the first
-            # rehearsal, and only on amd64: the arm64 runners did not
-            # enforce, so a green arm64 leg proves nothing about egress.
             production.cloudflare.docker.com:443
             production.cloudfront.docker.com:443
             deb.debian.org:80

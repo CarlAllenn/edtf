@@ -316,12 +316,23 @@ jobs:
       # First step of every job, before checkout: runtime egress audit —
       # enforcement per issue #6 canon (allowlist derived from audit run;
       # templates/ci/ in renovate-config).
+      #
+      # Derived from the audit run plus the GitHub-owned cold-cache set
+      # (mise tool installs on cache miss). sudo stays on: cargo pgrx init
+      # needs apt packages.
+      #
+      # ftp.postgresql.org and www.postgresql.org are reached only on a
+      # ~/.pgrx cache MISS, when `cargo pgrx init --pgN download` fetches
+      # versions.rss and the Postgres tarball. A warm cache short-circuits
+      # the init step entirely, which is why an egress audit never observed
+      # those two.
+      #
+      # Keep prose ABOVE the step: `allowed-endpoints:` is a folded block
+      # scalar and does not strip `#`, so comments written inside it become
+      # part of the value and are parsed as hostnames.
       - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: block
-          # Derived from the audit run plus the GitHub-owned
-          # cold-cache set (mise tool installs on cache miss).
-          # sudo stays on: cargo pgrx init needs apt packages.
           allowed-endpoints: >
             api.github.com:443
             archive.ubuntu.com:80
@@ -331,10 +342,6 @@ jobs:
             crates.io:443
             dl.google.com:443
             esm.ubuntu.com:443
-            # Only reached on a ~/.pgrx cache MISS, when `cargo pgrx init
-            # --pgN download` fetches versions.rss and the Postgres tarball.
-            # A warm cache short-circuits the init step entirely, which is
-            # why an egress audit never observed these two.
             ftp.postgresql.org:443
             www.postgresql.org:443
             github.com:443

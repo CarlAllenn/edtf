@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Pinned hand-worked relation cases (issue #22's test ceremony) across
 //! masks, qualifiers, seasons, open/unknown ends, Y-years, sets and
 //! datetimes. Property-level invariants live in `tests/props.rs`.

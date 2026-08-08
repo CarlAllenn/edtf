@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Property tests: the "valid by construction" guarantee from issue #20.
 //!
 //! Generators are constructive (build the prose from a known date, then

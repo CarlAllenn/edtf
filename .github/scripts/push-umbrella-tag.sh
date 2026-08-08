@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Push the umbrella tag `v<version>`, which is what triggers publish.yml.
 #
 # Must be run with RELEASE_PLZ_TOKEN, not GITHUB_TOKEN: tags pushed with the

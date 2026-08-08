@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Pinned oracle corpus of historically attested O.S./N.S. pairs
 //! (issue #21's test ceremony): Russian revolution dates, Orthodox feasts,
 //! the 1582 reform week, and well-documented biographical dates.

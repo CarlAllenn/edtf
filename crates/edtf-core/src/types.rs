@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Data model for parsed EDTF expressions.
 //!
 //! The model preserves everything the string encodes beyond a yes/no answer:

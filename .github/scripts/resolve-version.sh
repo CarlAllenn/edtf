@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Resolve the release version and refuse to continue unless everything agrees.
 #
 # Three things must line up before anything is built: the tag being published,

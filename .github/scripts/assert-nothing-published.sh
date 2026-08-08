@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Post-condition for a dry run: prove this rehearsal published nothing.
 #
 # Dry-run safety otherwise rests entirely on every publishing step carrying

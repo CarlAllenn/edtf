@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Enumeration of the concrete calendar values an expression denotes.
 //!
 //! ISO 8601-2 grounds exactly three value-set constructions, and

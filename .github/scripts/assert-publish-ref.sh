@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Refuse to publish from anything but a release tag.
 #
 # Provenance is the product of this workflow. A run on a branch records

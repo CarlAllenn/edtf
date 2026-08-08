@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Publish the edtf-wasm npm package, resumably.
 #
 # npm trusted publisher: OIDC, provenance generated automatically for public

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Interop cross-check against every example on the Library of Congress
 //! EDTF specification page (loc.gov/standards/datetime) — the original that
 //! the ISO 8601-2:2019 profile codifies. Where `LoC` and ISO disagree, ISO

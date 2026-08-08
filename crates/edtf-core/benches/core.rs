@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Criterion benchmarks over representative inputs: parse, canonicalize
 //! (Display) and bounds, per conformance level. Not a CI gate — run with
 //! `task bench` (or `cargo bench -p edtf-core`) and publish the numbers in

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Write SHA256SUMS over the binary artifacts — the extension tarballs and
 # the CLI tarballs — and prove both matrices are whole.
 #

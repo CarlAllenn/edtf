@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Attach the Sigstore attestation bundles to the per-crate releases.
 #
 # The attestations already exist in GitHub's attestation store — that is

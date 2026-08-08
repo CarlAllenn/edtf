@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Record which artifacts are currently on the registries, to $1.
 #
 # Used twice in a dry run: once before any publish step could execute, and

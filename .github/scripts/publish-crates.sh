@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Publish all six crates to crates.io, resumably.
 #
 # Per-crate guard, not all-or-nothing. `cargo publish --workspace` resolves

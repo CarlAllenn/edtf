@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Prove that what the registries now hold is byte-identical to what this run
 # built, BEFORE anything is attested.
 #

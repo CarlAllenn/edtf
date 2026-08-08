@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Per-language pattern tables. The grammar in `engine.rs` is
 //! language-neutral; everything language-specific lives in a [`Lang`] value.
 //! Adding a locale means adding one `Lang` const (and its word tables), not

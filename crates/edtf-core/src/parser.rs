@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Hand-written recursive-descent parser and validator for EDTF levels 0–2.
 //!
 //! Grammar and validation rules follow docs/spec-notes.md, which cites the

@@ -33,15 +33,20 @@ CLI_TARGETS=(
   x86_64-apple-darwin
 )
 
-expected=$((${#PG_MAJORS[@]} * ${#ARCHES[@]} + ${#CLI_TARGETS[@]}))
+# Two tarballs per extension cell: the stripped library and its -dbgsym
+# sibling (issue #83, gap 2) travel together or the release is incomplete.
+expected=$((${#PG_MAJORS[@]} * ${#ARCHES[@]} * 2 + ${#CLI_TARGETS[@]}))
 
 missing=()
 for pg in "${PG_MAJORS[@]}"; do
   for arch in "${ARCHES[@]}"; do
-    name="edtf_postgres-${VERSION}-pg${pg}-linux-${arch}.tar.gz"
-    if [[ ! -f "dist/${name}" ]]; then
-      missing+=("${name}")
-    fi
+    for name in \
+      "edtf_postgres-${VERSION}-pg${pg}-linux-${arch}.tar.gz" \
+      "edtf_postgres-dbgsym-${VERSION}-pg${pg}-linux-${arch}.tar.gz"; do
+      if [[ ! -f "dist/${name}" ]]; then
+        missing+=("${name}")
+      fi
+    done
   done
 done
 for target in "${CLI_TARGETS[@]}"; do

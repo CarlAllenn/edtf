@@ -77,6 +77,31 @@ cargo pgrx package \
 # two spellings is the classic install-snippet bug.
 ARCH=$(dpkg --print-architecture)
 
+# Split the debug info out of the shipped library, Debian-style (issue #83,
+# gap 2). Postgres resolves the extension's functions with dlsym against the
+# DYNAMIC symbol table (.dynsym), which stripping never touches — so the
+# shipped .so loses nothing it needs. What stripping would cost is the
+# backtrace when the extension crashes inside a backend, and that is what
+# the -dbgsym tarball preserves: the full debug info, split into a sibling
+# artifact, findable by gdb through both the .gnu_debuglink stamped into
+# the stripped library and the /usr/lib/debug path mirror it unpacks into.
+# The smoke tests downstream run against the STRIPPED tarball, so "stripped
+# still loads, resolves and conforms" is proven every release, not assumed.
+so_path=""
+so_path=$(find /build/pkgroot -name 'edtf_postgres.so' -type f)
+if [[ -z ${so_path} ]]; then
+  echo "::error::edtf_postgres.so not found in the package root"
+  exit 1
+fi
+so_rel="${so_path#/build/pkgroot/}"
+
+dbg_dir="/build/dbgroot/usr/lib/debug/$(dirname "${so_rel}")"
+mkdir -p "${dbg_dir}"
+objcopy --only-keep-debug "${so_path}" "${dbg_dir}/edtf_postgres.so.debug"
+chmod 0644 "${dbg_dir}/edtf_postgres.so.debug"
+objcopy --strip-unneeded --remove-section=.comment \
+  --add-gnu-debuglink="${dbg_dir}/edtf_postgres.so.debug" "${so_path}"
+
 # Normalised metadata: fixed ownership, sorted entries, epoch mtimes. The
 # compiled .so is not claimed to be bit-reproducible, but nothing about the
 # ARCHIVE should vary run to run for reasons unrelated to its contents.
@@ -86,4 +111,10 @@ tar --create --gzip \
   --file "/out/edtf_postgres-${VERSION}-pg${PG}-linux-${ARCH}.tar.gz" \
   --directory /build/pkgroot .
 
-echo "::notice::built edtf_postgres-${VERSION}-pg${PG}-linux-${ARCH}.tar.gz"
+tar --create --gzip \
+  --owner=0 --group=0 --numeric-owner \
+  --sort=name --mtime=@0 \
+  --file "/out/edtf_postgres-dbgsym-${VERSION}-pg${PG}-linux-${ARCH}.tar.gz" \
+  --directory /build/dbgroot .
+
+echo "::notice::built edtf_postgres-${VERSION}-pg${PG}-linux-${ARCH}.tar.gz (+ dbgsym)"

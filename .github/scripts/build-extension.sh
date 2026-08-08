@@ -25,11 +25,14 @@
 # and does not support containerised jobs; `egress-policy: block` as the
 # first step of every job is canon here.
 #
-# The image tag is floating rather than digest-pinned. Digest-pinning five
-# majors needs a Renovate regex manager in the shared config to keep them
-# current, and a pinned-but-never-updated base image is worse than a floating
-# one. Tracked as follow-up (issue #55).
+# The image is digest-pinned via base-images.sh (issue #83, gap 3), and the
+# custom manager in renovate.json keeps the digests current — the pairing
+# that makes pinning safe: a pinned-but-never-updated base image would be
+# worse than a floating one.
 set -euo pipefail
+
+# shellcheck source=.github/scripts/base-images.sh
+. "$(dirname "${BASH_SOURCE[0]}")/base-images.sh"
 
 PG="${PG:?PG must be set (e.g. 18)}"
 VERSION="${VERSION:?VERSION must be set}"
@@ -50,7 +53,10 @@ fi
 mkdir -p "${OUT_DIR}"
 abs_out=$(cd "${OUT_DIR}" && pwd)
 
-echo "::notice::building pg${PG} in postgres:${PG}-bookworm (rust ${RUST_VERSION}, cargo-pgrx ${PGRX_VERSION})"
+BUILD_IMAGE=""
+BUILD_IMAGE=$(base_image "${PG}" bookworm)
+
+echo "::notice::building pg${PG} in ${BUILD_IMAGE} (rust ${RUST_VERSION}, cargo-pgrx ${PGRX_VERSION})"
 
 # The source is mounted read-only and copied to /build: the container must
 # not be able to write into the checkout, and copying only the workspace
@@ -62,7 +68,7 @@ docker run --rm \
   --env PGRX_VERSION="${PGRX_VERSION}" \
   --volume "${PWD}:/src:ro" \
   --volume "${abs_out}:/out" \
-  "postgres:${PG}-bookworm" \
+  "${BUILD_IMAGE}" \
   bash -c '
     set -euo pipefail
     mkdir -p /build

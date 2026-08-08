@@ -2,6 +2,7 @@
   "Exclude": [
     "^\\.claude/",
     "(^|/)LICENSE-APACHE$",
+    "^LICENSES/",
     "^tests/fixtures/legacy/",
     "^spec/",
     "^mise\\.lock$"

@@ -44,7 +44,7 @@ CRATE_DIR="crates/edtf-postgres"
 SQL_DIR="${CRATE_DIR}/sql"
 
 # Every version ever published to crates.io.
-RELEASED=(0.2.0 1.0.0 1.0.1 1.0.2 1.1.0 1.1.1 1.1.2 1.2.0)
+RELEASED=(0.2.0 1.0.0 1.0.1 1.0.2 1.1.0 1.1.1 1.1.2 1.2.0 1.2.1)
 
 VERSION=""
 VERSION=$(cargo pkgid --manifest-path "${CRATE_DIR}/Cargo.toml" | sed 's/.*[@#]//')

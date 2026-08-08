@@ -1,29 +1,17 @@
 #!/usr/bin/env bash
-# Attach the extension tarballs and SHA256SUMS to the edtf-postgres release.
+# Attach the CLI tarballs and SHA256SUMS to the edtf-cli release.
 #
-# Per-crate, like the SBOMs: these artifacts are edtf-postgres and nothing
-# else, so they belong on that crate's release. There is no release at the
-# umbrella tag to put them on anyway (issue #66, defect 1). SHA256SUMS is
-# the shared manifest from checksum-artifacts.sh — it also names the CLI
-# tarballs, and upload-cli-assets.sh attaches the same file to that release.
+# Per-crate, like the SBOMs and the extension tarballs: these artifacts are
+# edtf-cli and nothing else, so they belong on that crate's release.
+# SHA256SUMS is the shared manifest from checksum-artifacts.sh — it also
+# names the extension tarballs, and it is attached to both releases so each
+# artifact's release carries the checksums that describe it.
 #
-# REPLACES rather than skips, while the release is a draft.
-#
-# The obvious shape — skip any asset whose name is already attached — is
-# wrong here, and dangerously so. A re-dispatched run rebuilds all ten
-# tarballs, and those bytes are explicitly not reproducible
-# (build-extension-inner.sh says so: the .so is not claimed bit-identical,
-# and the container apt-installs at run time). checksum-artifacts.sh then
-# regenerates SHA256SUMS over the NEW bytes. Skipping by name would leave the
-# release carrying run 1's tarballs beside run 2's manifest — a published,
-# immutable release whose checksums file contradicts its own assets — and the
-# canary would compare freshly built digests against stale published ones and
-# fail forever, so the release could never be completed at all.
-#
-# Drafts are mutable, which is the whole reason phase 1 stops short of
-# publishing. So the coherent move is to overwrite: after this runs, the
-# attached bytes, dist/, SHA256SUMS and the attestation subjects all describe
-# the same artifacts by construction.
+# REPLACES rather than skips, while the release is a draft — the same
+# reasoning as upload-extension-assets.sh: a re-dispatched run rebuilds the
+# binaries, the bytes are not claimed reproducible, and SHA256SUMS is
+# regenerated over the new bytes. Skipping by name would leave a release
+# whose checksums file contradicts its own assets.
 #
 # Once a release is published it is immutable and nothing can be attached.
 # That is not recoverable in place, so it fails loudly rather than pretending.
@@ -32,10 +20,10 @@ set -euo pipefail
 VERSION="${VERSION:?VERSION must be set}"
 GITHUB_REPOSITORY="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY must be set}"
 
-TAG="edtf-postgres-v${VERSION}"
+TAG="edtf-cli-v${VERSION}"
 
 assets=()
-for path in dist/edtf_postgres-*.tar.gz; do
+for path in dist/edtf-cli-*.tar.gz; do
   assets+=("$(basename "${path}")")
 done
 assets+=(SHA256SUMS)
@@ -83,4 +71,4 @@ if [[ ${#missing[@]} -gt 0 ]]; then
   exit 1
 fi
 
-echo "::notice::all ${#assets[@]} extension assets attached to ${TAG}"
+echo "::notice::all ${#assets[@]} CLI assets attached to ${TAG}"

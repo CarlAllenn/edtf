@@ -178,12 +178,107 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  # Prebuilt edtf-cli binaries (issue #84): the CLI was the one artifact
+  # with no prebuilt release, which forced downstream lockfiles into a
+  # bare-version cargo: pin — no checksum, no URL, no provenance. Same
+  # shape as the extension job: native hardware per target (a binary
+  # released for a target must have had its tests run ON that target),
+  # before publish so a broken build fails while everything is recoverable.
+  cli:
+    name: CLI ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    strategy:
+      # One failing cell must not hide the state of the other three.
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-24.04-arm
+          - target: aarch64-apple-darwin
+            runner: macos-15
+          - target: x86_64-apple-darwin
+            runner: macos-15-intel
+    env:
+      # Routed through env so no template expands inside run: code
+      # (zizmor template-injection, pedantic tier).
+      TARGET: ${{ matrix.target }}
+    steps:
+      # Linux only: harden-runner does not support macOS runners. The mac
+      # legs run the same pinned toolchain against the same lockfile; their
+      # egress is unenforced because no enforcement exists there, not
+      # because it is exempt.
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        if: runner.os == 'Linux'
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            codeload.github.com:443
+            mise.jdx.dev:443
+            mise-versions.jdx.dev:443
+            static.rust-lang.org:443
+            crates.io:443
+            index.crates.io:443
+            static.crates.io:443
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.7.12
+          # Single-purpose job: the pinned Rust toolchain to build with and
+          # the TOML reader that derives the version from Cargo.toml.
+          install_args: rust taplo
+          # No tool cache in the publishing workflow (zizmor
+          # cache-poisoning, high) — same rationale as the publish job.
+          cache: false
+
+      - name: Resolve dry-run mode
+        env:
+          DRY_RUN_INPUT: ${{ inputs.dry_run }}
+        run: .github/scripts/resolve-dry-run.sh
+
+      - name: Assert publishing ref
+        run: .github/scripts/assert-publish-ref.sh
+
+      # The publish job re-derives this and additionally asserts that the tag
+      # agrees; here it only has to name the artifact.
+      - name: Resolve version
+        run: |
+          set -euo pipefail
+          version=$(taplo get -f crates/edtf-cli/Cargo.toml 'package.version')
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+
+      - name: Build, test and package the CLI
+        env:
+          OUT_DIR: ${{ runner.temp }}/cli
+        run: .github/scripts/build-cli.sh
+
+      - name: Upload the tarball
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: edtf-cli-${{ matrix.target }}
+          path: ${{ runner.temp }}/cli/*.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
   publish:
     name: Publish + attest (${{ github.ref_name }})
     runs-on: ubuntu-latest
-    # Every tarball must exist and have installed cleanly before the release
-    # commits anything to a registry.
-    needs: extension
+    # Every tarball must exist — and the extension must have installed
+    # cleanly, the CLI passed its suite on every target — before the
+    # release commits anything to a registry.
+    needs: [extension, cli]
     permissions:
       contents: write # upload assets to the releases, publish the drafts
       id-token: write # OIDC: crates.io + npm trusted publishing, attestations
@@ -301,8 +396,17 @@ jobs:
           merge-multiple: true
           path: dist
 
-      - name: Checksum the extension tarballs
-        run: .github/scripts/checksum-extension.sh
+      - name: Collect the CLI tarballs
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: edtf-cli-*
+          merge-multiple: true
+          path: dist
+
+      # One SHA256SUMS over both artifact families; the count assertions
+      # inside are what catch a silently missing matrix cell.
+      - name: Checksum the binary tarballs
+        run: .github/scripts/checksum-artifacts.sh
 
       # Before the publish, and unguarded: nothing here depends on anything
       # being published, so running it in the rehearsal turns the `cp` loop
@@ -532,6 +636,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: .github/scripts/upload-extension-assets.sh
+
+      # Onto the edtf-cli release, still a draft. SHA256SUMS goes to both
+      # releases — it is the one manifest over all binary artifacts.
+      - name: Attach the CLI tarballs
+        if: env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/upload-cli-assets.sh
 
       # The stranger's path for the one artifact canary.sh cannot cover:
       # fetch what is attached to the release, prove it is what SHA256SUMS

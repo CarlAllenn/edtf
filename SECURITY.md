@@ -16,6 +16,30 @@ You can expect an acknowledgement within a week. Once a fix is released, the
 advisory will be published with credit to the reporter (unless you prefer
 otherwise).
 
+## Security requirements
+
+What a user can expect from this software, and what they cannot:
+
+- **No panic, crash or non-termination on any input.** Every entry point
+  (parse, normalise, the CLI, the wasm bindings, the SQL functions)
+  accepts arbitrary untrusted strings and either returns a typed result
+  or a positioned error. A reproducible violation is a security bug.
+- **No memory-unsafety.** `unsafe_code = "forbid"` workspace-wide; the
+  parsing surface is entirely safe Rust.
+- **Outputs are valid by construction.** Anything the library emits as
+  EDTF re-parses as EDTF; the normaliser never guesses at ambiguous
+  input.
+- **Artifacts are verifiable.** Every published artifact carries build
+  provenance traceable to its release tag (see "Verifying a release").
+- **Not promised**: resistance to resource exhaustion by volume (rate
+  limiting belongs to the host application), confidentiality guarantees
+  (the library holds no secrets), or the security of the Postgres server,
+  browser or OS hosting the code.
+
+The argument for why these requirements are met — threat model, trust
+boundaries, design principles and countered weakness classes — is the
+[security assurance case](docs/assurance-case.md).
+
 ## Scope notes
 
 - `edtf-core` and `edtf-calendars` are `#![no_std]`, zero-dependency parsers

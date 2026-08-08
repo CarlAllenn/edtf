@@ -115,6 +115,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
 
+      # The two chores release-plz cannot do (issue #121): the extension
+      # upgrade script and fuzz/Cargo.lock, run on the Release PR branch
+      # and pushed back so the PR arrives green instead of failing
+      # lint:pg-upgrade-path on every single release. prepare-release.sh
+      # still refuses to invent SQL when the surface moved — that refusal
+      # fails THIS step loudly, and the migration stays a person's call.
+      - name: Prepare the Release PR (upgrade SQL + fuzz lockfile)
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
+        run: .github/scripts/auto-prepare-release.sh
+
   tag:
     name: Tag on Release PR merge
     if: github.event_name == 'push'

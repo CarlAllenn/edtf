@@ -81,9 +81,12 @@ v1.0.0), so every one needs its list edited.
 
 These are edtf-specific and should be deleted unless the repository also
 ships a Postgres extension: `build-extension*`, `smoke-extension`,
-`checksum-extension`, `upload-extension-assets`, `canary-extension`,
+`upload-extension-assets`, `canary-extension`,
 `assert-upgrade-path`, `schema-snapshot`, the `sql/` directory, the
 `extension` matrix job, and the extension half of `prepare-release`. The
+same goes for the CLI binary leg (`build-cli`, `upload-cli-assets`, the
+`cli` matrix job) if there is no binary to ship; `checksum-artifacts`
+serves both legs and needs its target lists edited. The
 `lint:fuzz` gate goes too if there is no `fuzz/`.
 
 1. Copy `release-plz.toml`, `.github/workflows/release-plz.yml`,

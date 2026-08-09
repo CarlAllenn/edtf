@@ -5,6 +5,6 @@
     "^LICENSES/",
     "^tests/fixtures/legacy/",
     "^spec/",
-    "^mise\\.lock$"
+    "^mise(\\.[a-z]+)?\\.lock$"
   ]
 }

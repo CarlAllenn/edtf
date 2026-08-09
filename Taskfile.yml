@@ -15,11 +15,59 @@ vars:
   # datasource exists for dated nightlies; bump manually alongside stable
   # toolchain bumps. Hooks, tasks and CI all read this one value.
   RUSTFMT_TOOLCHAIN: nightly-2026-07-20
+  # Files outside the coverage metric: edtf-postgres, whose tests run in the
+  # pgrx harness (the pg14-18 matrix jobs) rather than under `cargo test`.
+  # The exclusion is now about where the tests run and what CI would have to
+  # install, NOT about instrumentability — that part turned out to be false.
+  # See docs/coverage.md.
+  COVERAGE_EXCLUDE: crates/edtf-postgres/
 
 tasks:
   ci:
     desc: Everything CI runs — the full gate, identical locally and on GitHub
     deps: [lint, test]
+
+  coverage:toolchain:
+    desc: Install the pinned nightly with llvm-tools (idempotent; CI + fresh clones)
+    cmds:
+      - rustup toolchain install {{.RUSTFMT_TOOLCHAIN}} --profile minimal --component llvm-tools
+
+  coverage:
+    desc: Line + branch coverage over the measured workspace; writes lcov.info
+    deps: [coverage:toolchain]
+    cmds:
+      # `--branch` is nightly-only, hence the pinned toolchain. cargo-llvm-cov
+      # has to see that rustc directly: under `rustup run` its own shim lands
+      # where RUSTC is expected and the build fails, so name rustc explicitly
+      # and put the toolchain first on PATH (mise's stable rustc otherwise
+      # shadows the rustup proxy).
+      - >
+        bin="$(rustup run {{.RUSTFMT_TOOLCHAIN}} rustc --print sysroot)/bin";
+        RUSTC="$bin/rustc" PATH="$bin:$PATH" cargo llvm-cov
+        --all-features --branch
+        --ignore-filename-regex '{{.COVERAGE_EXCLUDE}}'
+        --lcov --output-path lcov.info
+
+  coverage:table:
+    desc: Re-render the per-file table from the last `task coverage` run
+    cmds:
+      - >
+        bin="$(rustup run {{.RUSTFMT_TOOLCHAIN}} rustc --print sysroot)/bin";
+        RUSTC="$bin/rustc" PATH="$bin:$PATH" cargo llvm-cov report --branch
+        --ignore-filename-regex '{{.COVERAGE_EXCLUDE}}'
+
+  coverage:check:
+    desc: "Union view — every line executed, every branch side taken (issue #106)"
+    cmds:
+      # Not a percentage threshold (those rot into gaming, issue #8): a binary
+      # invariant you cannot half-satisfy. The per-file table cannot express
+      # it — see the instantiation artifact in docs/coverage.md — so the gate
+      # reads the per-line records instead.
+      - >
+        lines=$(grep -c '^DA:[0-9]*,0$' lcov.info || true);
+        sides=$(grep -c '^BRDA:.*,0$' lcov.info || true);
+        echo "uncovered lines: $lines; untaken branch sides: $sides";
+        test "$lines" -eq 0 && test "$sides" -eq 0
 
   test:
     desc: Run the test suite (all crates, all features)

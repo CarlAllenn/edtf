@@ -12,81 +12,112 @@ and a fudged one.
 
 The workspace **minus `edtf-postgres`**
 (`--ignore-filename-regex 'crates/edtf-postgres/'`). The extension's tests run
-inside the pgrx harness across the pg14–pg18 matrix, which llvm-cov cannot
-instrument; counting its source would report a false gap, not a real one.
+inside the pgrx harness across the pg14–pg18 matrix rather than under
+`cargo test`, so the coverage job — which installs neither `cargo-pgrx` nor a
+Postgres to run against — never executes them. Counting its source there would
+report a false gap, not a real one.
+
+**The exclusion is about where those tests run, not about whether they can be
+measured.** This document previously claimed llvm-cov could not instrument the
+pgrx harness. That is false, and was checked rather than inherited: with
+pgrx 0.19.1, running
+
+```bash
+set -a; eval "$(cargo llvm-cov show-env --sh)"; set +a
+cargo llvm-cov clean --workspace
+cd crates/edtf-postgres && cargo pgrx test pg18
+cargo llvm-cov report
+```
+
+the Postgres backend processes emit `.profraw` like any other instrumented
+binary, and `edtf-postgres/src/lib.rs` reports **132 lines, 0 missed**. Folding
+it into the published metric is therefore possible but not free: the coverage
+job would need `cargo-pgrx` and a built Postgres (today it sets
+`MISE_DISABLE_TOOLS: cargo:cargo-pgrx`), the `pg14`–`pg18` features are
+mutually exclusive so it cannot share the `--all-features` invocation, and the
+result would want validating on more than one major version. Tracked
+separately; do not treat the current exclusion as evidence it is impossible.
 
 `fuzz/` is outside the workspace and outside the metric — it is a corpus
 generator, not a test suite.
 
-## The two instruments
-
-### 1. The per-file summary table (lines; stable toolchain; CI)
+## Running it
 
 ```bash
-cargo llvm-cov --all-features --ignore-filename-regex 'crates/edtf-postgres/'
+task coverage         # instrumented run; writes lcov.info
+task coverage:table   # re-render the per-file table (reuses the run above)
+task coverage:check   # the gate: no uncovered line, no untaken branch side
 ```
 
-This is what the `coverage` job pipes into the GitHub step summary. It is
-convenient and it is what most people mean by "the coverage number", but for
-this repository it **under-reports** — see the artifact below.
+CI runs exactly these, so there is one recipe rather than a local one and a
+drifting copy in the workflow. Two details the tasks encapsulate: `--branch`
+is nightly-only, so the measurement uses the same pinned nightly as rustfmt
+(`RUSTFMT_TOOLCHAIN` in `Taskfile.yml` — the repo carries one nightly, not
+two); and cargo-llvm-cov has to be handed that `rustc` explicitly, because
+under `rustup run` its own shim lands where `RUSTC` is expected and the build
+fails, while mise's stable `rustc` otherwise shadows the rustup proxy.
 
-### 2. The union view (lines and branch sides; the lcov export)
+## The two instruments
+
+### 1. The per-file summary table
+
+What `task coverage:table` prints and the job pipes into the GitHub step
+summary. Convenient, and what most people mean by "the coverage number" — but
+for this repository it **under-reports**; see the artifact below.
+
+### 2. The union view (the lcov export)
 
 ```bash
-cargo llvm-cov report --lcov --output-path lcov.info \
-  --ignore-filename-regex 'crates/edtf-postgres/'
 grep -c '^DA:[0-9]*,0$' lcov.info    # uncovered lines
 grep -c '^BRDA:.*,0$' lcov.info      # untaken branch sides
 ```
 
 The per-line `DA:` and per-branch `BRDA:` records answer the question the word
 "coverage" is actually asking: *was this line ever executed by the suite, by
-any test, in any build of the crate?* This is the authoritative reading, and
-it is the artefact Codecov consumes.
+any test, in any build of the crate?* This is the authoritative reading, it is
+what `task coverage:check` gates on, and it is the artefact Codecov consumes.
 
-Branch sides need `--branch`, which is nightly-gated, so CI (stable) reports
-lines only. Locally, mise's stable `rustc` shadows the rustup proxy, so the
-pinned nightly has to be put on `PATH` explicitly — the toolchain pin is
-`RUSTFMT_TOOLCHAIN` in `Taskfile.yml`:
-
-```bash
-NIGHTLY="$HOME/.rustup/toolchains/nightly-2026-07-20-$(rustc -vV | sed -n 's/host: //p')/bin"
-RUSTC="$NIGHTLY/rustc" PATH="$NIGHTLY:$PATH" \
-  cargo llvm-cov --all-features --branch \
-  --ignore-filename-regex 'crates/edtf-postgres/' \
-  --lcov --output-path lcov.info
-```
+Note that lcov's own `LF:`/`LH:` header counters do **not** agree with the
+`DA:` records they summarise — they carry the table's number, not the union.
+Read the records, not the counters.
 
 ## The instantiation artifact
 
-A crate that has **both** integration tests (`crates/<name>/tests/`) and inline
+A crate with **both** integration tests (`crates/<name>/tests/`) and inline
 `#[cfg(test)]` unit tests is compiled twice: once as a plain rlib, which the
 integration tests link, and once with `--cfg test` for the unit-test binary.
-llvm-cov keeps those as separate instantiations and its per-file summary does
-**not** union them — so a private guard reachable only from a unit test is
-counted as missed in the table even though the merged view has it covered.
-
-`bounds.rs` shows the shape outright. Two records, one branch:
+llvm-cov records those separately. `bounds.rs` shows it outright — two records
+for one branch, each holding half the answer:
 
 ```text
 Branch (125:13): [True: 2.19k, False: 0]   # plain rlib, via the integration tests
 Branch (125:13): [True: 0,     False: 1]   # --cfg test build, via the guard unit test
 ```
 
-Only crates with both kinds of test split this way, which is why
-`edtf-normalize` (integration tests only) and `edtf-wasm` (unit tests only)
-still read 100% in the table while `edtf-core` does not.
+What is directly observable: every one of `bounds.rs`'s 398 lines has a
+non-zero merged execution count and every `DA:` record is non-zero, yet the
+table reports 384/398 — and 384 is exactly what lcov's own `LH:` counter says.
+The explanation that fits is that the per-file summary reports the best single
+instantiation rather than the union, so a file reads 100% only when **one**
+build covers it entirely.
 
-There is no llvm-cov flag that changes the merge. The consequence is
-structural, so it is stated rather than worked around:
+That also predicts which files are affected, and it holds: the shortfall is
+confined to the four largest `edtf-core` modules (`bounds`, `display`,
+`enumerate`, `parser`). `edtf-cli` and `edtf-calendars` carry inline tests too
+and still read 100%, because they are small enough for one build to cover
+alone — so "has both kinds of test" is not the rule; "no single instantiation
+covers the file" is.
+
+There is no llvm-cov flag that changes it (`--show-instantiations` leaves the
+numbers identical). The consequence is structural, so it is stated rather than
+worked around:
 
 > **Since issue #106, the union view has no uncovered line and no untaken
-> branch side. The summary table will not read 100% for `edtf-core`,
-> `edtf-cli`, or `edtf-calendars`, and that shortfall is the artifact above,
-> not a gap.**
+> branch side. The summary table will not read 100% for `edtf-core`'s four
+> largest modules, and that shortfall is the artifact above, not a gap.**
 
-The CI job publishes the union count next to the table for exactly this
-reason.
+The CI job gates on the union count and publishes it next to the table for
+exactly this reason.
 
 ## The standing rule for defensive guards
 

@@ -531,51 +531,53 @@ jobs:
           version: 2026.7.18
           # Single-purpose job: install only its own tools (canon rule,
           # templates/ci/README.md).
-          install_args: rust aqua:taiki-e/cargo-llvm-cov
+          install_args: rust aqua:taiki-e/cargo-llvm-cov task
       - run: rustup component add llvm-tools
-      # Deliberately NOT a gate: thresholds rot into gaming. The number is
-      # published on every PR; drops are reviewed by humans (issue #8).
-      # edtf-postgres is excluded from the metric: its tests run inside the
-      # pgrx harness (pg14-18 matrix jobs), which llvm-cov cannot
-      # instrument, so counting its source would only report a false gap.
+      # One instrumented run, reported three ways below: the per-file table
+      # into the step summary, lcov.info for Codecov, and the union count that
+      # gates. The commands live in Taskfile.yml so the measurement is
+      # identical locally and here, and so the nightly pin and the
+      # edtf-postgres exclusion are each written down once.
+      #
+      # `--branch` is nightly-only, so this runs the same pinned nightly
+      # rustfmt uses — the repo carries one nightly, not two. That is a change
+      # from the stable, lines-only measurement this job used to do: branch
+      # sides were previously measurable only on a contributor's laptop, which
+      # made half of issue #106's exit criterion unobservable in CI.
+      - run: task coverage
       - name: Coverage summary
         run: |
           {
-            echo '## Coverage (lines)'
+            echo '## Coverage'
             echo '```'
-            cargo llvm-cov --all-features --ignore-filename-regex 'crates/edtf-postgres/'
+            task -s -o interleaved coverage:table
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-      - run: >
-          cargo llvm-cov report --lcov --output-path lcov.info
-          --ignore-filename-regex 'crates/edtf-postgres/'
-      # The table above under-reports every file carrying inline `#[cfg(test)]`
-      # tests. llvm-cov keeps the plain rlib (what the integration tests link)
-      # and the `--cfg test` build of the same lib as separate instantiations,
-      # and its per-file summary does not union them — so a guard reachable
-      # only from a unit test reads as missed there while the merged view has
-      # it covered. bounds.rs shows the shape outright, two records for one
-      # branch: `Branch (125:13): [True: 2.19k, False: 0]` from the rlib and
-      # `[True: 0, False: 1]` from the unit-test build. Only crates with both
-      # kinds of test split this way, which is why edtf-normalize (integration
-      # only) and edtf-wasm (unit only) still read 100% in the table.
+      # The table above under-reports edtf-core's four largest modules. A lib
+      # with both integration tests and inline `#[cfg(test)]` tests is compiled
+      # twice — plain rlib, and `--cfg test` — and llvm-cov records those
+      # separately: bounds.rs carries two records for one branch,
+      # `Branch (125:13): [True: 2.19k, False: 0]` from the rlib and
+      # `[True: 0, False: 1]` from the unit-test build. The per-file summary
+      # reports the best single instantiation rather than the union, so a file
+      # reads 100% only when one build covers it alone — which is why the small
+      # crates are unaffected and bounds/display/enumerate/parser are not.
+      # docs/coverage.md carries the evidence.
       #
       # "Was this line ever executed by the suite" is the union, and the
-      # per-line DA: records below carry it. Stating it here keeps the table's
-      # shortfall from being mistaken for a real gap — and keeps anyone from
-      # ever "fixing" the table by deleting a guard test (issue #106).
+      # per-line DA:/BRDA: records carry it. So the union is what gates, and
+      # the table's shortfall can never be mistaken for a real gap — nor
+      # "fixed" by deleting a guard test (issue #106, docs/coverage.md).
       #
-      # Lines only: --branch is nightly-gated and this job runs stable, so the
-      # table's branch column is empty here. Branch sides are measured against
-      # the pinned nightly per docs/coverage.md.
-      - name: Uncovered lines (union view)
-        run: |
-          uncovered=$(grep -c '^DA:[0-9]*,0$' lcov.info || true)
-          {
-            echo '## Coverage (union view)'
-            echo
-            echo "Uncovered lines: ${uncovered}"
-          } >> "$GITHUB_STEP_SUMMARY"
+      # This IS a gate, and it does not contradict issue #8's rejection of
+      # coverage thresholds: "≥ N%" is a number that rots into gaming, while
+      # "no uncovered line, no untaken branch side" is a binary invariant that
+      # cannot be half-satisfied. The percentage is still published, still
+      # ungated, and still read by a human.
+      #
+      # It runs last, after the artifact and the Codecov upload, so a failing
+      # gate still leaves the lcov to diagnose it with — the run where the
+      # number matters most is exactly the one that must not lose the data.
       - name: Upload lcov artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -605,3 +607,12 @@ jobs:
           # blocks it either way; turning it off at source means the audit log
           # records the upload path and nothing else.
           disable_telem: true
+      # The gate, last: see the reasoning above the artifact upload.
+      - name: Union view — every line executed, every branch side taken
+        run: |
+          {
+            echo '## Coverage (union view)'
+            echo '```'
+            task -s -o interleaved coverage:check
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

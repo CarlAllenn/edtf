@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Resolve the released tarball's SHA256 for this pg/arch cell (issue #82).
 #
 # The image is built from the RELEASE'S bytes, fetched by URL inside the

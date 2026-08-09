@@ -55,6 +55,7 @@ BEGIN
     -- never a silently clamped date.
     ASSERT edtf_max('1986-04/') IS NULL, 'unknown interval end is NULL, not infinity';
     ASSERT edtf_min('Y17E7') IS NULL, 'year beyond the Postgres date range is NULL';
+    ASSERT edtf_min('Y-17E7') IS NULL, 'year before the Postgres date range is NULL';
 
     -- edtf_relation ------------------------------------------------------
     ASSERT edtf_relation('1985~', '199X') = ARRAY['definitely_before'],

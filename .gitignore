@@ -18,5 +18,10 @@ lefthook-local.yml
 # release step moves its output here out of the crate directories.
 /sbom/
 
-# Coverage staging: `task coverage` writes the lcov export here.
+# Coverage staging: `task coverage` writes the lcov export here, and
+# `task coverage:pg` the Postgres extension fragment beside it. Both are read
+# by `task coverage:check`, so the glob has to stay narrow enough not to catch
+# anything else.
 /lcov.info
+/lcov-postgres.info
+/coverage-postgres.txt

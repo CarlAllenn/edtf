@@ -10,41 +10,69 @@ and a fudged one.
 
 ## What is measured
 
-The workspace **minus `edtf-postgres`**
-(`--ignore-filename-regex 'crates/edtf-postgres/'`). The extension's tests run
-inside the pgrx harness across the pg14–pg18 matrix rather than under
-`cargo test`, so the coverage job — which installs neither `cargo-pgrx` nor a
-Postgres to run against — never executes them. Counting its source there would
-report a false gap, not a real one.
+**The whole workspace**, in two pieces, because it is built and tested in two
+harnesses.
 
-**The exclusion is about where those tests run, not about whether they can be
-measured.** This document previously claimed llvm-cov could not instrument the
-pgrx harness. That is false, and was checked rather than inherited: with
-pgrx 0.19.1, running
-
-```bash
-set -a; eval "$(cargo llvm-cov show-env --sh)"; set +a
-cargo llvm-cov clean --workspace
-cd crates/edtf-postgres && cargo pgrx test pg18
-cargo llvm-cov report
-```
-
-the Postgres backend processes emit `.profraw` like any other instrumented
-binary, and `edtf-postgres/src/lib.rs` reports **132 lines, 0 missed**. Folding
-it into the published metric is therefore possible but not free: the coverage
-job would need `cargo-pgrx` and a built Postgres (today it sets
-`MISE_DISABLE_TOOLS: cargo:cargo-pgrx`), the `pg14`–`pg18` features are
-mutually exclusive so it cannot share the `--all-features` invocation, and the
-result would want validating on more than one major version. Tracked
-separately; do not treat the current exclusion as evidence it is impossible.
+| piece | harness | measured by | written to |
+| --- | --- | --- | --- |
+| everything but `edtf-postgres` | `cargo test` | `task coverage` | `lcov.info` |
+| `edtf-postgres` | `cargo pgrx test`, pg14–pg18 | `task coverage:pg` | `lcov-postgres.info` |
 
 `fuzz/` is outside the workspace and outside the metric — it is a corpus
 generator, not a test suite.
+
+The split is a fact about where the tests run, not a carve-out.
+`cargo llvm-cov` over the workspace never executes the extension's tests —
+they need a Postgres to run against — so its source is excluded from *that*
+invocation (`--ignore-filename-regex 'crates/edtf-postgres/'`) and measured by
+the second one instead. Both files are then read together: `task coverage:check`
+gates on every `lcov*.info`, and the coverage job hands Codecov both.
+
+### Why it is measured in the matrix job
+
+Until issue #153 the extension was outside the number entirely, on the stated
+grounds that llvm-cov **cannot instrument** the pgrx harness. That was false,
+and testing it rather than inheriting it is what closed the issue: the Postgres
+backend processes emit `.profraw` like any other instrumented binary (66 files
+from a single `pg18` run). What was true is narrower — the coverage job has no
+Postgres and no `cargo-pgrx`.
+
+So the measurement moved to the job that has both, rather than the job growing
+a Postgres. That is also the general shape worth keeping: **every test job
+emits a coverage fragment; one job merges and publishes.** Teaching the
+coverage job to build a Postgres would have cost it `disable-sudo: true`, added
+the postgresql.org egress hosts, and paid for the pgrx build a second time —
+to measure code another job had already tested.
+
+Consequences, all deliberate:
+
+- The coverage job `needs: postgres`, so the number lands after the matrix and
+  a red leg means no coverage report. A matrix that did not finish has not
+  measured anything.
+- All five majors run instrumented and each asserts its own union is clean, so
+  "it holds on more than pg18" is a standing property, not a one-off check.
+  Only pg18 exports the fragment — it is the default feature, the same reason
+  it is the leg that governs the SQL snapshot. Concatenating all five would
+  make a line pg14 covers and pg18 does not read as *uncovered*, since the gate
+  reads every section it is given.
+- The instrumented run is the only run: it replaces `cargo pgrx test` rather
+  than following it. Instrumentation changes speed, not semantics.
+
+### What folding it in cost
+
+One test. The extension was at 132 lines / 0 missed, which is what the issue
+had measured — but at **3 of 4 branch sides**. `to_pg_date`'s range guard
+(`d.year < -4712 || d.year > 5_874_897`) was exercised at the upper end only,
+by `edtf_min('Y17E7')`; nothing in the suite reached a year before 4713 BC. So
+the documented "outside the Postgres date range → NULL" contract was pinned at
+one end and assumed at the other, and a lines-only reading could not see it.
+`edtf_min('Y-17E7')` is the mirror, added to both callers of the shared corpus.
 
 ## Running it
 
 ```bash
 task coverage         # instrumented run; writes lcov.info
+task coverage:pg      # the same for the extension; needs `cargo pgrx init`
 task coverage:table   # re-render the per-file table (reuses the run above)
 task coverage:check   # the gate: no uncovered line, no untaken branch side
 ```
@@ -56,6 +84,18 @@ is nightly-only, so the measurement uses the same pinned nightly as rustfmt
 two); and cargo-llvm-cov has to be handed that `rustc` explicitly, because
 under `rustup run` its own shim lands where `RUSTC` is expected and the build
 fails, while mise's stable `rustc` otherwise shadows the rustup proxy.
+
+`task coverage:pg` adds a third: `cargo pgrx test` is not `cargo test`, so it
+cannot run *under* `cargo llvm-cov`. `cargo llvm-cov show-env` exports the
+instrumentation into the environment and pgrx's own build inherits it — with
+`-Zcoverage-options=branch` appended by hand, because `show-env` has no
+`--branch` equivalent and the wrapper reads its flags as a 0x1f-separated list.
+`.github/scripts/coverage-extension.sh` is that recipe.
+
+A laptop without an initialised `$PGRX_HOME` can still run `task coverage` and
+`task coverage:check`; the gate then reads the workspace file alone. CI cannot
+fall into that half-check quietly — there the fragment is a downloaded
+artifact, and a missing artifact fails the download step first.
 
 ## The two instruments
 

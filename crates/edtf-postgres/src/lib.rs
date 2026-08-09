@@ -170,9 +170,13 @@ mod tests {
             q_text("SELECT edtf_min('../1985')::text").as_deref(),
             Some("-infinity")
         );
-        // Unknown end and out-of-range years are NULL.
+        // Unknown end and out-of-range years are NULL. Both ends of the
+        // range guard in `to_pg_date`, not just the upper one: the lower
+        // side is the only arm of this crate that a suite testing only
+        // `Y17E7` leaves untaken.
         assert_eq!(q_text("SELECT edtf_max('1986-04/')::text"), None);
         assert_eq!(q_text("SELECT edtf_min('Y17E7')::text"), None);
+        assert_eq!(q_text("SELECT edtf_min('Y-17E7')::text"), None);
     }
 
     #[pg_test]

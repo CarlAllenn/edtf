@@ -13,10 +13,15 @@ coverage:
     project: 'off'
     patch: 'off'
 
-# Must stay in step with `--ignore-filename-regex 'crates/edtf-postgres/'` in
-# the coverage job. edtf-postgres' tests run inside the pgrx harness across
-# the pg14-pg18 matrix, which llvm-cov cannot instrument, so its source never
-# reaches lcov.info. Without this entry Codecov would treat those files as
-# present-and-uncovered and report a gap that does not exist.
-ignore:
-  - crates/edtf-postgres/**
+# There is deliberately no `ignore:` list.
+#
+# There used to be one, for crates/edtf-postgres/**, justified by the claim
+# that llvm-cov could not instrument the pgrx harness. That claim was false
+# (issue #153): the Postgres backend processes emit .profraw like any other
+# instrumented binary. What was true is that the coverage job had no Postgres
+# to run those tests against — so the extension is now measured in the
+# postgres matrix job, which does, and the coverage job uploads both that
+# fragment and its own export. Every crate in the workspace reaches Codecov.
+#
+# If a future change stops producing lcov-postgres.info, the right outcome is
+# for Codecov to report the gap, not to be told in advance that it isn't one.

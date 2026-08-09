@@ -38,7 +38,22 @@ release for that major. Pin the digest.
   no OS packages, so it has no inherited CVE surface, and a cold
   `COPY --from` pulls only the extension rather than a whole base image.
 - **`:<version>-pg<major>`** — the official `postgres` image with the
-  extension installed. Runnable directly.
+  extension installed. A convenience for `docker run`, local trials and
+  demos; not a supported deployment base. It installs nothing of its own,
+  so its vulnerability posture is exactly its base image's, and that base
+  is refreshed only when a release is cut — expect base-inherited CVEs
+  between releases. Pin the digest and rebuild on your own cadence if you
+  deploy it.
+
+Neither floating tag is rebuilt between releases: `pg18` means "the latest
+release for Postgres 18", not "the latest base".
+
+**To deploy, build your own image from the `-artifact` variant** onto a
+base you pin and refresh on your own cadence — the `COPY --from` above is
+the whole of it. That keeps the extension's currency and your base's
+currency independent, which is the point: an extension release should not
+be what ships you a base image update, and a base image update should not
+wait on an extension release.
 
 Take the `-artifact` tag for a build stage:
 

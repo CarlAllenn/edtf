@@ -1308,15 +1308,30 @@ jobs:
       # publish path (canon: templates/trivy) — a CVE published tomorrow
       # must not retroactively kill a release. The scan exists so every
       # published digest has its package-CVE state on the run log.
-      - name: Scan the published image (report-only)
+      #
+      # Kept deliberately now that the runnable image is documented as a
+      # convenience rather than a supported artifact (issue #147): a
+      # convenience whose posture is unrecorded is how it quietly becomes a
+      # supported artifact again. This log IS the record — it is what made
+      # that decision answerable rather than a guess, and it is where the
+      # README's "expect base-inherited CVEs between releases" gets its
+      # evidence, per release, without a gate that could block one.
+      #
+      # Both variants, for the same reason: the artifact image's claim to
+      # no inherited CVE surface is structural, but a scan reporting it
+      # each release is cheap and turns the claim into an observation.
+      - name: Scan the published images (report-only)
         if: env.DRY_RUN != 'true'
         env:
           DIGEST: ${{ steps.manifest.outputs.digest }}
+          ARTIFACT_DIGEST: ${{ steps.manifest-artifact.outputs.digest }}
         run: |
           set -euo pipefail
-          trivy image --config /dev/null --scanners vuln \
-            --exit-code 0 --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL \
-            "${IMAGE}@${DIGEST}"
+          for d in "${DIGEST}" "${ARTIFACT_DIGEST}"; do
+            trivy image --config /dev/null --scanners vuln \
+              --exit-code 0 --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL \
+              "${IMAGE}@${d}"
+          done
 
       # Attested the same way as everything else in this repository —
       # GitHub attestations, no cosign sidecar (issue #55): subject-name is

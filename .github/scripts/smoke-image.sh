@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) the edtf contributors
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Boot the edtf-postgres image and prove the extension works (issue #82).
 #
 # The image-leg sibling of smoke-extension.sh: that script proves a tarball

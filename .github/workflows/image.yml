@@ -84,8 +84,9 @@ jobs:
     # and the coverage fragment: it is the default feature.
     name: Image build gate (pg18, amd64)
     runs-on: ubuntu-latest
-    # Hang guard, not a budget: the release path observes ~5m per cell, and
-    # this does two of that cell's three builds.
+    # Hang guard, not a budget: observed ~1m for both builds and both smoke
+    # tests — a fifth of the release path's ~5m per cell, which pays for the
+    # push, the attestation and an arm64 sibling this does not.
     timeout-minutes: 20
     env:
       # Routed through env so no template expands inside run: code

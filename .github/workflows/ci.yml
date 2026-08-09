@@ -299,11 +299,10 @@ jobs:
   postgres:
     name: pgrx extension tests (Postgres ${{ matrix.pg }})
     runs-on: ubuntu-latest
-    # Hang guard, not a budget: ~3.5m per major before this job took on the
-    # instrumented coverage run, which adds a nightly toolchain install and an
-    # instrumented rebuild. The headroom absorbs that several times over; the
-    # number is left as the last figure actually measured rather than a guess
-    # at the new one.
+    # Hang guard, not a budget: observed 6.5-7.1m per major, up from ~3.5m
+    # before this job took on the instrumented coverage run (a nightly
+    # toolchain install and an instrumented rebuild). Roughly double, and still
+    # a third of the guard.
     timeout-minutes: 25
     strategy:
       fail-fast: false

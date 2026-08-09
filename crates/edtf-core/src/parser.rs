@@ -626,10 +626,11 @@ fn parse_plain_complete_date(s: &str) -> Result<Date, ParseError> {
     })
 }
 
-/// The month of a date-time, which is always a plain calendar month at the
-/// fixed offset 5 of `YYYY-MM-DD`. Split out of [`parse_plain_complete_date`]
-/// so the unspecified-digit branch — which that caller's locally built digits
-/// can never take — is still directly exercisable.
+/// Validate the month of a date-time: always a plain calendar month at the
+/// fixed offset 5 of `YYYY-MM-DD`. The range check is live — `2020-13-01T…`
+/// lands on it — while the unspecified-digit arm above it is defensive:
+/// [`parse_plain_complete_date`] builds both digits itself, so only some
+/// future caller could take that arm.
 fn check_plain_month(month: DateField) -> Result<(), ParseError> {
     // Both digits were just parsed; a graceful error beats a panic if that
     // invariant ever breaks.

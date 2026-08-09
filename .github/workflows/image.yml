@@ -1,0 +1,228 @@
+---
+name: Image
+
+# The PR-side gate on the OCI image path (issue #160).
+#
+# publish.yml builds the image on tags; ci.yml never builds it at all. So
+# every change to docker/**, to the image jobs, or to base-images.sh's
+# trixie rows used to be unexercised until a release ran it for real —
+# across 5 majors x 2 architectures x 2 variants, on the path where failure
+# is most expensive and least recoverable.
+#
+# That is not hypothetical. The pre-push artifact proof in #156 was
+# originally written as a second Dockerfile consuming the loaded candidate
+# tag, which cannot work — the buildx container driver resolves FROM from
+# registries and cannot see the local docker image store — and it was caught
+# by reading the workflow, not by any test. A defect of that shape
+# (correct-looking, locally plausible, fails only on the release path) is
+# exactly what a gate exists for, and exactly what review will not catch a
+# second time.
+#
+# A separate workflow rather than a job in ci.yml: this is the repository's
+# only path-filtered gate, and per-job path filters do not exist in Actions
+# without pulling in a filter action. Not a required status check for the
+# same reason — a check that cannot run on most pull requests must not block
+# them.
+#
+# What it does not cover, so a green check is not read as more than it is:
+# the push half. push-image-manifest.sh and
+# docker/edtf-postgres-consumer.Dockerfile both take a published registry
+# image as their subject, which a pull request does not have — the consumer
+# proof cannot even be pointed at the last release, whose tag predates the
+# artifact variant. They are in the trigger set below because they are
+# edited in lockstep with the graph (a target rename lands in both), not
+# because this job runs them.
+#
+# Deliberately NOT a CVE gate. templates/trivy canon puts that on pull
+# requests and never on the publish path, and issue #160 settled that the
+# question is separate from build correctness — #147 having made the
+# runnable image a convenience rather than a deployment base makes the
+# answer likely no.
+
+"on":
+  # renovate/** as well as pull requests: the base-image digests in
+  # base-images.sh are bumped by Renovate under branch automerge, which
+  # opens no pull request unless the branch goes red — a pull_request-only
+  # trigger would leave exactly those bumps ungated.
+  push:
+    branches: [main, renovate/**]
+    paths:
+      - docker/**
+      - .github/workflows/image.yml
+      - .github/workflows/publish.yml
+      - .github/scripts/base-images.sh
+      - .github/scripts/smoke-image.sh
+      - .github/scripts/push-image-manifest.sh
+      - .github/scripts/resolve-image-tarball-sha.sh
+      - .github/scripts/resolve-latest-image-release.sh
+  pull_request:
+    paths:
+      - docker/**
+      - .github/workflows/image.yml
+      - .github/workflows/publish.yml
+      - .github/scripts/base-images.sh
+      - .github/scripts/smoke-image.sh
+      - .github/scripts/push-image-manifest.sh
+      - .github/scripts/resolve-image-tarball-sha.sh
+      - .github/scripts/resolve-latest-image-release.sh
+
+permissions:
+  contents: read
+
+# A newer push to the same branch supersedes any run still in progress.
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # One major, one architecture, no publish: enough to prove the graph,
+    # cheap enough to run on every touching pull request. The release path
+    # is what covers the matrix — this gate answers "does the graph still
+    # build and does what it builds still work", which is where the defects
+    # of the shape above live. pg18 governs, as it does for the SQL snapshot
+    # and the coverage fragment: it is the default feature.
+    name: Image build gate (pg18, amd64)
+    runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~1m for both builds and both smoke
+    # tests — a fifth of the release path's ~5m per cell, which pays for the
+    # push, the attestation and an arm64 sibling this does not.
+    timeout-minutes: 20
+    env:
+      # Routed through env so no template expands inside run: code
+      # (zizmor template-injection, pedantic tier).
+      PG: "18"
+      ARCH: amd64
+    steps:
+      # First step of every job, before checkout: runtime egress audit —
+      # enforcement per issue #6 canon.
+      #
+      # The publish leg's allowlist minus everything publication needs:
+      # no ghcr (nothing is pushed or pulled from it) and no mise (the one
+      # tool the release leg installs is taplo, for a version this gate
+      # resolves from the releases API instead).
+      #
+      # Buildkit's network namespace may not be governed by harden-runner at
+      # all — its endpoints (the base pull, the release-asset ADD) are
+      # allowlisted anyway rather than relying on that being true (canon:
+      # templates/publish egress lore).
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: block
+          disable-sudo: true
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            codeload.github.com:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+            production.cloudfront.docker.com:443
+            mirror.gcr.io:443
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # The gate builds the last released version, not this branch's — see
+      # the script's header for why that costs nothing.
+      - name: Resolve the released version to build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/resolve-latest-image-release.sh
+
+      # The same script the release path runs, on the same released
+      # SHA256SUMS: the checksum BuildKit verifies has to come from a
+      # release either way, and a gate that resolved it differently would
+      # not be gating the resolution.
+      - name: Resolve the released tarball checksum
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/resolve-image-tarball-sha.sh
+
+      # Identical to the release leg's lookup, which is half the point: a
+      # trixie row that is missing or malformed fails here rather than
+      # mid-release.
+      - name: Resolve the pinned base image
+        run: |
+          set -euo pipefail
+          # shellcheck source=.github/scripts/base-images.sh
+          . .github/scripts/base-images.sh
+          base=$(base_image "${PG}" trixie)
+          {
+            echo "BASE_IMAGE=${base}"
+            echo "BASE_NAME=${base%@*}"
+            echo "BASE_DIGEST=${base#*@}"
+          } >> "$GITHUB_ENV"
+
+      - name: Resolve the image metadata labels
+        env:
+          REVISION: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          {
+            echo "CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "REVISION=${REVISION}"
+          } >> "$GITHUB_ENV"
+
+      # The container driver, not the default docker one, and bootstrapped
+      # from the same mirror for the same egress reason: the driver IS the
+      # thing that made #156's first attempt wrong, so a gate that built
+      # under a different driver would not reproduce the class of defect it
+      # exists to catch. Digest-pinned like every other build input; the
+      # custom manager in renovate.json keeps it current (this file is named
+      # there alongside publish.yml).
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+        with:
+          # yamllint disable-line rule:line-length
+          driver-opts: image=mirror.gcr.io/moby/buildkit:buildx-stable-1@sha256:2f5adac4ecd194d9f8c10b7b5d7bceb5186853db1b26e5abd3a657af0b7e26ec
+
+      # Loaded, never pushed — no registry login exists in this workflow and
+      # no attestation is produced. The full build-arg set, not the subset
+      # the build would tolerate: a build arg the release passes and this
+      # does not is a difference between what the gate proves and what
+      # ships.
+      - name: Build the runnable image (loaded, not pushed)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: docker/edtf-postgres.Dockerfile
+          target: runnable
+          build-args: |
+            BASE_IMAGE=${{ env.BASE_IMAGE }}
+            BASE_NAME=${{ env.BASE_NAME }}
+            BASE_DIGEST=${{ env.BASE_DIGEST }}
+            PG=${{ env.PG }}
+            VERSION=${{ env.VERSION }}
+            TARBALL_SHA256=${{ env.TARBALL_SHA256 }}
+            REVISION=${{ env.REVISION }}
+            CREATED=${{ env.CREATED }}
+          tags: edtf-postgres:gate-candidate
+          load: true
+
+      - name: Smoke-test the runnable image
+        run: .github/scripts/smoke-image.sh edtf-postgres:gate-candidate
+
+      # The artifact stage's proof, exactly as the release path runs it: a
+      # scratch image cannot be booted, so the documented COPY --from into a
+      # stock postgres is what gets smoked.
+      - name: Build the artifact verifier (loaded, not pushed)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: docker/edtf-postgres.Dockerfile
+          target: verify
+          build-args: |
+            BASE_IMAGE=${{ env.BASE_IMAGE }}
+            PG=${{ env.PG }}
+            VERSION=${{ env.VERSION }}
+            TARBALL_SHA256=${{ env.TARBALL_SHA256 }}
+            REVISION=${{ env.REVISION }}
+            CREATED=${{ env.CREATED }}
+          tags: edtf-postgres:gate-artifact-verify
+          load: true
+
+      - name: Smoke-test the artifact variant through its consumer
+        run: .github/scripts/smoke-image.sh edtf-postgres:gate-artifact-verify

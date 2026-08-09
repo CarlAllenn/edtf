@@ -48,6 +48,13 @@ release for that major. Pin the digest.
 Neither floating tag is rebuilt between releases: `pg18` means "the latest
 release for Postgres 18", not "the latest base".
 
+**To deploy, build your own image from the `-artifact` variant** onto a
+base you pin and refresh on your own cadence — the `COPY --from` above is
+the whole of it. That keeps the extension's currency and your base's
+currency independent, which is the point: an extension release should not
+be what ships you a base image update, and a base image update should not
+wait on an extension release.
+
 Take the `-artifact` tag for a build stage:
 
 ```dockerfile

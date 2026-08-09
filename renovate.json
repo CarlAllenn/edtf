@@ -10,11 +10,12 @@
   ],
   "customManagers": [
     {
-      "description": "Pinned base images (issue #83, gap 3): keep the sha256 digests in base-images.sh and the buildkit bootstrap pin in publish.yml current as their tags are republished",
+      "description": "Pinned base images (issue #83, gap 3): keep the sha256 digests in base-images.sh and the buildkit bootstrap pins in publish.yml and image.yml current as their tags are republished",
       "customType": "regex",
       "managerFilePatterns": [
         "/^\\.github/scripts/base-images\\.sh$/",
-        "/^\\.github/workflows/publish\\.yml$/"
+        "/^\\.github/workflows/publish\\.yml$/",
+        "/^\\.github/workflows/image\\.yml$/"
       ],
       "matchStrings": [
         "\"(?<depName>postgres):(?<currentValue>\\d+-[a-z]+)@(?<currentDigest>sha256:[a-f0-9]{64})\"",

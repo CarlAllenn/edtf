@@ -196,6 +196,41 @@ gh attestation verify <artifact> --repo <owner>/<repo> \
 A bare `gh attestation verify` is **not** sufficient — the misattributed
 v1.0.0 artifacts pass it today. The three pinning flags are the check.
 
+### One-off: point `COPY --from` consumers at `-artifact` (delete after use)
+
+**This step is a transition note, not standing process. It applies to the
+first release after #156, and whoever runs that release deletes this
+subsection in the same PR that carries the note.** It is written down only
+because it has to survive the gap between two releases; leaving it here
+afterwards would calcify a one-time action into a step nobody remembers the
+reason for.
+
+Before merging the release PR, add a paragraph to the `edtf-postgres`
+section of `crates/edtf-postgres/CHANGELOG.md`. release-plz uses that
+section as the GitHub release body, so writing it there — rather than
+editing the release afterwards — puts the note in front of consumers
+without touching a release that is already published and immutable. Merging
+is still the commitment point; nothing about that changes.
+
+Roughly:
+
+> If you consume this image as a build stage, switch `FROM …:<version>-pg<major>`
+> to `…-artifact` and keep your `COPY --from` lines exactly as they are. The
+> build-stage pull drops from ~164 MB to ~1.7 MB for byte-identical extension
+> files, and the CVE surface goes from the base image's — refreshed only when
+> edtf releases — to structurally empty. The `FROM` line keeps its shape, so
+> Renovate semantics are unchanged. The runnable `:<version>-pg<major>` image
+> keeps its `COPY --from` capability and is not deprecated; it is documented as
+> a convenience for `docker run` and local trials.
+
+Why it needs saying at all: #156 published `-artifact` and
+`crates/edtf-postgres/README.md` now names it the supported build-stage
+artifact, but existing `COPY --from` consumers of the runnable image keep
+working — which is exactly the problem. A strict improvement nobody notices
+is one nobody adopts, and the generated changelog line ("publish a
+`FROM scratch` artifact variant") does not tell a consumer that it is about
+them. The release body is the one channel that reaches them.
+
 ## Recovery paths
 
 **Phase 2 died partway** (network, registry lag, anything after tagging):

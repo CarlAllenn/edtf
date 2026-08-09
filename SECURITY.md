@@ -88,13 +88,48 @@ which commit they were built from, or which workflow was allowed to sign.
 The same command verifies a prebuilt `edtf-postgres` tarball; substitute the
 asset name. Verify **before** extracting, since the archive unpacks into `/`.
 
+### Verifying a published image
+
+The `edtf-postgres` images at `ghcr.io/carlallenn/edtf-postgres` carry the
+same provenance, stored in the registry beside the manifest, so nothing has
+to be pulled first:
+
+```sh
+gh attestation verify oci://ghcr.io/carlallenn/edtf-postgres@sha256:<digest> \
+  --repo CarlAllenn/edtf \
+  --source-ref refs/tags/v<version> \
+  --signer-workflow CarlAllenn/edtf/.github/workflows/publish.yml
+```
+
+Three things about it, none of them guessable:
+
+- **Verify the digest you will pin**, not the tag you resolved it from. A tag
+  is a mutable pointer; only `@sha256:…` names the bytes you deploy. Resolve
+  it once — `docker buildx imagetools inspect ghcr.io/carlallenn/edtf-postgres:<version>-pg<major>-artifact`
+  — then verify and pin that digest. A tag reference verifies whatever the
+  tag points at *now*, which is not a statement about what you deployed.
+- **Both variants are attested separately.** The `-artifact` manifest list
+  and the runnable one are distinct published digests, each named by its own
+  attestation; verifying one says nothing about the other.
+- **`--source-ref` is what ties the image to the release** rather than to
+  this repository in general. Without it the check passes for any image this
+  workflow has ever built, including a different version — the same reason
+  the three flags are the check for a tarball.
+
+This is not a command only consumers run. Every release verifies each
+published manifest digest with it before the run may go green
+([`verify-image-attestation.sh`](.github/scripts/verify-image-attestation.sh)),
+so a documented invocation that no longer holds fails the release that broke
+it. The release additionally pins `--source-digest`, the commit the tag
+points at, which it knows and a consumer would have to look up.
+
 ### Which attestation is which
 
 Three kinds are produced, and they answer different questions:
 
 | Attestation | Subject | Answers |
 | --- | --- | --- |
-| Build provenance | each `.crate`, the npm tarball, each extension tarball, `SHA256SUMS` | which commit, ref and workflow built these bytes |
+| Build provenance | each `.crate`, the npm tarball, each extension tarball, `SHA256SUMS`, and from v1.2.0 each published image manifest digest | which commit, ref and workflow built these bytes |
 | SBOM | each `.crate` and, from v1.2.0, the binary artifacts built from it (extension tarballs, CLI binaries, the npm tarball) | what that artifact's dependency closure was |
 | Release | the GitHub release | which tag, commit and asset set the release contains |
 

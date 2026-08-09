@@ -78,6 +78,19 @@ fn field_body(f: DateField) -> String {
     s
 }
 
+/// Index of the last leading part sharing the year's qualifier `q0` — the
+/// reach of one group marker. The `Display` impl for `Date` returns early for
+/// fully uniform dates, so in practice the scan always stops at an unequal
+/// part; the length guard is what keeps it total for any slice, including one
+/// whose every part shares `q0`.
+fn qualified_prefix_end(parts: &[(String, Qualifier)], q0: Qualifier) -> usize {
+    let mut end = 0;
+    while end + 1 < parts.len() && parts[end + 1].1 == q0 {
+        end += 1;
+    }
+    end
+}
+
 impl Display for Date {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut parts: Vec<(String, Qualifier)> = Vec::new();
@@ -107,15 +120,9 @@ impl Display for Date {
 
         // Longest qualified prefix sharing the year's qualifier becomes one
         // group marker; anything after it gets individual (left) qualifiers.
-        // Fully uniform dates took the branch above, so this scan always
-        // stops at an unequal part before running off the end.
         let q0 = parts[0].1;
         let prefix_end = if q0.is_qualified() {
-            let mut end = 0;
-            while end + 1 < parts.len() && parts[end + 1].1 == q0 {
-                end += 1;
-            }
-            Some(end)
+            Some(qualified_prefix_end(&parts, q0))
         } else {
             None
         };
@@ -203,5 +210,65 @@ impl Display for Set {
             }
         }
         f.write_char(close)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use alloc::format;
+
+    use super::*;
+
+    const UNCERTAIN: Qualifier = Qualifier {
+        uncertain: true,
+        approximate: false,
+    };
+
+    /// `qual_symbol` has no symbol for "no qualification": the caller must
+    /// filter on `is_qualified` first, and misuse is a panic rather than a
+    /// silently wrong character in the output.
+    #[test]
+    #[should_panic(expected = "caller checks is_qualified")]
+    fn unqualified_has_no_symbol() {
+        qual_symbol(Qualifier::default());
+    }
+
+    /// The prefix scan's length guard: parts that all share `q0` walk to the
+    /// last index instead of indexing past the end. `Display for Date` never
+    /// hands it such a slice — a uniformly qualified date takes the
+    /// complete-qualification early return — so only a direct call reaches it.
+    #[test]
+    fn prefix_scan_stops_at_the_final_part() {
+        let uniform = [
+            (String::from("2004"), UNCERTAIN),
+            (String::from("06"), UNCERTAIN),
+            (String::from("11"), UNCERTAIN),
+        ];
+        assert_eq!(qualified_prefix_end(&uniform, UNCERTAIN), 2);
+
+        // The reachable shape, for contrast: the scan stops before the day.
+        let mixed = [
+            (String::from("2004"), UNCERTAIN),
+            (String::from("06"), UNCERTAIN),
+            (String::from("11"), Qualifier::default()),
+        ];
+        assert_eq!(qualified_prefix_end(&mixed, UNCERTAIN), 1);
+    }
+
+    /// The parser only sets `hours_only` on `±hh`, whose minutes are zero, so
+    /// a hand-built shift carrying both is out of the parser's reach. Display
+    /// degrades gracefully rather than truncating: the minutes survive.
+    #[test]
+    fn hours_only_shift_with_minutes_still_renders_them() {
+        let t = Time {
+            hour: 9,
+            minute: 30,
+            second: 0,
+            shift: Some(TimeShift::Offset {
+                minutes: 90,
+                hours_only: true,
+            }),
+        };
+        assert_eq!(format!("{t}"), "09:30:00+01:30");
     }
 }

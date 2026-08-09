@@ -332,3 +332,44 @@ pub fn convert(year: i64, month: Option<u8>, day: Option<u8>) -> Result<Converte
         (None, Some(_)) => Err(CalendarError::InvalidDate),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // `last_day` is deliberately partial: every caller range-checks the
+    // month first (`check` before the comparison, `convert` before the
+    // month-span branch), so an out-of-range month is a caller bug, not a
+    // calendar fact. These pin the guard's contract — misuse panics rather
+    // than silently answering with some plausible-looking day count.
+
+    #[test]
+    #[should_panic(expected = "caller validated month")]
+    fn last_day_below_range_panics() {
+        let _ = last_day(0, false);
+    }
+
+    #[test]
+    #[should_panic(expected = "caller validated month")]
+    fn last_day_above_range_panics() {
+        let _ = last_day(13, true);
+    }
+
+    /// The month-length table itself, direct: February is the only month the
+    /// `leap` flag moves, and the flag is the *caller's* leap rule — this
+    /// function is shared by the Julian and Gregorian checks and must not
+    /// have an opinion of its own.
+    #[test]
+    fn last_day_table() {
+        for month in [1, 3, 5, 7, 8, 10, 12] {
+            assert_eq!(last_day(month, false), 31);
+            assert_eq!(last_day(month, true), 31);
+        }
+        for month in [4, 6, 9, 11] {
+            assert_eq!(last_day(month, false), 30);
+            assert_eq!(last_day(month, true), 30);
+        }
+        assert_eq!(last_day(2, false), 28);
+        assert_eq!(last_day(2, true), 29);
+    }
+}

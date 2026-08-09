@@ -474,3 +474,158 @@ fn max_bound(a: Bound, b: Bound) -> Bound {
         (Bound::Date(x), Bound::Date(y)) => Bound::Date(x.max(y)),
     }
 }
+
+/// White-box tests for the defensive guards above.
+///
+/// The parser never builds the values these tests construct, but every field
+/// of the model is public and there are no validating constructors, so a
+/// downstream user can. Each test pins what a guard promises for such a
+/// value: graceful degradation where the code stays total, and a panic —
+/// never a wrong answer — where it does not.
+#[cfg(test)]
+mod tests {
+    use super::{
+        Bound, BoundDate, Bounds, Date, DateField, YearKind, date_bounds, extremum, last_day,
+        max_bound, min_bound, season_months, significant_range, year_range,
+    };
+    use crate::types::{Qualifier, Year};
+
+    fn standard_year(digits: [Option<u8>; 4], significant_digits: Option<u32>) -> Year {
+        Year {
+            kind: YearKind::Standard {
+                negative: false,
+                digits,
+            },
+            significant_digits,
+            qualifier: Qualifier::default(),
+        }
+    }
+
+    fn big_year(value: i64) -> Year {
+        Year {
+            kind: YearKind::Big { value },
+            significant_digits: None,
+            qualifier: Qualifier::default(),
+        }
+    }
+
+    fn field(tens: u8, ones: u8) -> DateField {
+        DateField {
+            digits: [Some(tens), Some(ones)],
+            qualifier: Qualifier::default(),
+        }
+    }
+
+    const UNKNOWN: Bounds = Bounds {
+        earliest: Bound::Unknown,
+        latest: Bound::Unknown,
+    };
+
+    // `S` precision never coexists with an `X` digit in the grammar, so the
+    // standard-year branch has no valuable year to sweep here; it must bound
+    // to Unknown rather than panic.
+    #[test]
+    fn significant_digits_on_a_masked_standard_year_bound_to_unknown() {
+        let d = Date {
+            year: standard_year([Some(1), Some(9), Some(8), None], Some(2)),
+            month: None,
+            day: None,
+        };
+        assert_eq!(date_bounds(&d), UNKNOWN);
+    }
+
+    // The totality fallback after the extremum scans: a month/day pattern the
+    // calendar never admits (February 30) leaves both scans empty.
+    #[test]
+    fn a_month_day_pattern_with_no_completion_bounds_to_unknown() {
+        let d = Date {
+            year: standard_year([Some(1), Some(9), Some(8), Some(5)], None),
+            month: Some(field(0, 2)),
+            day: Some(field(3, 0)),
+        };
+        assert_eq!(date_bounds(&d), UNKNOWN);
+    }
+
+    // A valuable year caps the width at 19, so `10^sweep` always fits; if that
+    // invariant broke, the sweep collapses to the exact value rather than
+    // overflowing. Width 20 (sweep 19) is the smallest shape that breaks it.
+    #[test]
+    fn a_sweep_too_wide_for_i64_falls_back_to_the_exact_value() {
+        assert_eq!(significant_range(1985, Some(1), 20), Some((1985, 1985)));
+    }
+
+    // `season_months` is total over the 21..=41 codes validation admits;
+    // anything else must panic rather than return a wrong month pair.
+    #[test]
+    #[should_panic(expected = "validated season code")]
+    fn season_months_rejects_a_code_outside_the_table() {
+        let _ = season_months(42);
+    }
+
+    // `year_range` reads the digits of a Standard year; handed any other form
+    // it must panic rather than invent a range.
+    #[test]
+    #[should_panic(expected = "caller checked Standard")]
+    fn year_range_rejects_a_non_standard_year() {
+        let d = Date {
+            year: big_year(20_000),
+            month: None,
+            day: None,
+        };
+        let _ = year_range(&d);
+    }
+
+    // `date_bounds` returns early for non-Standard years, so `extremum` only
+    // ever sees Standard ones; reached with a `Y`-prefixed year it falls
+    // through to `year_range`'s guard instead of guessing a completion.
+    #[test]
+    #[should_panic(expected = "caller checked Standard")]
+    fn extremum_rejects_a_non_standard_year() {
+        let d = Date {
+            year: big_year(20_000),
+            month: None,
+            day: None,
+        };
+        let _ = extremum(&d, true);
+    }
+
+    #[test]
+    #[should_panic(expected = "month is 1-12")]
+    fn last_day_rejects_a_month_outside_1_12() {
+        let _ = last_day(13, false);
+    }
+
+    // No set element yields a +infinity EARLIEST bound, but the fold stays
+    // total: +infinity is the identity of `min_bound`, in either operand
+    // order.
+    #[test]
+    fn min_bound_treats_positive_infinity_as_the_identity() {
+        let day = Bound::Date(BoundDate {
+            year: 1985,
+            month: 4,
+            day: 12,
+        });
+        assert_eq!(min_bound(Bound::PositiveInfinity, day), day);
+        assert_eq!(min_bound(day, Bound::PositiveInfinity), day);
+        assert_eq!(
+            min_bound(Bound::PositiveInfinity, Bound::PositiveInfinity),
+            Bound::PositiveInfinity
+        );
+    }
+
+    // The mirror image: -infinity is the identity of `max_bound`.
+    #[test]
+    fn max_bound_treats_negative_infinity_as_the_identity() {
+        let day = Bound::Date(BoundDate {
+            year: 1985,
+            month: 4,
+            day: 12,
+        });
+        assert_eq!(max_bound(Bound::NegativeInfinity, day), day);
+        assert_eq!(max_bound(day, Bound::NegativeInfinity), day);
+        assert_eq!(
+            max_bound(Bound::NegativeInfinity, Bound::NegativeInfinity),
+            Bound::NegativeInfinity
+        );
+    }
+}

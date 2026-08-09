@@ -492,3 +492,57 @@ fn mask_level(d: &Date) -> u8 {
         || (d.month.is_none() && matches!(year_x, [false, false, false | true, true]));
     if level1 { 1 } else { 2 }
 }
+
+#[cfg(test)]
+mod tests {
+    use alloc::vec;
+
+    use super::*;
+
+    fn year_date(digits: [u8; 4], qualifier: Qualifier) -> Date {
+        Date {
+            year: Year {
+                kind: YearKind::Standard {
+                    negative: false,
+                    digits: digits.map(Some),
+                },
+                significant_digits: None,
+                qualifier,
+            },
+            month: None,
+            day: None,
+        }
+    }
+
+    /// The parser rejects a qualifier on a set-range endpoint (D27), so
+    /// `any_date`'s range arm is only reachable from a hand-built value. It
+    /// stays structural — either endpoint answers — so both halves of
+    /// `f(a) || f(b)` are pinned here; dropping either one fails the test.
+    #[test]
+    fn set_range_reports_a_qualifier_on_either_endpoint() {
+        let both = Qualifier {
+            uncertain: true,
+            approximate: true,
+        };
+        let plain = Qualifier::default();
+        let range_set = |a, b| {
+            Edtf::Set(Set {
+                kind: SetKind::AllMembers,
+                elements: vec![SetElement::Range(
+                    year_date([2, 0, 0, 1], a),
+                    year_date([2, 0, 0, 2], b),
+                )],
+            })
+        };
+
+        let first = range_set(both, plain);
+        assert!(first.is_uncertain());
+        assert!(first.is_approximate());
+        // Neither endpoint is masked, so the same arm answers false as well.
+        assert!(!first.has_unspecified());
+
+        let second = range_set(plain, both);
+        assert!(second.is_uncertain());
+        assert!(second.is_approximate());
+    }
+}

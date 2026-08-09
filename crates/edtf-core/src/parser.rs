@@ -414,25 +414,33 @@ fn day_has_valid_completion(year: &YearKind, m: DateField, d: DateField) -> bool
     let mut leap_possible: Option<bool> = None;
     for &mm in &months {
         for &dd in &days {
-            let max = match mm {
-                1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-                4 | 6 | 9 | 11 => 30,
-                2 => {
-                    if dd <= 28 {
-                        28
-                    } else {
-                        let leap = *leap_possible.get_or_insert_with(|| year_leap_possible(year));
-                        if leap { 29 } else { 28 }
-                    }
-                },
-                _ => unreachable!("month candidates are 1-12"),
-            };
-            if dd <= max {
+            if month_admits_day(mm, dd, year, &mut leap_possible) {
                 return true;
             }
         }
     }
     false
+}
+
+/// Whether month `mm` can hold day `dd`. Deliberately a predicate rather than
+/// a month-length function: February short-circuits to 28 for any day the
+/// 28th admits, so leap-ness is only asked once a later day forces the
+/// question, and `leap_possible` memoises that answer across the scan.
+fn month_admits_day(mm: u8, dd: u8, year: &YearKind, leap_possible: &mut Option<bool>) -> bool {
+    let max = match mm {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 => {
+            if dd <= 28 {
+                28
+            } else {
+                let leap = *leap_possible.get_or_insert_with(|| year_leap_possible(year));
+                if leap { 29 } else { 28 }
+            }
+        },
+        _ => unreachable!("month candidates are 1-12"),
+    };
+    dd <= max
 }
 
 fn year_leap_possible(year: &YearKind) -> bool {
@@ -599,14 +607,7 @@ fn parse_plain_complete_date(s: &str) -> Result<Date, ParseError> {
         digits: [Some(digit(8)?), Some(digit(9)?)],
         qualifier: Qualifier::default(),
     };
-    // Both digits were just parsed; a graceful error beats a panic if that
-    // invariant ever breaks.
-    let Some(m) = month.value() else {
-        return Err(err(5, "month must be fully specified"));
-    };
-    if !(1..=12).contains(&m) {
-        return Err(err(5, "month must be 01-12"));
-    }
+    check_plain_month(month)?;
     let kind = YearKind::Standard {
         negative: false,
         digits: ydigits,
@@ -623,6 +624,22 @@ fn parse_plain_complete_date(s: &str) -> Result<Date, ParseError> {
         month: Some(month),
         day: Some(day),
     })
+}
+
+/// The month of a date-time, which is always a plain calendar month at the
+/// fixed offset 5 of `YYYY-MM-DD`. Split out of [`parse_plain_complete_date`]
+/// so the unspecified-digit branch — which that caller's locally built digits
+/// can never take — is still directly exercisable.
+fn check_plain_month(month: DateField) -> Result<(), ParseError> {
+    // Both digits were just parsed; a graceful error beats a panic if that
+    // invariant ever breaks.
+    let Some(m) = month.value() else {
+        return Err(err(5, "month must be fully specified"));
+    };
+    if !(1..=12).contains(&m) {
+        return Err(err(5, "month must be 01-12"));
+    }
+    Ok(())
 }
 
 fn parse_time(s: &str, base: usize) -> Result<Time, ParseError> {
@@ -871,4 +888,128 @@ fn check_range_endpoint(d: &Date, off: usize) -> Result<(), ParseError> {
         ));
     }
     Ok(())
+}
+
+// ------------------------------------------------------------ guard tests
+//
+// The parser's own callers already exclude the inputs below, so these
+// defensive arms are unreachable through `parse`. They are the contract for
+// misuse of the private/`pub(crate)` entry points — a positioned error or a
+// panic, never a silent wrong answer — and only a white-box test can pin it.
+
+#[cfg(test)]
+mod tests {
+    #![allow(
+        clippy::unwrap_used,
+        reason = "test code: a panic here is the failure signal, not a crash path"
+    )]
+
+    use super::*;
+
+    /// Every caller filters empty slices first; the fallback must still be a
+    /// positioned error rather than an index panic on the first byte.
+    #[test]
+    fn empty_date_slice_errors_at_its_base_offset() {
+        let e = parse_date_at("", 7).unwrap_err();
+        assert_eq!(e.message, "empty date");
+        assert_eq!(e.offset, 7);
+    }
+
+    /// A sub-year code where a calendar month belongs: no calendar month
+    /// matches it, and the answer is an empty candidate list, not a panic.
+    #[test]
+    fn month_candidates_of_a_sub_year_code_are_empty() {
+        let spring = DateField {
+            digits: [Some(2), Some(1)],
+            qualifier: Qualifier::default(),
+        };
+        assert!(month_candidates(spring).is_empty());
+    }
+
+    /// The day-completion scan only ever passes months from
+    /// `month_candidates`; anything else is misuse and must panic rather
+    /// than pick some month length.
+    #[test]
+    #[should_panic(expected = "month candidates are 1-12")]
+    fn month_admits_day_rejects_a_month_outside_1_12() {
+        let year = YearKind::Standard {
+            negative: false,
+            digits: [Some(2), Some(0), Some(0), Some(1)],
+        };
+        let _ = month_admits_day(21, 1, &year, &mut None);
+    }
+
+    /// `Y`-prefixed years never carry a month, so leap-ness is only asked of
+    /// them in theory; a big year answers for its own value.
+    #[test]
+    fn big_year_leap_possible_follows_the_value() {
+        assert!(year_leap_possible(&YearKind::Big { value: 20_000 }));
+        assert!(!year_leap_possible(&YearKind::Big { value: 20_001 }));
+        assert!(year_leap_possible(&YearKind::Big { value: -20_000 }));
+    }
+
+    /// An exponential year stands for a value the model never pins down, so
+    /// the permissive answer keeps a 29 February completion available. 17E2 is
+    /// 1700, a century year the real leap rule rejects, so only the
+    /// unconditional arm can satisfy it; the spec's own 17E7 example is
+    /// 170 000 000, divisible by 400, and would pass under either reading.
+    #[test]
+    fn exponential_year_is_permissively_leap() {
+        assert!(year_leap_possible(&YearKind::Exponential {
+            significand: 17,
+            exponent: 2,
+        }));
+        assert!(year_leap_possible(&YearKind::Exponential {
+            significand: 17,
+            exponent: 7,
+        }));
+    }
+
+    /// A digit run too wide for `i64` is real input, not only a guard: it has
+    /// to be reported at the run's first digit rather than wrap around.
+    #[test]
+    fn an_oversized_digit_run_errors_at_the_first_digit() {
+        let e = parse("Y99999999999999999999").unwrap_err();
+        assert_eq!(e.message, "number out of supported range");
+        assert_eq!(e.offset, 1);
+    }
+
+    /// The dispatcher only routes strings containing `/` here; without one the
+    /// missing second half is reported at end of input.
+    #[test]
+    fn interval_without_a_slash_errors_at_end_of_input() {
+        let e = parse_interval("1985").unwrap_err();
+        assert_eq!(e.message, "interval requires '/'");
+        assert_eq!(e.offset, 4);
+    }
+
+    /// The dispatcher only routes `T`-bearing strings here; without one the
+    /// split fails and the error must say so.
+    #[test]
+    fn datetime_without_t_errors() {
+        let e = parse_datetime("1985-04-12").unwrap_err();
+        assert_eq!(e.message, "datetime requires 'T'");
+        assert_eq!(e.offset, 0);
+    }
+
+    /// `parse_plain_complete_date` builds both month digits itself, so only a
+    /// direct call reaches the unspecified-digit arm; the other two outcomes
+    /// are pinned alongside it to hold the whole check in place.
+    #[test]
+    fn plain_month_check_covers_masked_and_out_of_range_months() {
+        let field = |digits| DateField {
+            digits,
+            qualifier: Qualifier::default(),
+        };
+
+        let masked = check_plain_month(field([None, Some(4)])).unwrap_err();
+        assert_eq!(masked.message, "month must be fully specified");
+        assert_eq!(masked.offset, 5);
+
+        let thirteen = check_plain_month(field([Some(1), Some(3)])).unwrap_err();
+        assert_eq!(thirteen.message, "month must be 01-12");
+        assert_eq!(thirteen.offset, 5);
+
+        assert!(check_plain_month(field([Some(0), Some(4)])).is_ok());
+    }
 }

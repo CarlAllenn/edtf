@@ -454,3 +454,67 @@ impl RangeWalk {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #![allow(
+        clippy::unwrap_used,
+        reason = "test code: a panic here is the failure signal, not a crash path"
+    )]
+
+    use alloc::vec;
+
+    use super::*;
+    use crate::types::{Set, SetKind};
+
+    const PLAIN: Qualifier = Qualifier {
+        uncertain: false,
+        approximate: false,
+    };
+
+    /// A hand-built date carrying an `X` in a field while its year is an
+    /// exponential too large for `i64` — `Year::value()` is then `None` on a
+    /// kind that cannot hold `X` digits. The parser cannot build this (masks
+    /// only attach to standard years), and the odometer refuses to guess a
+    /// year pattern for it.
+    #[test]
+    #[should_panic(expected = "only standard years carry X digits")]
+    fn masked_field_under_an_unrepresentable_year_panics() {
+        let d = Date {
+            year: Year {
+                // 1 × 10^100 overflows i64, so `value()` yields None.
+                kind: YearKind::Exponential {
+                    significand: 1,
+                    exponent: 100,
+                },
+                significant_digits: None,
+                qualifier: PLAIN,
+            },
+            month: Some(DateField {
+                digits: [Some(0), None],
+                qualifier: PLAIN,
+            }),
+            day: None,
+        };
+        drop(Edtf::Date(d).values());
+    }
+
+    /// D27 rejects season endpoints in a set range at parse time — seasons
+    /// have no spec-defined successor, so the walk has no step to take. A
+    /// hand-built `2001-21..2002-21` reaches the guard on the first step.
+    #[test]
+    #[should_panic(expected = "D27 rejects season range endpoints")]
+    fn season_range_endpoints_have_no_successor() {
+        let season = |y: i64| Date {
+            year: concrete_year(y, PLAIN),
+            month: Some(concrete_field(21, PLAIN)),
+            day: None,
+        };
+        let set = Edtf::Set(Set {
+            kind: SetKind::AllMembers,
+            elements: vec![SetElement::Range(season(2001), season(2002))],
+        });
+        let mut values = set.values().unwrap();
+        drop(values.next());
+    }
+}

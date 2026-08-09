@@ -549,6 +549,33 @@ jobs:
       - run: >
           cargo llvm-cov report --lcov --output-path lcov.info
           --ignore-filename-regex 'crates/edtf-postgres/'
+      # The table above under-reports every file carrying inline `#[cfg(test)]`
+      # tests. llvm-cov keeps the plain rlib (what the integration tests link)
+      # and the `--cfg test` build of the same lib as separate instantiations,
+      # and its per-file summary does not union them — so a guard reachable
+      # only from a unit test reads as missed there while the merged view has
+      # it covered. bounds.rs shows the shape outright, two records for one
+      # branch: `Branch (125:13): [True: 2.19k, False: 0]` from the rlib and
+      # `[True: 0, False: 1]` from the unit-test build. Only crates with both
+      # kinds of test split this way, which is why edtf-normalize (integration
+      # only) and edtf-wasm (unit only) still read 100% in the table.
+      #
+      # "Was this line ever executed by the suite" is the union, and the
+      # per-line DA: records below carry it. Stating it here keeps the table's
+      # shortfall from being mistaken for a real gap — and keeps anyone from
+      # ever "fixing" the table by deleting a guard test (issue #106).
+      #
+      # Lines only: --branch is nightly-gated and this job runs stable, so the
+      # table's branch column is empty here. Branch sides are measured against
+      # the pinned nightly per docs/coverage.md.
+      - name: Uncovered lines (union view)
+        run: |
+          uncovered=$(grep -c '^DA:[0-9]*,0$' lcov.info || true)
+          {
+            echo '## Coverage (union view)'
+            echo
+            echo "Uncovered lines: ${uncovered}"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload lcov artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

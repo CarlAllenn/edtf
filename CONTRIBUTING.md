@@ -73,7 +73,9 @@ blocked by branch protection. Review checks, in order of importance:
    change; fixes need a regression test.
 3. **The gate**: lints, formatting, MSRV, semver-checks, the pgrx matrix
    and coverage visibility must all pass — reviewers do not re-litigate
-   what the gate enforces mechanically.
+   what the gate enforces mechanically. Coverage is visibility, not a
+   threshold; [docs/coverage.md](docs/coverage.md) says which instrument
+   to read and why the summary table under-reports this workspace.
 4. **Release-pipeline changes** get adversarial review: every assertion
    script exists because something once failed silently, so a pipeline
    diff is reviewed by asking what it can no longer catch.

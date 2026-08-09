@@ -1357,6 +1357,10 @@ jobs:
       # Verify the way a stranger would, immediately: an attest step that
       # succeeded is not the same as an attestation that verifies against
       # the identity consumers will check.
+      #
+      # A script, not inline: SECURITY.md publishes this command, and the
+      # documented one and the executed one must not be able to drift
+      # (issue #159).
       - name: Verify the attestations as a consumer would
         if: env.DRY_RUN != 'true'
         env:
@@ -1364,9 +1368,5 @@ jobs:
           ARTIFACT_DIGEST: ${{ steps.manifest-artifact.outputs.digest }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-          for d in "${DIGEST}" "${ARTIFACT_DIGEST}"; do
-            gh attestation verify "oci://${IMAGE}@${d}" \
-              --repo CarlAllenn/edtf \
-              --signer-workflow 'CarlAllenn/edtf/.github/workflows/publish.yml'
-          done
+          .github/scripts/verify-image-attestation.sh \
+            "${IMAGE}@${DIGEST}" "${IMAGE}@${ARTIFACT_DIGEST}"

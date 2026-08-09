@@ -28,10 +28,13 @@ instructions, the support matrix and the glibc floor are in
 the [repository README](https://github.com/CarlAllenn/edtf#installing-the-postgres-extension).
 
 OCI images are also published to `ghcr.io/carlallenn/edtf-postgres`, built
-from the released tarballs and attested the same way. Two variants per
-Postgres major, both multi-arch, both tagged extension version × major
-(`1.2.3-pg18`) with a floating major tag (`pg18`) tracking the latest
-release for that major. Pin the digest.
+from the released tarballs and attested the same way — the command that
+checks a digest against its release tag, and the three flags that make it
+mean anything, are in
+[the security policy](https://github.com/CarlAllenn/edtf/blob/main/SECURITY.md#verifying-a-published-image).
+Two variants per Postgres major, both multi-arch, both tagged extension
+version × major (`1.2.3-pg18`) with a floating major tag (`pg18`) tracking
+the latest release for that major. Pin the digest.
 
 - **`:<version>-pg<major>-artifact`** — `FROM scratch`: the extension
   files and nothing else. The supported build-stage artifact. It carries

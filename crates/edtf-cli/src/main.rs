@@ -240,3 +240,66 @@ fn precision_str(d: &edtf_core::Date) -> &'static str {
         edtf_core::Precision::Day => "day",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #![allow(
+        clippy::unwrap_used,
+        reason = "test code: a panic here is the failure signal, not a crash path"
+    )]
+
+    use super::*;
+
+    /// Drive the dispatch with a sink of our own instead of the process's
+    /// stdout, and report both halves of its contract: what it wrote, and
+    /// whether it called the input valid.
+    fn dispatch(cmd: &str, input: &str) -> (bool, String) {
+        let mut out = Vec::new();
+        let ok = process(cmd, input, &mut out);
+        (ok, String::from_utf8(out).unwrap())
+    }
+
+    /// `tests/cli.rs` pins the same outputs through the real binary; these go
+    /// through the same code with an injected sink, which is what pins that
+    /// `process` writes where it is told rather than to stdout.
+    #[test]
+    fn every_command_writes_to_the_supplied_sink() {
+        assert_eq!(
+            dispatch("validate", "1985-04-12"),
+            (true, "1985-04-12: ok (level 0)\n".to_owned())
+        );
+        assert_eq!(
+            dispatch("canonical", "?2004-?06-?11"),
+            (true, "2004-06-11?\n".to_owned())
+        );
+        assert_eq!(dispatch("level", "156X-12-25"), (true, "2\n".to_owned()));
+        // `from-julian` is dispatched before parsing, since its input is a
+        // Julian date rather than an EDTF expression.
+        assert_eq!(
+            dispatch("from-julian", "1917-10-25"),
+            (true, "1917-11-07\n".to_owned())
+        );
+        let (ok, json) = dispatch("info", "1985");
+        assert!(ok);
+        let v: serde_json::Value = serde_json::from_str(json.trim()).unwrap();
+        assert_eq!(v["kind"], "date");
+    }
+
+    /// An input that fails to parse is refused before the dispatch, so
+    /// nothing at all reaches the sink — the diagnostic goes to stderr.
+    #[test]
+    fn parse_failure_writes_nothing() {
+        assert_eq!(dispatch("validate", "1985-02-30"), (false, String::new()));
+    }
+
+    /// `main` only ever hands `process` a command it has already matched, so
+    /// the final arm guards that invariant: a command that slipped through
+    /// must abort loudly rather than print a line for a request nobody made.
+    /// A subprocess can never reach it — `main` rejects unknown commands.
+    #[test]
+    #[should_panic(expected = "commands are pre-validated")]
+    fn unroutable_command_panics_rather_than_printing() {
+        // The input parses, so control really does reach the dispatch.
+        dispatch("frobnicate", "1985-04-12");
+    }
+}

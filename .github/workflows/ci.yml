@@ -608,11 +608,21 @@ jobs:
           # records the upload path and nothing else.
           disable_telem: true
       # The gate, last: see the reasoning above the artifact upload.
+      #
+      # The counts go to the log as well as the step summary. Redirecting them
+      # only into $GITHUB_STEP_SUMMARY leaves a failing gate with no numbers
+      # in the log, which is precisely the run where they are wanted. Capture
+      # rather than pipe: the default shell here is `bash -e` without
+      # pipefail, so `task ... | tee` would report tee's status and a red gate
+      # would pass.
       - name: Union view — every line executed, every branch side taken
         run: |
+          out=$(task -s -o interleaved coverage:check 2>&1) && status=0 || status=$?
           {
             echo '## Coverage (union view)'
             echo '```'
-            task -s -o interleaved coverage:check
+            echo "$out"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          echo "$out"
+          exit "$status"

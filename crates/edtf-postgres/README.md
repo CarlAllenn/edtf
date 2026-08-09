@@ -27,21 +27,45 @@ full debug info sits beside each tarball for crash analysis. Full
 instructions, the support matrix and the glibc floor are in
 the [repository README](https://github.com/CarlAllenn/edtf#installing-the-postgres-extension).
 
-An OCI image is also published to `ghcr.io/carlallenn/edtf-postgres`,
-built from the released tarballs and attested the same way. Tags are
-extension version × Postgres major (`1.1.2-pg18`) plus a floating major
-tag (`pg18`); pin the digest. The intended use is as a build stage:
+OCI images are also published to `ghcr.io/carlallenn/edtf-postgres`, built
+from the released tarballs and attested the same way. Two variants per
+Postgres major, both multi-arch, both tagged extension version × major
+(`1.2.3-pg18`) with a floating major tag (`pg18`) tracking the latest
+release for that major. Pin the digest.
+
+- **`:<version>-pg<major>-artifact`** — `FROM scratch`: the extension
+  files and nothing else. The supported build-stage artifact. It carries
+  no OS packages, so it has no inherited CVE surface, and a cold
+  `COPY --from` pulls only the extension rather than a whole base image.
+- **`:<version>-pg<major>`** — the official `postgres` image with the
+  extension installed. Runnable directly.
+
+Take the `-artifact` tag for a build stage:
 
 ```dockerfile
-FROM ghcr.io/carlallenn/edtf-postgres:1.1.2-pg18 AS ext
+FROM ghcr.io/carlallenn/edtf-postgres:1.2.3-pg18-artifact AS ext
 FROM postgres:18-trixie
-COPY --from=ext /usr/lib/postgresql/18/lib/edtf_postgres.so /usr/lib/postgresql/18/lib/
+COPY --from=ext /usr/lib/postgresql/18/lib/ /usr/lib/postgresql/18/lib/
 COPY --from=ext /usr/share/postgresql/18/extension/ /usr/share/postgresql/18/extension/
 ```
 
-Running it directly also works — it is the official `postgres` image with
-the extension installed. The tarballs remain the primary artifact; the
-image is a wrapper around them, never a replacement.
+The artifact image also carries a second copy of the same files in the
+[CloudNativePG extension-ImageVolume][cnpg-ext] layout — `lib/` and
+`share/extension/` at the image root — so the same tag can be mounted
+into a CNPG cluster without a repack:
+
+```yaml
+postgresql:
+  extensions:
+    - name: edtf
+      image:
+        reference: ghcr.io/carlallenn/edtf-postgres:1.2.3-pg18-artifact
+```
+
+The tarballs remain the primary artifact; the images are wrappers around
+them, never a replacement.
+
+[cnpg-ext]: https://cloudnative-pg.io/docs/1.29/imagevolume_extensions/
 
 Building from source instead needs `cargo-pgrx` and an initialised
 `$PGRX_HOME`; see the repository for the development workflow.

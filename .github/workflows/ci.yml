@@ -299,7 +299,11 @@ jobs:
   postgres:
     name: pgrx extension tests (Postgres ${{ matrix.pg }})
     runs-on: ubuntu-latest
-    # Hang guard, not a budget: observed ~3.5m per major.
+    # Hang guard, not a budget: ~3.5m per major before this job took on the
+    # instrumented coverage run, which adds a nightly toolchain install and an
+    # instrumented rebuild. The headroom absorbs that several times over; the
+    # number is left as the last figure actually measured rather than a guess
+    # at the new one.
     timeout-minutes: 25
     strategy:
       fail-fast: false
@@ -364,9 +368,13 @@ jobs:
           # renovate: datasource=github-releases depName=jdx/mise
           version: 2026.7.18
           # Single-purpose job: install only its own tools (canon rule,
-          # templates/ci/README.md).
-          install_args: rust cargo:cargo-pgrx
-          cache_key_prefix: mise-pgrx-v1
+          # templates/ci/README.md). cargo-llvm-cov and task are here because
+          # this job now measures its own coverage — see the test step below.
+          install_args: rust cargo:cargo-pgrx aqua:taiki-e/cargo-llvm-cov task
+          # v1 -> v2 because the tool set above changed. A cache hit skips the
+          # save, so leaving the key alone would mean re-installing the two new
+          # tools on every run, for the life of the cache.
+          cache_key_prefix: mise-pgrx-v2
       - name: Resolve pinned cargo-pgrx version
         run: echo "PGRX_VERSION=$(cargo pgrx --version | awk '{print $2}')" >> "$GITHUB_ENV"
       - name: Cache pgrx-managed Postgres
@@ -386,9 +394,39 @@ jobs:
       - run: >
           cargo clippy -p edtf-postgres --all-targets
           --no-default-features --features "pg$PG" -- -D warnings
-      - run: >
-          cd crates/edtf-postgres && cargo pgrx test "pg$PG"
-          --no-default-features --features "pg$PG"
+      # Same pair the coverage job installs: llvm-tools on the active
+      # toolchain, and `task coverage:pg` pulls in the pinned nightly itself
+      # (its coverage:toolchain dep) because `--branch` is nightly-only.
+      - run: rustup component add llvm-tools
+      # The test run, instrumented — this IS `cargo pgrx test`, wrapped so the
+      # backend processes emit .profraw (issue #153). It replaces the plain run
+      # rather than following it: instrumentation changes speed, not semantics,
+      # and this is the matrix's most expensive step, five times over.
+      #
+      # edtf-postgres used to sit outside the coverage metric because the
+      # coverage job installs neither cargo-pgrx nor a Postgres. Measuring it
+      # in the job that already has both is what folds it in, and does it
+      # without the coverage job giving up `disable-sudo: true` or paying for a
+      # second pgrx build.
+      #
+      # Every leg, not just the exporting one: the script asserts its own union
+      # is clean, so "no uncovered line, no untaken branch side" is checked
+      # against all five majors continuously rather than measured once on pg18
+      # and assumed. The recipe lives in Taskfile.yml and the script, so it is
+      # identical here and under `task coverage:pg`.
+      - run: task coverage:pg
+      # pg18 governs, for the SQL snapshot's reason: it is the default feature.
+      # One fragment, not five — concatenating all five would make a line the
+      # pg14 leg covers and the pg18 leg does not read as uncovered, because
+      # the union gate reads every section it is given.
+      - name: Upload extension coverage fragment
+        if: matrix.pg == 18
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-lcov-postgres
+          path: |
+            lcov-postgres.info
+            coverage-postgres.txt
       # One leg only: the snapshot is the crate's SQL contract, and the
       # point is that there is a single canonical copy of it. pg18 is the
       # default feature, so it is the one that governs. Running this on all
@@ -476,6 +514,16 @@ jobs:
     runs-on: ubuntu-latest
     # Hang guard, not a budget: observed ~1m.
     timeout-minutes: 15
+    # The extension's half of the measurement is produced by the postgres job,
+    # which owns the pgrx harness those tests run in (issue #153). This job is
+    # the merge-and-publish half, so it waits for it.
+    #
+    # The cost is deliberate and it is two things. Coverage now lands after the
+    # matrix rather than beside it, and a red postgres leg means no coverage
+    # report at all — which is the honest outcome: a matrix that did not finish
+    # has not measured anything, and a number published anyway would be a
+    # smaller number wearing the same badge.
+    needs: postgres
     permissions:
       contents: read
       id-token: write # OIDC: Codecov upload, so no CODECOV_TOKEN secret exists
@@ -545,12 +593,26 @@ jobs:
       # sides were previously measurable only on a contributor's laptop, which
       # made half of issue #106's exit criterion unobservable in CI.
       - run: task coverage
+      # The other half of the measurement. `cargo llvm-cov report` cannot
+      # render this crate here — the profile data was produced by Postgres
+      # backend processes on another runner — so the fragment arrives already
+      # exported, as lcov plus its own rendered table.
+      #
+      # No `continue-on-error`, and nothing downstream tolerates the file being
+      # absent: download-artifact fails when the artifact does not exist, and
+      # that failure is the only thing standing between "the extension is in
+      # the number" and a silent return to the gap this replaced.
+      - name: Download the extension coverage fragment
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: coverage-lcov-postgres
       - name: Coverage summary
         run: |
           {
             echo '## Coverage'
             echo '```'
             task -s -o interleaved coverage:table
+            cat coverage-postgres.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
       # The table above under-reports edtf-core's four largest modules. A lib
@@ -582,7 +644,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-lcov
-          path: lcov.info
+          path: |
+            lcov.info
+            lcov-postgres.info
       # Publication, not a gate. .github/codecov.yml turns off the project
       # and patch commit statuses Codecov posts by default — those are the
       # merge-blocking threshold the comment above rejects, wearing a
@@ -598,8 +662,11 @@ jobs:
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           use_oidc: true
-          files: lcov.info
-          # Report exactly the file the step above produced; no tree scan.
+          # Both halves. Codecov merges multiple reports for a commit, so the
+          # badge and the PR comment carry one number over the whole workspace
+          # rather than one over most of it.
+          files: lcov.info,lcov-postgres.info
+          # Report exactly the files the steps above produced; no tree scan.
           disable_search: true
           codecov_yml_path: .github/codecov.yml
           fail_ci_if_error: false

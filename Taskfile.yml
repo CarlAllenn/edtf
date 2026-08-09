@@ -15,10 +15,11 @@ vars:
   # datasource exists for dated nightlies; bump manually alongside stable
   # toolchain bumps. Hooks, tasks and CI all read this one value.
   RUSTFMT_TOOLCHAIN: nightly-2026-07-20
-  # Files outside the coverage metric: edtf-postgres, whose tests run in the
-  # pgrx harness (the pg14-18 matrix jobs) rather than under `cargo test`.
-  # The exclusion is now about where the tests run and what CI would have to
-  # install, NOT about instrumentability — that part turned out to be false.
+  # Files outside THIS invocation, not outside the metric: edtf-postgres'
+  # tests run in the pgrx harness (the pg14-18 matrix jobs) rather than under
+  # `cargo test`, so a `cargo llvm-cov` over the workspace has no data for it
+  # and would report a false gap. `task coverage:pg` measures it where those
+  # tests do run, and the two lcov files are read together from there on.
   # See docs/coverage.md.
   COVERAGE_EXCLUDE: crates/edtf-postgres/
 
@@ -56,6 +57,17 @@ tasks:
         RUSTC="$bin/rustc" PATH="$bin:$PATH" cargo llvm-cov report --branch
         --ignore-filename-regex '{{.COVERAGE_EXCLUDE}}'
 
+  coverage:pg:
+    desc: Same measurement for the Postgres extension (requires `cargo pgrx init`)
+    deps: [coverage:toolchain]
+    # Not fingerprinted, for pg:schema-snapshot's reason: the input is a pgrx
+    # BUILD against an initialised $PGRX_HOME, not just the sources.
+    env:
+      PG: '{{.PG | default "18"}}'
+      NIGHTLY: "{{.RUSTFMT_TOOLCHAIN}}"
+    cmds:
+      - .github/scripts/coverage-extension.sh
+
   coverage:check:
     desc: "Union view — every line executed, every branch side taken (issue #106)"
     cmds:
@@ -63,9 +75,18 @@ tasks:
       # invariant you cannot half-satisfy. The per-file table cannot express
       # it — see the instantiation artifact in docs/coverage.md — so the gate
       # reads the per-line records instead.
+      #
+      # Every lcov*.info, because the measurement arrives in two pieces: the
+      # workspace export from `task coverage`, and the extension fragment from
+      # `task coverage:pg` (which needs a Postgres, so a laptop without one
+      # checks the first alone). CI cannot silently fall into that half-check:
+      # there the fragment is a downloaded artifact, and a missing artifact
+      # fails the download step before this one runs.
+      - test -s lcov.info
       - >
-        lines=$(grep -c '^DA:[0-9]*,0$' lcov.info || true);
-        sides=$(grep -c '^BRDA:.*,0$' lcov.info || true);
+        lines=$(cat lcov*.info | grep -c '^DA:[0-9]*,0$' || true);
+        sides=$(cat lcov*.info | grep -c '^BRDA:.*,0$' || true);
+        echo "measured: $(ls lcov*.info | tr '\n' ' ')";
         echo "uncovered lines: $lines; untaken branch sides: $sides";
         test "$lines" -eq 0 && test "$sides" -eq 0
 

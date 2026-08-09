@@ -1,0 +1,24 @@
+# The CloudNativePG ImageVolume proof's tools (issue #158) — a mise config
+# ENVIRONMENT, loaded only when MISE_ENV=cnpg, which is set on exactly one
+# step of exactly one job (scheduled.yml, the `cnpg` job).
+#
+# Not in mise.toml, and the difference is not cosmetic. `task ci` installs
+# the whole toolchain, and every ci.yml job runs under `egress-policy:
+# block`; kubectl is served from dl.k8s.io, which that allowlist does not
+# contain. Putting these two in the default table therefore had a choice
+# behind it — widen the strict allowlist of every CI job and have all of
+# them download Kubernetes tooling none of them use, or scope the tools to
+# the job that needs them. This file is the second option, and it gives up
+# nothing the first would have kept: both tools stay pinned, checksummed in
+# mise.cnpg.lock (each config file carries its own lockfile) and
+# provenance-verified, so `locked = true` still means no ad-hoc install can
+# happen anywhere. Renovate's mise manager matches `mise.*.toml` by
+# default, so the two pins age no differently from the ones next door.
+#
+# The kind FLOOR is load-bearing rather than incidental: image volumes need
+# containerd 2.1, which first shipped in kind 0.29's node images. An older
+# kind boots a node whose runtime silently cannot mount the extension, which
+# would read as a defect in the image rather than in the harness.
+[tools]
+kind = "0.32.0"
+kubectl = "1.36.1"

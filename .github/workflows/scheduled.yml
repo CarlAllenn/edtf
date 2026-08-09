@@ -152,6 +152,14 @@ jobs:
     # Hang guard, not a budget: observed ~4m locally against a warm cache,
     # and the CI path adds three cold image pulls to that.
     timeout-minutes: 30
+    # Job-scoped, not step-scoped: this is what makes mise.cnpg.toml visible
+    # at all, and mise's shims re-read it on every invocation — so the step
+    # that RUNS kind needs it just as much as the step that installs kind.
+    # kind and kubectl are pinned there rather than in mise.toml so that
+    # `task ci`, which installs the whole toolchain under `egress-policy:
+    # block`, never reaches for dl.k8s.io. See that file's header.
+    env:
+      MISE_ENV: cnpg
     steps:
       # audit, not block — the second such job, and for a structural reason
       # rather than lychee's wide-endpoint one. A kind node is a container

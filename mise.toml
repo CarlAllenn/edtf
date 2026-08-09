@@ -94,10 +94,3 @@ lychee = "0.24.2"
 # canon: renovate-config templates/trivy — the gate shape is report-only on
 # the publish path, never blocking
 "aqua:aquasecurity/trivy" = "0.72.0"
-# The CloudNativePG ImageVolume proof (issue #158), weekly scheduled.yml
-# only: a throwaway Kubernetes cluster and the client that drives it. The
-# kind FLOOR is load-bearing — image volumes need containerd 2.1, which
-# arrived in the node images of kind 0.29; an older kind boots a node whose
-# runtime silently cannot mount the extension.
-kind = "0.32.0"
-kubectl = "1.36.1"

@@ -23,6 +23,25 @@
       "datasourceTemplate": "docker"
     },
     {
+      "description": "The CloudNativePG proof's pinned images (issue #158): the kind node and the CNPG operand Postgres, both digest-pinned in smoke-cnpg.sh for the same reason base-images.sh pins its own",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/scripts/smoke-cnpg\\.sh$/"],
+      "matchStrings": [
+        "\"(?<depName>kindest/node):(?<currentValue>v[\\d.]+)@(?<currentDigest>sha256:[a-f0-9]{64})\"",
+        "\"(?<depName>ghcr\\.io/cloudnative-pg/postgresql):(?<currentValue>[\\w.-]+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "The CloudNativePG operator release the proof installs; the release branch in the URL is derived from this one string, so there is nothing else to move",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/scripts/smoke-cnpg\\.sh$/"],
+      "matchStrings": ["CNPG_VERSION=\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""],
+      "depNameTemplate": "cloudnative-pg/cloudnative-pg",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
       "description": "rustup-init pin in the extension build script; verify-rustup-pin.sh gates every PR so the SHA256 lines must move with the version",
       "customType": "regex",
       "managerFilePatterns": ["/^\\.github/scripts/build-extension-inner\\.sh$/"],

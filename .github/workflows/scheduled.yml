@@ -139,3 +139,71 @@ jobs:
         run: lychee .
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # The one claim this repository shipped without a proof behind it (issue
+  # #158): the artifact image's CloudNativePG ImageVolume layout. Scheduled
+  # rather than gating, for the reasons in smoke-cnpg.sh's header — an
+  # external operator, a Kubernetes floor, and a PUBLISHED image it cannot
+  # run without. Those are exactly the inputs that break with no commit
+  # here, which is the definition of this workflow's job class.
+  cnpg:
+    name: CloudNativePG ImageVolume
+    runs-on: ubuntu-latest
+    # Hang guard, not a budget: observed ~4m locally against a warm cache,
+    # and the CI path adds three cold image pulls to that.
+    timeout-minutes: 30
+    steps:
+      # audit, not block — the second such job, and for a structural reason
+      # rather than lychee's wide-endpoint one. A kind node is a container
+      # running its own containerd with its own resolver, and every image
+      # this proof depends on (operator, operand, extension) is pulled from
+      # inside it. A runner-level allowlist cannot see or filter that
+      # traffic, so declaring `block` here would assert a control that is
+      # not in force — worse than declaring none. Quarantined here with
+      # nothing secret-bearing in the job: the read-only default token
+      # authenticates one release lookup, and every image pulled is public,
+      # and digest-pinned in smoke-cnpg.sh.
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+          disable-sudo: true
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.7.18
+          # Its own tools and no others, the same rule as the scanners
+          # above: a scheduled job must not pay (or egress for) the whole
+          # toolchain. Neither pin is arbitrary — see smoke-cnpg.sh on why
+          # the kind floor is load-bearing.
+          install_args: kind kubectl
+
+      # The LATEST PUBLISHED release, not the workspace version: main is
+      # routinely ahead of what has shipped, and an image only exists for
+      # what shipped. Sorted by publish time rather than trusting list
+      # order, because five tags are cut per release and only one of them
+      # names the extension.
+      - name: Resolve the published artifact image
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag=$(gh release list --repo "${GITHUB_REPOSITORY}" --limit 100 \
+            --json tagName,publishedAt \
+            --jq '[.[] | select(.tagName | startswith("edtf-postgres-v"))]
+                  | sort_by(.publishedAt) | last | .tagName // ""')
+          if [[ -z ${tag} ]]; then
+            echo "::error::no edtf-postgres release found to test"
+            exit 1
+          fi
+          version="${tag#edtf-postgres-v}"
+          echo "VERSION=${version}" >> "${GITHUB_ENV}"
+          echo "IMAGE_REF=ghcr.io/carlallenn/edtf-postgres:${version}-pg18-artifact" >> "${GITHUB_ENV}"
+          echo "::notice::testing ${tag}"
+
+      - name: Mount the artifact image into a CNPG cluster and prove it loads
+        run: .github/scripts/smoke-cnpg.sh "${IMAGE_REF}"

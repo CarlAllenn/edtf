@@ -77,6 +77,15 @@ postgresql:
         reference: ghcr.io/carlallenn/edtf-postgres:1.2.3-pg18-artifact
 ```
 
+That path is tested, not inferred: a weekly job builds a CNPG cluster
+around the published tag and installs the extension into it as a
+non-superuser. It needs PostgreSQL 18 — `extension_control_path` is what
+makes out-of-tree extensions loadable at all — CloudNativePG 1.29 or
+later, and a Kubernetes with image volumes: 1.35 and later have them on by
+default, 1.33 and 1.34 need the `ImageVolume` feature gate. The operand
+image must be Debian 12 or newer, the same glibc 2.36 floor the tarballs
+carry.
+
 The tarballs remain the primary artifact; the images are wrappers around
 them, never a replacement.
 

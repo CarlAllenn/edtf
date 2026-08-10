@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0](https://github.com/CarlAllenn/edtf/compare/edtf-core-v1.2.3...edtf-core-v1.3.0) - 2026-08-10
+
+### Other
+
+- cover every remaining defensive guard ([#152](https://github.com/CarlAllenn/edtf/pull/152))
+
 ## [1.2.3](https://github.com/CarlAllenn/edtf/compare/edtf-core-v1.2.2...edtf-core-v1.2.3) - 2026-08-08
 
 ### Other

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0](https://github.com/CarlAllenn/edtf/compare/edtf-postgres-v1.2.3...edtf-postgres-v1.3.0) - 2026-08-10
+
+### Added
+
+- *(image)* publish a FROM scratch artifact variant ([#156](https://github.com/CarlAllenn/edtf/pull/156))
+- *(ci)* fold edtf-postgres into the coverage metric ([#155](https://github.com/CarlAllenn/edtf/pull/155))
+
+### Other
+
+- *(security)* document verifying an image attestation ([#159](https://github.com/CarlAllenn/edtf/pull/159)) ([#166](https://github.com/CarlAllenn/edtf/pull/166))
+- *(image)* prove the CloudNativePG ImageVolume claim ([#158](https://github.com/CarlAllenn/edtf/pull/158)) ([#162](https://github.com/CarlAllenn/edtf/pull/162))
+- *(image)* the runnable image is a convenience, not an artifact ([#157](https://github.com/CarlAllenn/edtf/pull/157))
+
 ## [1.2.3](https://github.com/CarlAllenn/edtf/compare/edtf-postgres-v1.2.2...edtf-postgres-v1.2.3) - 2026-08-08
 
 ### Other

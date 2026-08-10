@@ -130,7 +130,7 @@ jobs:
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
         with:
           # renovate: datasource=github-releases depName=jdx/mise
-          version: 2026.7.18
+          version: 2026.8.0
           # Single-purpose job: the toolchain lives inside the build
           # container, so the runner needs only the TOML reader that derives
           # the pins from mise.toml.
@@ -259,7 +259,7 @@ jobs:
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
         with:
           # renovate: datasource=github-releases depName=jdx/mise
-          version: 2026.7.18
+          version: 2026.8.0
           # Single-purpose job: the pinned Rust toolchain to build with and
           # the TOML reader that derives the version from Cargo.toml.
           install_args: rust taplo
@@ -379,7 +379,7 @@ jobs:
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
         with:
           # renovate: datasource=github-releases depName=jdx/mise
-          version: 2026.7.18
+          version: 2026.8.0
           install_args: rust node aqua:rustwasm/wasm-pack cargo:cargo-cyclonedx
           # No tool cache in the publishing workflow (zizmor cache-poisoning,
           # high). Everything this job builds gets signed, so a poisoned
@@ -750,7 +750,7 @@ jobs:
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
         with:
           # renovate: datasource=github-releases depName=jdx/mise
-          version: 2026.7.18
+          version: 2026.8.0
           # canary.sh needs cargo and npm; nothing here builds from source.
           install_args: rust node
           cache: false
@@ -915,7 +915,7 @@ jobs:
         if: env.DRY_RUN != 'true'
         with:
           # renovate: datasource=github-releases depName=jdx/mise
-          version: 2026.7.18
+          version: 2026.8.0
           # Single-purpose job: only the TOML reader that derives the
           # version. No tool cache in the publishing workflow (zizmor
           # cache-poisoning, high).
@@ -1197,7 +1197,7 @@ jobs:
         if: env.DRY_RUN != 'true'
         with:
           # renovate: datasource=github-releases depName=jdx/mise
-          version: 2026.7.18
+          version: 2026.8.0
           # taplo derives the version; trivy runs the report-only scan.
           install_args: taplo aqua:aquasecurity/trivy
           cache: false

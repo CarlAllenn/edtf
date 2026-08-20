@@ -21,4 +21,4 @@
 # would read as a defect in the image rather than in the harness.
 [tools]
 kind = "0.32.0"
-kubectl = "1.36.1"
+kubectl = "1.36.3"

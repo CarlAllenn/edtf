@@ -20,17 +20,17 @@ url = "https://github.com/kubernetes-sigs/kind/releases/download/v0.32.0/kind-da
 url_api = "https://api.github.com/repos/kubernetes-sigs/kind/releases/assets/436442412"
 
 [[tools.kubectl]]
-version = "1.36.1"
+version = "1.36.3"
 backend = "aqua:kubernetes/kubernetes/kubectl"
 
 [tools.kubectl."platforms.linux-arm64"]
-checksum = "sha256:59f7ee8e477fae658447607dc3c8790ac17a1b016c01c622c12070e969e2d4e7"
-url = "https://dl.k8s.io/v1.36.1/bin/linux/arm64/kubectl"
+checksum = "sha256:3d86f24401c41ae5a46ac50eef8865fe891d3647d324a0836f6c63757a126e62"
+url = "https://dl.k8s.io/v1.36.3/bin/linux/arm64/kubectl"
 
 [tools.kubectl."platforms.linux-x64"]
-checksum = "sha256:629d3f410e09bf49b64ae7079f7f0bda1191efed311f7d37fdbab0ad5b0ec2b7"
-url = "https://dl.k8s.io/v1.36.1/bin/linux/amd64/kubectl"
+checksum = "sha256:ebbd080e7c2e275093b55915722043257eb24004363e20acb3c4d71919f88336"
+url = "https://dl.k8s.io/v1.36.3/bin/linux/amd64/kubectl"
 
 [tools.kubectl."platforms.macos-arm64"]
-checksum = "sha256:9092778abaef3079449da4cd70ded0e4be112480c93efcdeace3155968d1d133"
-url = "https://dl.k8s.io/v1.36.1/bin/darwin/arm64/kubectl"
+checksum = "sha256:fc8582acde13869a606730a79379d6515f30c68afcced0b5ac8789d5d002b7d6"
+url = "https://dl.k8s.io/v1.36.3/bin/darwin/arm64/kubectl"

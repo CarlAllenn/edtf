@@ -30,10 +30,11 @@ that is valid in your application is valid in your database — always:
 
 [pgrx]: https://github.com/pgcentralfoundation/pgrx
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) (how to
-contribute, the enforced coding standard, DCO), [GOVERNANCE.md](GOVERNANCE.md)
-(decision-making and continuity), the [roadmap](docs/roadmap.md), the
-[security policy](SECURITY.md) and the
+Contributions are welcome. The contributing guide, code of conduct,
+governance and security policy are served org-wide from
+[monumental-archive/.github](https://github.com/monumental-archive/.github)
+rather than duplicated here. Repo-specific reading: the
+[roadmap](docs/roadmap.md) and the
 [security assurance case](docs/assurance-case.md).
 
 ## Why this exists
@@ -210,9 +211,9 @@ checksum lockfile; git hooks (lefthook) and CI run the same gauntlet:
 
 ```sh
 mise install     # pinned Rust + all linters
-task ci          # fmt + clippy + cargo-deny + taplo + codespell + ec + tests
-task wasm        # build the WebAssembly artifact
-task pg:test     # Postgres extension tests (needs `cargo pgrx init` once)
+mise run ci      # the org gate: every linter, then the test suite
+mise run wasm    # build the WebAssembly artifact
+mise run pg:test # Postgres extension tests (needs `cargo pgrx init` once)
 ```
 
 The test suite includes a 63-case conformance corpus derived from every
@@ -235,7 +236,7 @@ Parse errors carry the byte offset of the problem:
 
 ### Performance
 
-Criterion benchmarks live in `crates/edtf-core/benches/core.rs` (`task bench`).
+Criterion benchmarks live in `crates/edtf-core/benches/core.rs` (`mise run bench`).
 Representative numbers, Apple M1 Pro, rustc 1.97.1, `--release`:
 
 | Input | parse | canonicalize | bounds |

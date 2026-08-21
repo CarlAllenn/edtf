@@ -13,7 +13,8 @@ relations).
 ## Installing
 
 Prebuilt, attested tarballs are attached to each `edtf-postgres-v*` release
-from v1.1.0 onward, for Postgres 14–18 on `amd64` and `arm64` — no Rust toolchain and no
+from v1.1.0 onward, for Postgres 14–18 on `amd64` and `arm64` — no Rust
+toolchain and no
 `cargo-pgrx` required. Download the tarball for your major and architecture,
 verify it, extract into `/`, then:
 

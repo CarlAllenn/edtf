@@ -25,3 +25,4 @@ lefthook-local.yml
 /lcov.info
 /lcov-postgres.info
 /coverage-postgres.txt
+biome-org.generated.json

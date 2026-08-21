@@ -60,6 +60,10 @@
     reason = "the discarded value's type is fixed by the call it comes from"
 )]
 #![expect(clippy::panic, reason = "a panic in a test IS the failure signal")]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::Edtf;
 

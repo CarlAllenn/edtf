@@ -1,10 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) the edtf contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Per-language pattern tables. The grammar in `engine.rs` is
-//! language-neutral; everything language-specific lives in a [`Lang`] value.
-//! Adding a locale means adding one `Lang` const (and its word tables), not
-//! touching the grammar.
+//! Per-language pattern tables.
+//!
+//! The grammar in `engine.rs` is language-neutral; everything
+//! language-specific lives in a [`Lang`] value. Adding a locale means adding
+//! one `Lang` const (and its word tables), not touching the grammar.
 //!
 //! Every table is `&'static` so the crate stays `no_std` + zero-dep; lookup
 //! is linear scan, which beats hash machinery at these sizes. All entries are
@@ -14,10 +15,6 @@
 #![expect(
     clippy::redundant_pub_crate,
     reason = "pub(crate) states the intended visibility even where the module tree makes it redundant today"
-)]
-#![expect(
-    clippy::missing_docs_in_private_items,
-    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
 )]
 #![expect(
     clippy::single_call_fn,
@@ -113,6 +110,7 @@ pub(crate) const fn season_name(code: u8) -> &'static str {
 // ---------------------------------------------------------------------------
 // English
 
+/// The English table set.
 static EN: Lang = Lang {
     months: &[
         ("january", 1),
@@ -237,6 +235,7 @@ static EN: Lang = Lang {
 // ("весной 2001"). Tables carry every form the grammar should accept; the
 // engine never inflects.
 
+/// The Russian table set.
 static RU: Lang = Lang {
     months: &[
         ("\u{44f}\u{43d}\u{432}\u{430}\u{440}\u{44c}", 1),

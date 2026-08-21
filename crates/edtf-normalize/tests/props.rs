@@ -54,6 +54,14 @@
     clippy::integer_division_remainder_used,
     reason = "same integer calendar arithmetic as the code under test"
 )]
+#![expect(
+    clippy::tests_outside_test_module,
+    reason = "an integration test under tests/ is compiled as its own crate whose every item is test support, so there is no non-test code for a mod tests to separate it from"
+)]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::Edtf;
 use edtf_normalize::{Language, Options, Outcome, normalize, normalize_with};

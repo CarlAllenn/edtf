@@ -30,6 +30,10 @@
     clippy::absolute_paths,
     reason = "a one-use std path written in full at the call site"
 )]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::Edtf;
 use serde_json::Value;

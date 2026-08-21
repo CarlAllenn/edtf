@@ -28,10 +28,6 @@
     reason = "a one-use std path written in full at the call site is clearer than an import that only appears once"
 )]
 #![expect(
-    clippy::missing_docs_in_private_items,
-    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
-)]
-#![expect(
     clippy::pattern_type_mismatch,
     reason = "matching through a reference without restating & at every level is the idiomatic form the rest of this crate uses"
 )]
@@ -58,10 +54,6 @@
 #![expect(
     clippy::indexing_slicing,
     reason = "each index is preceded by the bounds check that justifies it, or indexes a fixed-size array whose length is in its type"
-)]
-#![expect(
-    clippy::inline_modules,
-    reason = "a module small enough to read in place belongs in place; splitting it into a file would hide it"
 )]
 #![expect(
     clippy::missing_trait_methods,
@@ -114,6 +106,7 @@ impl Qualifier {
         self.uncertain || self.approximate
     }
 
+    /// Fold another component set into this one.
     pub(crate) fn merge(&mut self, other: Self) {
         self.uncertain |= other.uncertain;
         self.approximate |= other.approximate;
@@ -252,6 +245,7 @@ impl Date {
         }
     }
 
+    /// Whether any component of this value satisfies `f`.
     fn any_component<F>(&self, f: F) -> bool
     where
         F: Fn(Qualifier) -> bool,
@@ -344,6 +338,7 @@ impl IntervalEndpoint {
         !matches!(self, Self::Open | Self::Unknown)
     }
 
+    /// The date this value denotes, when it denotes exactly one.
     pub(crate) const fn date(&self) -> Option<&Date> {
         match self {
             Self::Date(d) | Self::OnOrBefore(d) | Self::OnOrAfter(d) => Some(d),
@@ -434,6 +429,7 @@ impl Edtf {
         }
     }
 
+    /// Whether any date inside this value satisfies `f`.
     fn any_date<F>(&self, f: F) -> bool
     where
         F: Fn(&Date) -> bool,
@@ -475,6 +471,7 @@ impl core::str::FromStr for Edtf {
     }
 }
 
+/// The conformance level an interval requires.
 fn interval_level(iv: &Interval) -> u8 {
     let mut level = 0;
     for endpoint in [&iv.start, &iv.end] {
@@ -489,6 +486,7 @@ fn interval_level(iv: &Interval) -> u8 {
     level
 }
 
+/// The conformance level a date requires.
 fn date_level(d: &Date, in_interval: bool) -> u8 {
     let mut level = 0_u8;
     match d.year.kind {
@@ -566,8 +564,14 @@ fn mask_level(d: &Date) -> u8 {
 
 #[cfg(test)]
 mod tests {
-    #![expect(clippy::too_long_first_doc_paragraph, reason = "these doc comments describe test intent for a reader of the file, not a rustdoc summary — a private test module renders nowhere")]
-    #![expect(clippy::missing_panics_doc, reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn")]
+    #![expect(
+        clippy::missing_panics_doc,
+        reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+    )]
+    #![expect(
+        clippy::inline_modules,
+        reason = "unit tests live beside the code they exercise; a separate file would put the invariants further from what they constrain"
+    )]
     use alloc::vec;
 
     use super::*;
@@ -587,10 +591,12 @@ mod tests {
         }
     }
 
+    /// Both halves of `f(a) || f(b)` are pinned, structurally.
+    ///
     /// The parser rejects a qualifier on a set-range endpoint (D27), so
     /// `any_date`'s range arm is only reachable from a hand-built value. It
-    /// stays structural — either endpoint answers — so both halves of
-    /// `f(a) || f(b)` are pinned here; dropping either one fails the test.
+    /// stays structural — either endpoint answers — so dropping either half
+    /// fails the test.
     #[test]
     fn set_range_reports_a_qualifier_on_either_endpoint() {
         let both = Qualifier {

@@ -30,10 +30,6 @@
     reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
 )]
 #![expect(
-    clippy::missing_docs_in_private_items,
-    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
-)]
-#![expect(
     clippy::shadow_reuse,
     reason = "the algorithms shadow deliberately — the JDN forms rebind y and m as the published derivation does, step by step, and renaming each step would break the correspondence to the source"
 )]
@@ -54,10 +50,6 @@
     reason = "every flagged operation is bounded where it stands: slice indices by a length guard on the line above, digit values to 0-9 by the match arm that binds them, and the JDN forms by being computed in i128 so any i64 year fits. The operations that genuinely could leave range already use checked_/saturating_ and return an error rather than wrapping"
 )]
 #![expect(
-    clippy::inline_modules,
-    reason = "a module small enough to read in place belongs in place; splitting it into a file would hide it"
-)]
-#![expect(
     clippy::unreachable,
     reason = "an unreachable! whose comment names the caller-side check that makes it unreachable — a deliberate assertion of an invariant, not an unhandled case"
 )]
@@ -73,6 +65,7 @@ use std::{
 
 use edtf_core::{Bound, Edtf};
 
+/// The `--help` text, and the usage line every argument error prints.
 const USAGE: &str = "\
 edtf \u{2014} EDTF (ISO 8601-2:2019 Annex A) validator, levels 0-2
 
@@ -121,6 +114,7 @@ fn main() -> ExitCode {
     }
 }
 
+/// Dispatch one command with its arguments and return the process exit code.
 fn run(cmd: &str, rest: &[String]) -> ExitCode {
     let stdout = std::io::stdout();
     let mut out = stdout.lock();
@@ -244,6 +238,7 @@ fn parse_julian_parts(input: &str) -> Option<(i64, Option<u8>, Option<u8>)> {
     Some((year, month, day))
 }
 
+/// Render a bound as JSON: a date string, or `null` for an unknown bound.
 fn bound_value(b: Bound) -> serde_json::Value {
     match b {
         Bound::Date(d) => serde_json::Value::String(d.to_string()),
@@ -253,6 +248,7 @@ fn bound_value(b: Bound) -> serde_json::Value {
     }
 }
 
+/// The `info` command's JSON object for one parsed expression.
 fn info_json(input: &str, parsed: &Edtf) -> String {
     let bounds = parsed.bounds();
     let (kind, precision) = match parsed {
@@ -276,6 +272,7 @@ fn info_json(input: &str, parsed: &Edtf) -> String {
     .to_string()
 }
 
+/// The precision of a date as the lowercase word the JSON surface uses.
 fn precision_str(d: &edtf_core::Date) -> &'static str {
     match d.precision() {
         edtf_core::Precision::Year => "year",
@@ -287,6 +284,14 @@ fn precision_str(d: &edtf_core::Date) -> &'static str {
 
 #[cfg(test)]
 mod tests {
+    #![expect(
+        clippy::missing_panics_doc,
+        reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+    )]
+    #![expect(
+        clippy::inline_modules,
+        reason = "unit tests live beside the code they exercise; a separate file would put the invariants further from what they constrain"
+    )]
     #![allow(
         clippy::unwrap_used,
         reason = "test code: a panic here is the failure signal, not a crash path"
@@ -336,9 +341,11 @@ mod tests {
         assert_eq!(dispatch("validate", "1985-02-30"), (false, String::new()));
     }
 
+    /// The final arm guards an invariant, loudly.
+    ///
     /// `main` only ever hands `process` a command it has already matched, so
-    /// the final arm guards that invariant: a command that slipped through
-    /// must abort loudly rather than print a line for a request nobody made.
+    /// a command that slipped through must abort rather than print a line
+    /// for a request nobody made.
     /// A subprocess can never reach it — `main` rejects unknown commands.
     #[test]
     #[should_panic(expected = "commands are pre-validated")]

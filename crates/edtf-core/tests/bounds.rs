@@ -33,6 +33,10 @@
     clippy::shadow_unrelated,
     reason = "short-lived rebinding inside one assertion chain"
 )]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::{Bound, Edtf};
 use serde_json::Value;

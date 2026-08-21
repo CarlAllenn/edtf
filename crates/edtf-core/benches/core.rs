@@ -31,13 +31,19 @@
     clippy::shadow_unrelated,
     reason = "short-lived rebinding inside one assertion chain"
 )]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use core::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use edtf_core::Edtf;
 
-/// (label, input) pairs chosen to cover the grammar, not to flatter it:
+/// The benchmark corpus: (label, input) pairs.
+///
+/// Chosen to cover the grammar, not to flatter it:
 /// level 0 calendar forms, level 1 qualification/masks, and the level 2
 /// shapes (per-component qualifiers, exponential years, sets) that take the
 /// deepest parser paths.

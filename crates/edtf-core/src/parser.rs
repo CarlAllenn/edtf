@@ -20,10 +20,6 @@
     reason = "every flagged operation is bounded where it stands: slice indices by a length guard on the line above, digit values to 0-9 by the match arm that binds them, and the JDN forms by being computed in i128 so any i64 year fits. The operations that genuinely could leave range already use checked_/saturating_ and return an error rather than wrapping"
 )]
 #![expect(
-    clippy::missing_docs_in_private_items,
-    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
-)]
-#![expect(
     clippy::indexing_slicing,
     reason = "each index is preceded by the bounds check that justifies it, or indexes a fixed-size array whose length is in its type"
 )]
@@ -72,21 +68,17 @@
     reason = "'a is the conventional name for the single borrowed input's lifetime"
 )]
 #![expect(
-    clippy::inline_modules,
-    reason = "a module small enough to read in place belongs in place; splitting it into a file would hide it"
-)]
-#![expect(
-    clippy::let_underscore_untyped,
-    reason = "the discarded value's type is fixed by the call it comes from"
-)]
-#![expect(
     clippy::unreachable,
     reason = "an unreachable! whose comment names the caller-side check that makes it unreachable — a deliberate assertion of an invariant, not an unhandled case"
 )]
-
-#![expect(clippy::missing_errors_doc, reason = "edtf-core declares every module private and exports only named types, so nothing here is reachable from outside the crate and there is no published error contract to document")]
-
-#![expect(clippy::too_long_first_doc_paragraph, reason = "the items are crate-private, so these paragraphs render in no rustdoc summary; they are written to be read in the file, next to the code they describe")]
+#![expect(
+    clippy::missing_errors_doc,
+    reason = "edtf-core declares every module private and exports only named types, so nothing flagged here is reachable from outside the crate and there is no published error contract to document"
+)]
+#![expect(
+    clippy::too_long_first_doc_paragraph,
+    reason = "the items are crate-private, so these paragraphs render in no rustdoc summary; they are written to be read next to the code they describe"
+)]
 
 use alloc::{vec, vec::Vec};
 
@@ -98,6 +90,7 @@ use crate::{
     },
 };
 
+/// Parse a whole EDTF expression, or report where it stopped being one.
 pub(crate) fn parse(input: &str) -> Result<Edtf, ParseError> {
     if input.is_empty() {
         return Err(err(0, "empty input"));
@@ -119,6 +112,7 @@ pub(crate) fn parse(input: &str) -> Result<Edtf, ParseError> {
     }
 }
 
+/// A parse error at `offset` with a fixed message.
 const fn err(offset: usize, message: &'static str) -> ParseError {
     ParseError { message, offset }
 }
@@ -130,13 +124,18 @@ fn offset_in(whole: &str, part: &str) -> usize {
 
 // ---------------------------------------------------------------- cursor
 
+/// A cursor over the input's bytes, carrying its offset in the original.
 struct Cur<'a> {
+    /// The bytes still being scanned.
     b: &'a [u8],
+    /// Index of the next byte in `b`.
     i: usize,
+    /// Offset of `b[0]` within the original input.
     base: usize,
 }
 
 impl<'a> Cur<'a> {
+    /// A cursor over `s`, whose first byte sits at `base` in the original.
     const fn new(s: &'a str, base: usize) -> Self {
         Self {
             b: s.as_bytes(),
@@ -145,18 +144,22 @@ impl<'a> Cur<'a> {
         }
     }
 
+    /// The current position, in the original input's coordinates.
     const fn pos(&self) -> usize {
         self.base + self.i
     }
 
+    /// A parse error at the current position.
     const fn fail(&self, message: &'static str) -> ParseError {
         err(self.pos(), message)
     }
 
+    /// The next byte without consuming it.
     fn peek(&self) -> Option<u8> {
         self.b.get(self.i).copied()
     }
 
+    /// Consume and return the next byte.
     fn bump(&mut self) -> Option<u8> {
         let c = self.peek();
         if c.is_some() {
@@ -165,6 +168,7 @@ impl<'a> Cur<'a> {
         c
     }
 
+    /// Consume the next byte if it is `c`; report whether it was.
     fn eat(&mut self, c: u8) -> bool {
         if self.peek() == Some(c) {
             self.i += 1;
@@ -174,10 +178,12 @@ impl<'a> Cur<'a> {
         }
     }
 
+    /// Whether the cursor has reached the end of its input.
     const fn eof(&self) -> bool {
         self.i >= self.b.len()
     }
 
+    /// Consume a trailing qualifier character, if one is present.
     fn take_qualifier(&mut self) -> Option<Qualifier> {
         let q = match self.peek()? {
             b'?' => Qualifier {
@@ -240,6 +246,7 @@ impl<'a> Cur<'a> {
     clippy::too_many_lines,
     reason = "one linear scan; splitting scatters the offset bookkeeping"
 )]
+/// Parse a date whose first byte sits at `base` in the original input.
 pub(crate) fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
     // Every caller (dispatcher, interval endpoints, set elements) rejects
     // empty slices with its own message first; a graceful error beats a
@@ -398,6 +405,7 @@ pub(crate) fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
     clippy::too_many_arguments,
     reason = "finisher taking every parsed component; it has one caller"
 )]
+/// Assemble a validated date from its parsed parts.
 fn finish_date(
     negative: bool,
     ydigits: [Option<u8>; 4],
@@ -420,6 +428,7 @@ fn finish_date(
     Ok(Date { year, month, day })
 }
 
+/// Reject month/day combinations no completion of the year admits.
 fn validate_month_day(
     year: &YearKind,
     month: Option<&DateField>,
@@ -461,6 +470,7 @@ fn validate_month_day(
     Ok(())
 }
 
+/// Every month value a (possibly masked) month field admits.
 fn month_candidates(m: DateField) -> Vec<u8> {
     match m.value() {
         Some(v) if (1..=12).contains(&v) => vec![v],
@@ -471,6 +481,7 @@ fn month_candidates(m: DateField) -> Vec<u8> {
     }
 }
 
+/// Every day value a (possibly masked) day field admits.
 fn day_candidates(d: DateField) -> Vec<u8> {
     match d.value() {
         Some(v) if (1..=31).contains(&v) => vec![v],
@@ -479,6 +490,7 @@ fn day_candidates(d: DateField) -> Vec<u8> {
     }
 }
 
+/// Whether a concrete value matches a field's digits, masked positions free.
 fn field_matches(f: DateField, v: u8) -> bool {
     f.digits[0].is_none_or(|p| p == v / 10) && f.digits[1].is_none_or(|p| p == v % 10)
 }
@@ -520,6 +532,7 @@ fn month_admits_day(mm: u8, dd: u8, year: &YearKind, leap_possible: &mut Option<
     dd <= max
 }
 
+/// Whether any completion of this year could be a leap year.
 fn year_leap_possible(year: &YearKind) -> bool {
     match year {
         YearKind::Standard { negative, digits } => {
@@ -540,6 +553,7 @@ fn year_leap_possible(year: &YearKind) -> bool {
     }
 }
 
+/// Whether `y` matches the year's digits, masked positions free.
 fn year_matches(digits: [Option<u8>; 4], y: i64) -> bool {
     let actual = [(y / 1000) % 10, (y / 100) % 10, (y / 10) % 10, y % 10];
     digits
@@ -646,6 +660,7 @@ fn parse_prefixed_year(s: &str, base: usize) -> Result<Date, ParseError> {
 
 // ---------------------------------------------------------------- datetime
 
+/// Parse a date-time expression.
 fn parse_datetime(s: &str) -> Result<Edtf, ParseError> {
     // The dispatcher only routes strings containing 'T' here; a graceful
     // error beats a library panic if that invariant ever breaks.
@@ -720,6 +735,7 @@ fn check_plain_month(month: DateField) -> Result<(), ParseError> {
     Ok(())
 }
 
+/// Parse the time half of a date-time.
 fn parse_time(s: &str, base: usize) -> Result<Time, ParseError> {
     let b = s.as_bytes();
     if b.len() < 8 || b[2] != b':' || b[5] != b':' {
@@ -761,6 +777,7 @@ fn parse_time(s: &str, base: usize) -> Result<Time, ParseError> {
     })
 }
 
+/// Parse a UTC designator or numeric time-zone shift.
 fn parse_shift(s: &str, base: usize) -> Result<TimeShift, ParseError> {
     let b = s.as_bytes();
     let negative = match b[0] {
@@ -796,6 +813,7 @@ fn parse_shift(s: &str, base: usize) -> Result<TimeShift, ParseError> {
     })
 }
 
+/// Read a two-digit shift component at `i`.
 fn shift_two(b: &[u8], i: usize, base: usize) -> Result<u8, ParseError> {
     match (b[i], b[i + 1]) {
         (t @ b'0'..=b'9', o @ b'0'..=b'9') => Ok((t - b'0') * 10 + (o - b'0')),
@@ -805,6 +823,7 @@ fn shift_two(b: &[u8], i: usize, base: usize) -> Result<u8, ParseError> {
 
 // ---------------------------------------------------------------- intervals
 
+/// Parse an interval expression.
 fn parse_interval(s: &str) -> Result<Edtf, ParseError> {
     let mut parts = s.splitn(3, '/');
     let start_str = parts.next().unwrap_or("");
@@ -835,6 +854,7 @@ fn parse_interval(s: &str) -> Result<Edtf, ParseError> {
     Ok(Edtf::Interval(Interval { start, end }))
 }
 
+/// Parse one interval endpoint.
 fn parse_endpoint(s: &str, base: usize, is_start: bool) -> Result<IntervalEndpoint, ParseError> {
     if s.is_empty() {
         return Ok(IntervalEndpoint::Unknown);
@@ -874,6 +894,7 @@ fn dates_out_of_order(a: &Date, b: &Date) -> bool {
 
 // ---------------------------------------------------------------- sets
 
+/// Parse a set expression.
 fn parse_set(s: &str) -> Result<Edtf, ParseError> {
     let b = s.as_bytes();
     let (kind, close) = match b[0] {
@@ -904,6 +925,7 @@ fn parse_set(s: &str) -> Result<Edtf, ParseError> {
     Ok(Edtf::Set(Set { kind, elements }))
 }
 
+/// Parse one set element, which may itself be a range.
 fn parse_set_element(p: &str, base: usize) -> Result<SetElement, ParseError> {
     if p == ".." {
         return Err(err(base, "'..' alone is not a set element"));
@@ -977,8 +999,18 @@ fn check_range_endpoint(d: &Date, off: usize) -> Result<(), ParseError> {
 
 #[cfg(test)]
 mod tests {
-    #![expect(clippy::too_long_first_doc_paragraph, reason = "these doc comments describe test intent for a reader of the file, not a rustdoc summary — a private test module renders nowhere")]
-    #![expect(clippy::missing_panics_doc, reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn")]
+    #![expect(
+        clippy::missing_panics_doc,
+        reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+    )]
+    #![expect(
+        clippy::let_underscore_untyped,
+        reason = "the discarded value's type is fixed by the call it comes from"
+    )]
+    #![expect(
+        clippy::inline_modules,
+        reason = "a module small enough to read in place belongs in place"
+    )]
     #![allow(
         clippy::unwrap_used,
         reason = "test code: a panic here is the failure signal, not a crash path"

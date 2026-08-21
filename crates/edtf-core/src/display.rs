@@ -34,10 +34,6 @@
     reason = "the result is deliberately discarded at a point where the error is already reported"
 )]
 #![expect(
-    clippy::missing_docs_in_private_items,
-    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
-)]
-#![expect(
     clippy::as_conversions,
     reason = "the operands are proven in range by the guard or type immediately above each cast, and try_from at these sites would add an unreachable error path"
 )]
@@ -50,10 +46,6 @@
     reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
 )]
 #![expect(
-    clippy::inline_modules,
-    reason = "a module small enough to read in place belongs in place; splitting it into a file would hide it"
-)]
-#![expect(
     clippy::integer_division,
     reason = "calendar arithmetic is integer division by definition — the leap rules are /4, /100 and /400, and a float would be wrong"
 )]
@@ -61,10 +53,14 @@
     clippy::unreachable,
     reason = "an unreachable! whose comment names the caller-side check that makes it unreachable — a deliberate assertion of an invariant, not an unhandled case"
 )]
-
-#![expect(clippy::missing_errors_doc, reason = "edtf-core declares every module private and exports only named types, so nothing here is reachable from outside the crate and there is no published error contract to document")]
-
-#![expect(clippy::too_long_first_doc_paragraph, reason = "the items are crate-private, so these paragraphs render in no rustdoc summary; they are written to be read in the file, next to the code they describe")]
+#![expect(
+    clippy::missing_errors_doc,
+    reason = "edtf-core declares every module private and exports only named types, so nothing flagged here is reachable from outside the crate and there is no published error contract to document"
+)]
+#![expect(
+    clippy::too_long_first_doc_paragraph,
+    reason = "the items are crate-private, so these paragraphs render in no rustdoc summary; they are written to be read next to the code they describe"
+)]
 
 use alloc::{string::String, vec::Vec};
 use core::fmt::{self, Display, Formatter, Write as _};
@@ -85,6 +81,7 @@ impl Display for Edtf {
     }
 }
 
+/// The single character EDTF writes for a qualifier (`?`, `~`, `%`).
 fn qual_symbol(q: Qualifier) -> char {
     match (q.uncertain, q.approximate) {
         (true, true) => '%',
@@ -94,6 +91,7 @@ fn qual_symbol(q: Qualifier) -> char {
     }
 }
 
+/// The year's digits in the form the level requires, without its qualifier.
 fn year_body(year: &Year) -> String {
     let mut s = String::new();
     match year.kind {
@@ -124,6 +122,7 @@ fn year_body(year: &Year) -> String {
     s
 }
 
+/// A date field's two digits, with `X` in every masked position.
 fn field_body(f: DateField) -> String {
     let mut s = String::new();
     for d in f.digits {
@@ -268,8 +267,14 @@ impl Display for Set {
 
 #[cfg(test)]
 mod tests {
-    #![expect(clippy::too_long_first_doc_paragraph, reason = "these doc comments describe test intent for a reader of the file, not a rustdoc summary — a private test module renders nowhere")]
-    #![expect(clippy::missing_panics_doc, reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn")]
+    #![expect(
+        clippy::missing_panics_doc,
+        reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+    )]
+    #![expect(
+        clippy::inline_modules,
+        reason = "a module small enough to read in place belongs in place"
+    )]
     use alloc::format;
 
     use super::*;

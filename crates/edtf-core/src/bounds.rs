@@ -31,10 +31,6 @@
     reason = "every flagged operation is bounded where it stands: slice indices by a length guard on the line above, digit values to 0-9 by the match arm that binds them, and the JDN forms by being computed in i128 so any i64 year fits. The operations that genuinely could leave range already use checked_/saturating_ and return an error rather than wrapping"
 )]
 #![expect(
-    clippy::missing_docs_in_private_items,
-    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
-)]
-#![expect(
     clippy::pattern_type_mismatch,
     reason = "matching through a reference without restating & at every level is the idiomatic form the rest of this crate uses"
 )]
@@ -49,10 +45,6 @@
 #![expect(
     clippy::absolute_paths,
     reason = "a one-use std path written in full at the call site is clearer than an import that only appears once"
-)]
-#![expect(
-    clippy::let_underscore_untyped,
-    reason = "the discarded value's type is fixed by the call it comes from"
 )]
 #![expect(
     clippy::as_conversions,
@@ -83,10 +75,6 @@
     reason = "these enums enumerate what ISO 8601-2 defines; the spec fixes the variants, so non_exhaustive would promise additions the format cannot make"
 )]
 #![expect(
-    clippy::inline_modules,
-    reason = "a module small enough to read in place belongs in place; splitting it into a file would hide it"
-)]
-#![expect(
     clippy::integer_division,
     reason = "calendar arithmetic is integer division by definition — the leap rules are /4, /100 and /400, and a float would be wrong"
 )]
@@ -98,8 +86,10 @@
     clippy::wildcard_enum_match_arm,
     reason = "the wildcard covers variants the arm above has already narrowed by construction; naming them would be dead code the compiler cannot check"
 )]
-
-#![expect(clippy::too_long_first_doc_paragraph, reason = "the items are crate-private, so these paragraphs render in no rustdoc summary; they are written to be read in the file, next to the code they describe")]
+#![expect(
+    clippy::too_long_first_doc_paragraph,
+    reason = "the items are crate-private, so these paragraphs render in no rustdoc summary; they are written to be read next to the code they describe"
+)]
 
 use crate::types::{Date, DateField, Edtf, Interval, IntervalEndpoint, Set, SetElement, YearKind};
 
@@ -166,6 +156,7 @@ impl Edtf {
     }
 }
 
+/// The earliest and latest calendar day a single date expression touches.
 pub(crate) fn date_bounds(d: &Date) -> Bounds {
     // Y-prefixed / exponential years are year-precision by construction.
     if !matches!(d.year.kind, YearKind::Standard { .. }) {
@@ -260,6 +251,7 @@ pub(crate) fn big_width(kind: &YearKind) -> u32 {
     }
 }
 
+/// Number of decimal digits in `v` (at least one, for zero).
 const fn decimal_digits(mut v: u64) -> u32 {
     let mut n = 1;
     while v >= 10 {
@@ -319,6 +311,7 @@ fn season_months(code: u8) -> (u8, u8, bool) {
     }
 }
 
+/// Bounds of a sub-year code (season, quarter, semestral, …) within a year.
 fn season_bounds(d: &Date, code: u8) -> Bounds {
     let (first, last, wraps) = season_months(code);
     let (y_lo, y_hi) = year_range(d);
@@ -458,6 +451,7 @@ fn extremum_in_year(d: &Date, y: i64, ascending: bool) -> Option<BoundDate> {
     None
 }
 
+/// Every month value a (possibly masked) month field admits.
 pub(crate) fn month_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
     f.value().map_or_else(
         || (1..=12).filter(|v| field_matches(f, *v)).collect(),
@@ -465,6 +459,7 @@ pub(crate) fn month_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
     )
 }
 
+/// Every day value a (possibly masked) day field admits.
 pub(crate) fn day_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
     f.value().map_or_else(
         || (1..=31).filter(|v| field_matches(f, *v)).collect(),
@@ -472,6 +467,7 @@ pub(crate) fn day_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
     )
 }
 
+/// Whether a concrete value matches a field's digits, masked positions free.
 fn field_matches(f: DateField, v: u8) -> bool {
     f.digits[0].is_none_or(|p| p == v / 10) && f.digits[1].is_none_or(|p| p == v % 10)
 }
@@ -481,6 +477,7 @@ pub(crate) const fn is_leap(y: i64) -> bool {
     y.rem_euclid(4) == 0 && (y.rem_euclid(100) != 0 || y.rem_euclid(400) == 0)
 }
 
+/// Last day of a month, honouring the leap flag for February.
 pub(crate) fn last_day(month: u8, leap: bool) -> u8 {
     match month {
         1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
@@ -496,6 +493,7 @@ pub(crate) fn last_day(month: u8, leap: bool) -> u8 {
     }
 }
 
+/// Bounds of an interval: its start's earliest and its end's latest.
 fn interval_bounds(iv: &Interval) -> Bounds {
     let earliest = match &iv.start {
         IntervalEndpoint::Open | IntervalEndpoint::OnOrBefore(_) => Bound::NegativeInfinity,
@@ -510,6 +508,7 @@ fn interval_bounds(iv: &Interval) -> Bounds {
     Bounds { earliest, latest }
 }
 
+/// Bounds of a set: the widest span any element touches.
 fn set_bounds(s: &Set) -> Bounds {
     let mut earliest: Option<Bound> = None;
     let mut latest: Option<Bound> = None;
@@ -532,6 +531,7 @@ fn set_bounds(s: &Set) -> Bounds {
     }
 }
 
+/// The earlier of two bounds, treating `Unknown` as negative infinity.
 fn min_bound(a: Bound, b: Bound) -> Bound {
     match (a, b) {
         (Bound::NegativeInfinity, _) | (_, Bound::NegativeInfinity) => Bound::NegativeInfinity,
@@ -543,6 +543,7 @@ fn min_bound(a: Bound, b: Bound) -> Bound {
     }
 }
 
+/// The later of two bounds, treating `Unknown` as positive infinity.
 fn max_bound(a: Bound, b: Bound) -> Bound {
     match (a, b) {
         (Bound::PositiveInfinity, _) | (_, Bound::PositiveInfinity) => Bound::PositiveInfinity,
@@ -563,7 +564,18 @@ fn max_bound(a: Bound, b: Bound) -> Bound {
 /// never a wrong answer — where it does not.
 #[cfg(test)]
 mod tests {
-    #![expect(clippy::missing_panics_doc, reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn")]
+    #![expect(
+        clippy::missing_panics_doc,
+        reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+    )]
+    #![expect(
+        clippy::let_underscore_untyped,
+        reason = "the discarded value's type is fixed by the call it comes from"
+    )]
+    #![expect(
+        clippy::inline_modules,
+        reason = "a module small enough to read in place belongs in place"
+    )]
     use super::{
         Bound, BoundDate, Bounds, Date, DateField, YearKind, date_bounds, extremum, last_day,
         max_bound, min_bound, season_months, significant_range, year_range,

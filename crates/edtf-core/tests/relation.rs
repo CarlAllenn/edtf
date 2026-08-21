@@ -19,6 +19,10 @@
     reason = "a and b are the two operands of the interval relation algebra and ab/ba its two directions; that is the notation the invariants are written in"
 )]
 #![expect(clippy::panic, reason = "a panic in a test IS the failure signal")]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::{Edtf, Modality, Relation, Relations};
 

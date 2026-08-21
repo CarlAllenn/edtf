@@ -80,10 +80,6 @@
     reason = "the algorithms shadow deliberately — the JDN forms rebind y and m as the published derivation does, step by step, and renaming each step would break the correspondence to the source"
 )]
 #![expect(
-    clippy::missing_docs_in_private_items,
-    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
-)]
-#![expect(
     clippy::missing_inline_in_public_items,
     reason = "inlining is the compiler's call across a crate boundary, and the release profile enables fat LTO — annotating every public item would assert a decision this crate has not measured"
 )]
@@ -100,20 +96,12 @@
     reason = "these enums enumerate what ISO 8601-2 defines; the spec fixes the variants, so non_exhaustive would promise additions the format cannot make"
 )]
 #![expect(
-    clippy::let_underscore_untyped,
-    reason = "the discarded value's type is fixed by the call it comes from"
-)]
-#![expect(
     clippy::map_err_ignore,
     reason = "the source error carries no information the caller can act on; the replacement names the failing production instead"
 )]
 #![expect(
     clippy::exhaustive_structs,
     reason = "these types are the public data model of an ISO 8601-2 value; the spec fixes their fields, so a non_exhaustive that promised future additions would be a promise this format cannot make"
-)]
-#![expect(
-    clippy::inline_modules,
-    reason = "a module small enough to read in place belongs in place; splitting it into a file would hide it"
 )]
 #![expect(
     clippy::missing_trait_methods,
@@ -226,6 +214,12 @@ fn last_day(month: u8, leap: bool) -> u8 {
     }
 }
 
+/// Validate a month/day pair against the given leap-year flag.
+///
+/// # Errors
+///
+/// [`CalendarError::InvalidDate`] when the month is outside 1..=12 or the
+/// day is outside `1..=last_day` for that month.
 fn check(month: u8, day: u8, leap: bool) -> Result<(), CalendarError> {
     if !(1..=12).contains(&month) || day == 0 || day > last_day(month, leap) {
         return Err(CalendarError::InvalidDate);
@@ -237,6 +231,7 @@ fn check(month: u8, day: u8, leap: bool) -> Result<(), CalendarError> {
 // floor division), computed in i128 so any i64 year is safe, valid for all
 // proleptic dates in both calendars.
 
+/// Julian Day Number of a proleptic Julian date.
 const fn julian_jdn(y: i128, m: i128, d: i128) -> i128 {
     let a = (14 - m).div_euclid(12);
     let y = y + 4800 - a;
@@ -244,6 +239,7 @@ const fn julian_jdn(y: i128, m: i128, d: i128) -> i128 {
     d + (153 * m + 2).div_euclid(5) + 365 * y + y.div_euclid(4) - 32083
 }
 
+/// Julian Day Number of a proleptic Gregorian date.
 const fn gregorian_jdn(y: i128, m: i128, d: i128) -> i128 {
     let a = (14 - m).div_euclid(12);
     let y = y + 4800 - a;
@@ -271,6 +267,7 @@ const fn split(c: i128) -> (i128, u8, u8) {
     (d + m.div_euclid(10), month as u8, day as u8)
 }
 
+/// The proleptic Gregorian (year, month, day) a Julian Day Number denotes.
 const fn jdn_to_gregorian(jdn: i128) -> (i128, u8, u8) {
     let a = jdn + 32044;
     let b = (4 * a + 3).div_euclid(146_097);
@@ -279,11 +276,17 @@ const fn jdn_to_gregorian(jdn: i128) -> (i128, u8, u8) {
     (100 * b + y - 4800, month, day)
 }
 
+/// The proleptic Julian (year, month, day) a Julian Day Number denotes.
 const fn jdn_to_julian(jdn: i128) -> (i128, u8, u8) {
     let (y, month, day) = split(jdn + 32082);
     (y - 4800, month, day)
 }
 
+/// Narrow a computed (year, month, day) triple to a [`BoundDate`].
+///
+/// # Errors
+///
+/// [`CalendarError::OutOfRange`] when the year does not fit `i64`.
 fn to_bound_date(ymd: (i128, u8, u8)) -> Result<BoundDate, CalendarError> {
     Ok(BoundDate {
         year: i64::try_from(ymd.0).map_err(|_| CalendarError::OutOfRange)?,
@@ -399,6 +402,22 @@ pub fn convert(year: i64, month: Option<u8>, day: Option<u8>) -> Result<Converte
 
 #[cfg(test)]
 mod tests {
+    #![expect(
+        clippy::too_long_first_doc_paragraph,
+        reason = "these describe test intent for a reader of the file, not a rustdoc summary"
+    )]
+    #![expect(
+        clippy::missing_panics_doc,
+        reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+    )]
+    #![expect(
+        clippy::let_underscore_untyped,
+        reason = "the discarded value's type is fixed by the call it comes from"
+    )]
+    #![expect(
+        clippy::inline_modules,
+        reason = "a module small enough to read in place belongs in place"
+    )]
     use super::*;
 
     // `last_day` is deliberately partial: every caller range-checks the

@@ -1,10 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) the edtf contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! The language-neutral pattern grammar: preprocessing, qualifier stripping,
-//! and the ordered match arms. Everything language-specific comes in through
-//! a [`Lang`] table set. Whole-input only — no substring extraction (N11);
-//! anything unmatched is `NoMatch`, never a guess.
+//! The language-neutral pattern grammar.
+//!
+//! Preprocessing, qualifier stripping, and the ordered match arms.
+//! Everything language-specific comes in through a [`Lang`] table set.
+//! Whole-input only — no substring extraction (N11); anything unmatched is
+//! `NoMatch`, never a guess.
 //!
 //! Values are built through the `edtf_core` model and rendered via its
 //! canonical `Display`, then re-parsed before being returned ([`render`]).
@@ -19,10 +21,6 @@
 #![expect(
     clippy::arithmetic_side_effects,
     reason = "every flagged operation is bounded where it stands: slice indices by a length guard on the line above, digit values to 0-9 by the match arm that binds them, and the JDN forms by being computed in i128 so any i64 year fits. The operations that genuinely could leave range already use checked_/saturating_ and return an error rather than wrapping"
-)]
-#![expect(
-    clippy::missing_docs_in_private_items,
-    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
 )]
 #![expect(
     clippy::default_numeric_fallback,
@@ -101,22 +99,29 @@ use crate::{
 /// A matched expression before qualification and rendering.
 #[derive(Debug, Clone, Copy)]
 enum Expr {
+    /// A single date.
     Date(Date),
+    /// An interval between two dates.
     Interval(Interval),
 }
 
 /// One reading of an ambiguous input.
 #[derive(Debug, Clone)]
 struct Candidate {
+    /// The expression this reading denotes.
     expr: Expr,
+    /// How the reading is described to a caller ("day-month-year", …).
     reading: String,
+    /// Why this reading exists.
     notes: Vec<Note>,
 }
 
 /// Result of the single-expression grammar.
 #[derive(Debug, Clone)]
 enum Single {
+    /// One reading, with the notes that justify it.
     One(Expr, Vec<Note>),
+    /// Several readings the input admits, all reported.
     Many(Vec<Candidate>),
 }
 
@@ -124,14 +129,14 @@ enum Single {
 // Construction helpers (core's fields are public; there are no constructors)
 
 /// Single decimal digit as `u8`.
-#[expect(
-    clippy::cast_possible_truncation,
-    reason = "callers reduce mod 10 (or divide down to one digit): always < 10"
-)]
+///
+/// Callers reduce mod 10, or divide down to one digit, so the value is
+/// always < 10 and the narrowing cannot truncate.
 const fn digit(v: u32) -> u8 {
     (v % 10) as u8
 }
 
+/// A `DateField` holding `v` with no qualifier.
 fn quiet(v: u8) -> DateField {
     DateField {
         digits: [Some(digit(u32::from(v) / 10)), Some(digit(u32::from(v)))],
@@ -139,6 +144,7 @@ fn quiet(v: u8) -> DateField {
     }
 }
 
+/// A four-digit `Year` for `y`, or `None` outside the standard range.
 fn year_of(y: i32) -> Option<Year> {
     if !(-9999..=9999).contains(&y) {
         return None;
@@ -159,6 +165,7 @@ fn year_of(y: i32) -> Option<Year> {
     })
 }
 
+/// A year-precision `Date`.
 fn date_y(y: i32) -> Option<Date> {
     Some(Date {
         year: year_of(y)?,
@@ -167,6 +174,7 @@ fn date_y(y: i32) -> Option<Date> {
     })
 }
 
+/// A month-precision `Date`, or `None` if the parts are out of range.
 fn date_ym(y: i32, m: u8) -> Option<Date> {
     Some(Date {
         month: Some(quiet(m)),
@@ -174,6 +182,7 @@ fn date_ym(y: i32, m: u8) -> Option<Date> {
     })
 }
 
+/// A day-precision `Date`, or `None` if the parts are out of range.
 fn date_ymd(y: i32, m: u8, d: u8) -> Option<Date> {
     Some(Date {
         day: Some(quiet(d)),
@@ -230,6 +239,7 @@ fn century_date(prefix2: u8, negative: bool) -> Date {
     }
 }
 
+/// An interval expression between two dates.
 const fn interval(a: Date, b: Date) -> Expr {
     Expr::Interval(Interval {
         start: IntervalEndpoint::Date(a),
@@ -240,6 +250,7 @@ const fn interval(a: Date, b: Date) -> Expr {
 // ---------------------------------------------------------------------------
 // Token classifiers
 
+/// Parse an all-digit token as a number.
 fn num(s: &str) -> Option<u32> {
     if s.is_empty() || s.len() > 5 || !s.bytes().all(|b| b.is_ascii_digit()) {
         return None;
@@ -247,6 +258,7 @@ fn num(s: &str) -> Option<u32> {
     s.parse().ok()
 }
 
+/// The token without a single trailing full stop.
 fn strip_dot(t: &str) -> &str {
     t.trim_end_matches('.')
 }
@@ -266,6 +278,7 @@ fn eq_dotless(token: &str, word: &str) -> bool {
     w.next().is_none()
 }
 
+/// Look a token up in a word table, case-insensitively.
 fn table_u8(t: &str, table: &[(&str, u8)]) -> Option<u8> {
     let t = strip_dot(t);
     table.iter().find(|(n, _)| *n == t).map(|&(_, v)| v)
@@ -316,9 +329,11 @@ fn roman_num(t: &str) -> Option<u32> {
     u32::try_from(total).ok().filter(|t| (1..=99).contains(t))
 }
 
-/// Ordinal in century position: digits, suffixed digits, ordinal words, and
-/// Roman numerals where the language uses them. The bool records the
-/// Roman-numeral provenance (surfaced as `Note::RomanCentury`, N15).
+/// Ordinal in century position.
+///
+/// Digits, suffixed digits, ordinal words, and Roman numerals where the
+/// language uses them. The bool records the Roman-numeral provenance
+/// (surfaced as `Note::RomanCentury`, N15).
 fn century_ordinal(t: &str, lang: &Lang) -> Option<(u32, bool)> {
     if let Some(n) = ordinal_num(t, lang) {
         return Some((n, false));
@@ -376,8 +391,10 @@ fn preprocess(input: &str) -> String {
     out
 }
 
-/// Strip leading noise ("the", "в"), trailing noise ("гг.", "года"), leading
-/// and trailing qualifier words, and attached approximate prefixes ("c1860",
+/// Strip noise and qualifier words from around an expression.
+///
+/// Leading noise ("the", "в"), trailing noise ("гг.", "года"), leading and
+/// trailing qualifier words, and attached approximate prefixes ("c1860",
 /// "ок.1920"). Returns the remainder and the accumulated whole-expression
 /// qualifier (N10).
 fn strip_qualifiers(s: &str, lang: &Lang) -> (String, Qualifier) {
@@ -456,6 +473,7 @@ fn split_era<'a>(toks: &[&'a str], lang: &Lang) -> Option<(bool, Vec<&'a str>)> 
 // Decades
 
 #[derive(Clone, Copy)]
+/// What a decade token denotes, before a century is chosen.
 enum DecadeParse {
     /// "1860s", "1980-е" — three leading digits fixed.
     Exact(u16),
@@ -465,6 +483,7 @@ enum DecadeParse {
     Bare(u8),
 }
 
+/// Read a decade token ("60s", "1960s", "60-е"), if it is one.
 fn decade_tok(t: &str, lang: &Lang) -> Option<DecadeParse> {
     let t = t.strip_prefix('\'').unwrap_or(t);
     let digits = lang
@@ -492,6 +511,7 @@ fn decade_tok(t: &str, lang: &Lang) -> Option<DecadeParse> {
     }
 }
 
+/// Turn a decade reading into a candidate set, honouring the options.
 fn decade_single(parse: DecadeParse, opts: Options) -> Single {
     match parse {
         DecadeParse::Exact(p3) => Single::One(Expr::Date(decade_date(p3)), Vec::new()),
@@ -621,6 +641,7 @@ fn century_part_expr(span: Span, n: u32, bc: bool) -> Option<(Expr, Vec<Note>)> 
 // ---------------------------------------------------------------------------
 // Numeric tokens ("12/04/1985", "1914-1918", "7/2008", "1914-18")
 
+/// The separator an all-numeric date uses, if it uses exactly one.
 fn numeric_sep(t: &str) -> Option<char> {
     let mut sep = None;
     for c in ['/', '-', '.'] {
@@ -634,6 +655,7 @@ fn numeric_sep(t: &str) -> Option<char> {
     sep
 }
 
+/// A day-month-year triple as an expression, if the parts are a real date.
 fn dmy(d: u32, m: u32, y: i32) -> Option<Expr> {
     if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
         return None;
@@ -644,9 +666,9 @@ fn dmy(d: u32, m: u32, y: i32) -> Option<Expr> {
 
 #[expect(
     clippy::many_single_char_names,
-    clippy::too_many_lines,
     reason = "y/m/d/a/b are date-field names; the arms ARE the grammar"
 )]
+/// Read an all-numeric date token, reporting every ordering it admits.
 fn numeric_token(t: &str, opts: Options, lang: &Lang) -> Option<Single> {
     let sep = numeric_sep(t)?;
     let parts: Vec<&str> = t.split(sep).collect();
@@ -969,6 +991,7 @@ fn split_modifier<'a>(toks: &[&'a str], lang: &Lang) -> Option<(Span, Vec<&'a st
     Some((span, rest))
 }
 
+/// The candidate with one more note attached.
 fn with_note(s: Single, note: Note) -> Single {
     match s {
         Single::One(e, mut notes) => {
@@ -1232,11 +1255,14 @@ fn endpoint_pair(left: &str, right: &str, opts: Options, lang: &Lang) -> Option<
     }
 }
 
-/// N16: when exactly one range endpoint lacks a year (`XXXX` via N9) and the
-/// other states one, the year scopes both endpoints — copy it over and swap
-/// the note. Fails (→ `NoMatch`) when the year-less endpoint cannot inherit.
+/// N16: a stated year scopes both range endpoints.
+///
+/// When exactly one endpoint lacks a year (`XXXX` via N9) and the other
+/// states one, copy it over and swap the note. Fails (→ `NoMatch`) when the
+/// year-less endpoint cannot inherit.
 type Endpoints = (Date, Vec<Note>, Date, Vec<Note>);
 
+/// See the module docs: a stated year scopes both range endpoints.
 fn distribute_year(
     mut ld: Date,
     mut ln: Vec<Note>,
@@ -1329,6 +1355,7 @@ fn map_single(single: Single, wrap: impl Fn(Expr) -> Option<Expr>, note: Note) -
 // ---------------------------------------------------------------------------
 // Qualification and rendering
 
+/// Fold a qualifier into an accumulating one.
 fn merge(into: &mut Qualifier, q: Qualifier) {
     into.uncertain |= q.uncertain;
     into.approximate |= q.approximate;
@@ -1350,6 +1377,7 @@ fn qualify_date(d: &mut Date, q: Qualifier) {
     }
 }
 
+/// Distribute a whole-expression qualifier over every date it covers.
 fn qualify_expr(e: &mut Expr, q: Qualifier) {
     match e {
         Expr::Date(d) => qualify_date(d, q),
@@ -1377,10 +1405,12 @@ fn render(expr: Expr) -> Option<(Edtf, String)> {
     Some((reparsed, s))
 }
 
+/// An outcome that matched nothing, with the reason.
 const fn no_match(reason: NoMatchReason) -> Outcome {
     Outcome::NoMatch { reason }
 }
 
+/// Build the public outcome from a candidate set and its qualifier.
 fn outcome_from(single: Single, q: Qualifier, base_notes: Vec<Note>) -> Outcome {
     match single {
         Single::One(mut expr, mut notes) => {
@@ -1446,6 +1476,7 @@ fn outcome_from(single: Single, q: Qualifier, base_notes: Vec<Note>) -> Outcome 
 // ---------------------------------------------------------------------------
 // Entry point
 
+/// Normalise one input under `opts`; the crate's whole entry point.
 pub(crate) fn run(input: &str, opts: Options) -> Outcome {
     let lang = lang_for(opts.language);
     let trimmed = input.trim();

@@ -32,6 +32,10 @@
     reason = "the assertion's expression is its message"
 )]
 #![expect(clippy::std_instead_of_alloc, reason = "this target links std")]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::Edtf;
 use edtf_normalize::{Note, NumericOrder, Options, Outcome, normalize, normalize_with};

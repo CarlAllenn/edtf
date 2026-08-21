@@ -24,6 +24,10 @@
     clippy::indexing_slicing,
     reason = "indexing a fixture the test itself constructed; an out-of-range index is a failing test, not a crash path"
 )]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use std::{
     io::Write as _,

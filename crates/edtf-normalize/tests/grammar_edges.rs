@@ -32,6 +32,10 @@
     clippy::missing_assert_message,
     reason = "the assertion's expression is its message"
 )]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::Edtf;
 use edtf_normalize::{Language, Options, Outcome, normalize, normalize_with};

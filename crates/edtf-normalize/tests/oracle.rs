@@ -37,6 +37,10 @@
     clippy::wildcard_enum_match_arm,
     reason = "the wildcard covers variants the assertion has already excluded"
 )]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_normalize::{Outcome, normalize};
 use serde_json::Value;

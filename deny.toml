@@ -7,7 +7,11 @@
 # hide whole feature-gated subtrees from all four checks.
 all-features = true
 # The platforms we actually build for (mirrors mise lockfile_platforms).
-targets = ["aarch64-apple-darwin", "x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
+targets = [
+  "aarch64-apple-darwin",
+  "x86_64-unknown-linux-gnu",
+  "aarch64-unknown-linux-gnu",
+]
 
 [advisories]
 yanked = "deny"
@@ -17,7 +21,9 @@ yanked = "deny"
 # pgcentralfoundation/pgrx#524, open. Not fixable here: it is pgrx's direct
 # dependency, not ours. `unused-ignored-advisory = "deny"` below means this
 # entry fails CI the moment pgrx drops it, so it cannot rot.
-ignore = [{ id = "RUSTSEC-2021-0127", reason = "serde_cbor via pgrx 0.19; upstream pgrx#524" }]
+ignore = [
+  { id = "RUSTSEC-2021-0127", reason = "serde_cbor via pgrx 0.19; upstream pgrx#524" },
+]
 # Unmaintained advisories fail for the whole graph, not just direct deps —
 # a transitive unmaintained crate is the same supply-chain exposure.
 unmaintained = "all"

@@ -195,11 +195,7 @@ const fn decimal_digits(mut v: u64) -> u32 {
 /// `precision` digits, sweep the rest 0..9. `None` when the top of the swept
 /// range exceeds the numeric range this library computes with (e.g.
 /// `Y9E18S1`), mirroring how un-valuable years bound to `Unknown`.
-pub fn significant_range(
-    value: i64,
-    precision: Option<u32>,
-    width: u32,
-) -> Option<(i64, i64)> {
+pub fn significant_range(value: i64, precision: Option<u32>, width: u32) -> Option<(i64, i64)> {
     let Some(p) = precision else {
         return Some((value, value));
     };

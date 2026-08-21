@@ -187,7 +187,10 @@ impl Date {
         }
     }
 
-    fn any_component<F>(&self, f: F) -> bool where F: Fn(Qualifier) -> bool {
+    fn any_component<F>(&self, f: F) -> bool
+    where
+        F: Fn(Qualifier) -> bool,
+    {
         f(self.year.qualifier)
             || self.month.is_some_and(|m| f(m.qualifier))
             || self.day.is_some_and(|d| f(d.qualifier))
@@ -366,7 +369,10 @@ impl Edtf {
         }
     }
 
-    fn any_date<F>(&self, f: F) -> bool where F: Fn(&Date) -> bool {
+    fn any_date<F>(&self, f: F) -> bool
+    where
+        F: Fn(&Date) -> bool,
+    {
         match self {
             Self::Date(d) => f(d),
             Self::DateTime(dt) => f(&dt.date),

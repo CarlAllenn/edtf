@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   publish:
-    uses: monumental-archive/.github/.github/workflows/publish.yml@ba1771562c6179221078179ee216e10eff4fef21 # v1.58.2
+    uses: monumental-archive/.github/.github/workflows/publish.yml@b10409592310fe8ea84d27d67a3a049729e6bf29 # v1.58.5
     with:
       # The maximal spread in the org: five crates, the CLI binary, the
       # extension across every supported major (with its FROM scratch

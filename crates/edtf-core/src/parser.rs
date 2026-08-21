@@ -11,6 +11,11 @@
 //! problem was detected; sub-parsers receive a `base` offset so positions
 //! stay absolute inside intervals, sets and date-times.
 
+#![expect(
+    clippy::min_ident_chars,
+    reason = "a byte scanner's b, c, s and i, alongside a date's y, m and d, are this grammar's notation; spelling them out makes the productions harder to follow, not easier"
+)]
+
 use alloc::{vec, vec::Vec};
 
 use crate::{

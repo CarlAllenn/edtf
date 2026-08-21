@@ -7,6 +7,11 @@
 //! per-component qualification, unspecified-digit masks, endpoint kinds, and
 //! set semantics (see docs/spec-notes.md §6).
 
+#![expect(
+    clippy::min_ident_chars,
+    reason = "y, m and d are the universal notation for a date's components, and this crate is about little else"
+)]
+
 use alloc::vec::Vec;
 
 /// Error returned when an input is not valid EDTF.

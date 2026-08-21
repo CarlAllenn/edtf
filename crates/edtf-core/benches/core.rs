@@ -11,6 +11,10 @@
     clippy::expect_used,
     reason = "test/bench code: a panic here is the failure signal, not a crash path"
 )]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
 
 use core::hint::black_box;
 

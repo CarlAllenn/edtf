@@ -63,6 +63,10 @@
 //! this crate; and guessing which calendar a source used, which is the
 //! application's vocabulary-backed qualifier, not arithmetic.
 #![no_std]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the conversions keep their published algorithms' own variable names (y, m, d, a); renaming them breaks the correspondence to the sources they are checked against"
+)]
 
 use edtf_core::BoundDate;
 

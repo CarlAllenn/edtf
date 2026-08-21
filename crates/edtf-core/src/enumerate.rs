@@ -24,6 +24,11 @@
 //! never moves the value set, §8.4.2 NOTE). Decisions D24–D29 in
 //! docs/spec-notes.md.
 
+#![expect(
+    clippy::min_ident_chars,
+    reason = "y, m and d are the universal notation for a date's components, and this crate is about little else"
+)]
+
 use alloc::vec::Vec;
 
 use crate::{

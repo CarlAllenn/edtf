@@ -62,6 +62,10 @@
 //! The grammar and every validation decision are documented with ISO section
 //! citations in `docs/spec-notes.md` at the repository root.
 #![no_std]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "y, m and d are the universal notation for a date's components, and this crate is about little else"
+)]
 
 extern crate alloc;
 

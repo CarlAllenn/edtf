@@ -28,6 +28,11 @@
 //! - Bounds are day-granular (time of day refines within a day), so same-day
 //!   datetimes are definitely equal.
 
+#![expect(
+    clippy::min_ident_chars,
+    reason = "y, m and d are the universal notation for a date's components, and this crate is about little else"
+)]
+
 use crate::{
     bounds::{Bound, BoundDate, is_leap, last_day},
     types::Edtf,

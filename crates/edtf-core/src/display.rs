@@ -9,6 +9,11 @@
 //! yields a semantically identical value; spellings that mean the same
 //! thing (`?2004-?06-?11` vs `2004-06-11?`) normalize to one form.
 
+#![expect(
+    clippy::min_ident_chars,
+    reason = "y, m and d are the universal notation for a date's components, and this crate is about little else"
+)]
+
 use alloc::{string::String, vec::Vec};
 use core::fmt::{self, Display, Formatter, Write as _};
 

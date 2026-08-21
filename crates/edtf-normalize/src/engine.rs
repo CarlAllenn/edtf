@@ -12,6 +12,11 @@
 //! check (it rejects e.g. a constructed February 31) and the proof that
 //! every output is valid EDTF.
 
+#![expect(
+    clippy::min_ident_chars,
+    reason = "a byte scanner's b, c, s and i, alongside a date's y, m and d, are this grammar's notation; spelling them out makes the productions harder to follow, not easier"
+)]
+
 use alloc::{
     format,
     string::{String, ToString as _},

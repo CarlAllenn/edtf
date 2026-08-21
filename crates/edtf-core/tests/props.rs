@@ -26,6 +26,14 @@
     clippy::cast_sign_loss,
     reason = "generator and oracle ranges are bounded by construction"
 )]
+#![expect(
+    clippy::non_ascii_literal,
+    reason = "proptest! expands to code carrying the generated corpus, which includes the Cyrillic month and century forms this crate normalises"
+)]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "a and b are the two operands of the interval relation algebra and ab/ba its two directions; that is the notation the invariants are written in"
+)]
 
 use edtf_core::{
     Bound, Date, DateField, DateTime, Edtf, Interval, IntervalEndpoint, Modality, Qualifier,
@@ -625,9 +633,9 @@ fn expected_unenumerable(v: &Edtf) -> Option<Unenumerable> {
                         Some(Unenumerable::UnboundedSetElement)
                     }
                     SetElement::Date(d) => date_unenumerable(d),
-                    SetElement::Range(a, b) => {
-                        (a.year.value().is_none() || b.year.value().is_none()).then(|| Unenumerable::YearRangeOverflow)
-                    }
+                    SetElement::Range(a, b) => (a.year.value().is_none()
+                        || b.year.value().is_none())
+                    .then(|| Unenumerable::YearRangeOverflow),
                 };
                 if err.is_some() {
                     return err;

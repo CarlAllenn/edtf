@@ -16,6 +16,14 @@
     clippy::expect_used,
     reason = "test/bench code: a panic here is the failure signal, not a crash path"
 )]
+#![expect(
+    clippy::non_ascii_literal,
+    reason = "proptest! expands to code carrying the generated corpus, which includes the Cyrillic month and century forms this crate normalises"
+)]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the conversions keep their published algorithms' own variable names (y, m, d, a); renaming them breaks the correspondence to the sources they are checked against"
+)]
 
 use edtf_calendars::{
     Converted, JulianDate, convert, gregorian_to_julian, is_julian_leap, julian_to_gregorian,

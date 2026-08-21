@@ -21,6 +21,10 @@
     clippy::print_stderr,
     reason = "a CLI's job is printing: stdout is output, stderr is diagnostics"
 )]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
 
 use std::{
     io::{BufRead as _, Write},

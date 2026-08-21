@@ -16,6 +16,15 @@
 //!   "numericOrder": "dayFirst"|"monthFirst", "defaultCentury": 1900}` — all
 //!   fields optional.
 
+#![expect(
+    clippy::non_ascii_literal,
+    reason = "Russian prose dates are the input this normaliser exists to read; Cyrillic literals are the subject under test, not stray non-ASCII"
+)]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
+
 use edtf_core::{Bound, Edtf, Relation};
 use edtf_normalize::{Language, NoMatchReason, NumericOrder, Options, Outcome, normalize_with};
 use serde::{Deserialize, Serialize};

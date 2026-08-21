@@ -21,6 +21,14 @@
     clippy::cast_sign_loss,
     reason = "generator and oracle ranges are bounded by construction"
 )]
+#![expect(
+    clippy::non_ascii_literal,
+    reason = "Russian prose dates are the input this normaliser exists to read; Cyrillic literals are the subject under test, not stray non-ASCII"
+)]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
 
 use edtf_core::Edtf;
 use edtf_normalize::{Language, Options, Outcome, normalize, normalize_with};

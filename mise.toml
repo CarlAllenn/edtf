@@ -10,6 +10,14 @@
 [settings]
 lockfile = true
 
+[task_config]
+# Tasks below are bash: the default task shell is sh, which is dash on
+# Ubuntu runners. -euo pipefail is the point rather than a bare `bash -c`
+# — without it a task whose failure signal is a tool's exit status passes
+# if anything follows it, and the check goes green having not checked.
+# Same setting the belt sets for its own tasks (#700).
+shell = "bash -euo pipefail -c"
+
 [env]
 # Workspace members whose tests cannot run on the gate runner; consumed
 # by coverage:check and coverage:report. edtf-postgres is a pgrx

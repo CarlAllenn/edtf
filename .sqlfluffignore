@@ -1,0 +1,26 @@
+# Per-file escapes for sqlfluff, one entry per line, each with its reason.
+# The org's sqlfluff config is delivered by the belt (lint:sql passes it with
+# --config); this file is the repo-shaped half, on the same footing as
+# deny.toml's skips and _typos.toml's vocabulary. Nothing goes in here to
+# silence a finding that is simply inconvenient. Recorded upward as
+# monumental-archive/.github#708.
+
+# pgrx GENERATES this file, and .github/scripts/schema-snapshot.sh exists to
+# diff freshly-generated SQL against it. sqlfluff wants LT01/RF06/LT05/CP05
+# changes — quoted identifiers unquoted, whitespace moved, types upper-cased
+# — and applying any of them means the snapshot is no longer what pgrx emits,
+# so every later snapshot run diffs dirty forever. Same reasoning the canon
+# already wrote into .editorconfig for the source-attest git fixture: a
+# fixture reformatted away from what the tool emits stops being evidence.
+crates/edtf-postgres/schema.snapshot.sql
+
+# sqlfluff's postgres dialect cannot parse a namespaced GUC assignment.
+# Reproduced on the single line, alone:
+#   $ printf 'SET plpgsql.check_asserts = on;\n' > s.sql
+#   $ sqlfluff lint --config <belt>/sqlfluff.cfg s.sql
+#   L: 1 | P: 1 | PRS | Found unparsable section: 'SET ...
+# One unparsable statement poisons the whole file, so the corpus's ASSERT
+# lines go unlinted either way — the check is not merely wrong here, it is
+# inert. The statement is deliberate: the corpus turns plpgsql assertions on
+# so a run cannot silently pass because the default moved.
+crates/edtf-postgres/tests/corpus.sql

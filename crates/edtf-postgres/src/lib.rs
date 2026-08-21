@@ -100,14 +100,6 @@ fn edtf_relation(a: &str, b: &str) -> Option<Vec<String>> {
     reason = "test code: a panic here is the failure signal, not a crash path"
 )]
 mod tests {
-    #![expect(
-        clippy::too_long_first_doc_paragraph,
-        reason = "these describe test intent for a reader of the file, not a rustdoc summary"
-    )]
-    #![expect(
-        clippy::missing_panics_doc,
-        reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
-    )]
     use pgrx::prelude::*;
 
     fn q_bool(sql: &str) -> bool {

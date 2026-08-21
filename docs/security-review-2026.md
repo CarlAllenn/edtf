@@ -1,7 +1,7 @@
 # Security review — August 2026
 
 A documented review of the project against its stated security
-requirements ([SECURITY.md](../SECURITY.md)) and the security boundary
+requirements ([SECURITY.md](https://github.com/monumental-archive/.github/blob/main/SECURITY.md)) and the security boundary
 described in the [assurance case](assurance-case.md). Conducted
 2026-08-08 by the maintainer with model-assisted adversarial review;
 recorded here so the review, its findings and their dispositions are

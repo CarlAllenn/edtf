@@ -8,4 +8,4 @@ prose-date normalization ("circa 1920" → `1920~`) for JavaScript — the same
 validator the Rust and Postgres layers run, so the stack can never diverge.
 
 Published on npm as `edtf-wasm` (built with wasm-pack). Part of the
-[`edtf`](https://github.com/CarlAllenn/edtf) crate family.
+[`edtf`](https://github.com/monumental-archive/edtf) crate family.

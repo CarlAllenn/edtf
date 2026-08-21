@@ -29,7 +29,7 @@ Pattern tables are per-language (English and Russian today); adding a locale
 means adding one table struct, not touching the grammar. Every judgement call
 — century arithmetic, BC year-zero handling, season codes, ambiguity policy —
 is a numbered N-decision in
-[`docs/normalize-notes.md`](https://github.com/CarlAllenn/edtf/blob/main/docs/normalize-notes.md),
+[`docs/normalize-notes.md`](https://github.com/monumental-archive/edtf/blob/main/docs/normalize-notes.md),
 cited from the `Note` values attached to every result. Disagree with one?
 File an issue against the N-number.
 

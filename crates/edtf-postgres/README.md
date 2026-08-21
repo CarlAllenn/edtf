@@ -26,13 +26,13 @@ The extension is `trusted`, so any user with `CREATE` on the database can
 install it. The shipped library is stripped; a `-dbgsym` tarball with the
 full debug info sits beside each tarball for crash analysis. Full
 instructions, the support matrix and the glibc floor are in
-the [repository README](https://github.com/CarlAllenn/edtf#installing-the-postgres-extension).
+the [repository README](https://github.com/monumental-archive/edtf#installing-the-postgres-extension).
 
 OCI images are also published to `ghcr.io/carlallenn/edtf-postgres`, built
 from the released tarballs and attested the same way — the command that
 checks a digest against its release tag, and the three flags that make it
 mean anything, are in
-[the security policy](https://github.com/CarlAllenn/edtf/blob/main/SECURITY.md#verifying-a-published-image).
+[the repository README](https://github.com/monumental-archive/edtf#installing-the-postgres-extension).
 Two variants per Postgres major, both multi-arch, both tagged extension
 version × major (`1.2.3-pg18`) with a floating major tag (`pg18`) tracking
 the latest release for that major. Pin the digest.
@@ -99,4 +99,4 @@ Building from source instead needs `cargo-pgrx` and an initialised
 `$PGRX_HOME`; see the repository for the development workflow.
 
 Its contract is the SQL surface, not a Rust API. Part of the
-[`edtf`](https://github.com/CarlAllenn/edtf) crate family.
+[`edtf`](https://github.com/monumental-archive/edtf) crate family.

@@ -7,6 +7,16 @@ described in the [assurance case](assurance-case.md). Conducted
 recorded here so the review, its findings and their dispositions are
 auditable rather than asserted.
 
+> **Editor's note, 2026-08-21.** This is a dated record of a review
+> conducted on 2026-08-08, when the repository lived at
+> `github.com/CarlAllenn/edtf`. The links and issue numbers below are left
+> as they were written; GitHub redirects them to
+> `monumental-archive/edtf`. Several of the mechanisms it credits —
+> `upgrade-smoke-extension.sh`, the repository's own CodeQL workflow, its
+> `publish.yml` — were replaced by the organisation's shared machinery when
+> edtf was imported. What they were fixing is still fixed; what does the
+> fixing changed. See monumental-archive/.github#669.
+
 ## Scope and method
 
 - **Requirements reviewed**: no panic/non-termination on any input; no

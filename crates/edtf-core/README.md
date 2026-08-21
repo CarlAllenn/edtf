@@ -29,7 +29,7 @@ This is the core of a small family — CLI (`edtf-cli`), WebAssembly/npm
 ingest conversion (`edtf-calendars`) — all compiled from this one
 implementation, so a date that is valid in your application is valid in
 your database. Full documentation, the spec-coverage notes and the whole
-family live in the [repository](https://github.com/CarlAllenn/edtf).
+family live in the [repository](https://github.com/monumental-archive/edtf).
 
 ## License
 

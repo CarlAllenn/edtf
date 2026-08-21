@@ -1,16 +1,22 @@
 # edtf
 
-[![CI](https://github.com/CarlAllenn/edtf/actions/workflows/ci.yml/badge.svg)](https://github.com/CarlAllenn/edtf/actions/workflows/ci.yml)
+<!-- badges:begin -->
+[![ci](https://github.com/monumental-archive/edtf/actions/workflows/ci.yml/badge.svg)](https://github.com/monumental-archive/edtf/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/monumental-archive/edtf/badge)](https://scorecard.dev/viewer/?uri=github.com/monumental-archive/edtf)
+[![SLSA build](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmonumental-archive%2Fedtf%2Flevels%2Fedtf%2Fbuild.shield.json)](https://raw.githubusercontent.com/monumental-archive/edtf/levels/edtf/build.report.json)
+[![SLSA source](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmonumental-archive%2Fedtf%2Flevels%2Fedtf%2Fsource.shield.json)](https://raw.githubusercontent.com/monumental-archive/edtf/levels/edtf/source.report.json)
+[![SLSA dependency](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmonumental-archive%2Fedtf%2Flevels%2Fedtf%2Fdependency.shield.json)](https://raw.githubusercontent.com/monumental-archive/edtf/levels/edtf/dependency.report.json)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13992/badge)](https://www.bestpractices.dev/projects/13992)
+[![OpenSSF Baseline](https://www.bestpractices.dev/projects/13992/baseline)](https://www.bestpractices.dev/projects/13992)
+<!-- pending (human step): REUSE — register at https://api.reuse.software/register (no account: name, email, project URL, confirmation link), then set 'reuse registered' in .badge-states and re-run fix:badges -->
+[![coverage](https://codecov.io/gh/monumental-archive/edtf/branch/main/graph/badge.svg)](https://codecov.io/gh/monumental-archive/edtf)
+<!-- pending (first mint): DOI — the concept DOI lands in CITATION.cff after the first release mints it; re-run fix:badges -->
 [![crates.io](https://img.shields.io/crates/v/edtf-core.svg)](https://crates.io/crates/edtf-core)
 [![docs.rs](https://img.shields.io/docsrs/edtf-core)](https://docs.rs/edtf-core)
-[![npm](https://img.shields.io/npm/v/edtf-wasm.svg)](https://www.npmjs.com/package/edtf-wasm)
-[![coverage](https://img.shields.io/codecov/c/github/CarlAllenn/edtf)](https://codecov.io/gh/CarlAllenn/edtf)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/CarlAllenn/edtf/badge)](https://scorecard.dev/viewer/?uri=github.com/CarlAllenn/edtf)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13992/badge)](https://www.bestpractices.dev/projects/13992)
-[![REUSE status](https://api.reuse.software/badge/github.com/CarlAllenn/edtf)](https://api.reuse.software/info/github.com/CarlAllenn/edtf)
-[![MSRV](https://img.shields.io/crates/msrv/edtf-core)](https://github.com/CarlAllenn/edtf/blob/main/Cargo.toml)
-[![dependency status](https://deps.rs/repo/github/CarlAllenn/edtf/status.svg)](https://deps.rs/repo/github/CarlAllenn/edtf)
-[![license](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE-MIT)
+[![npm](https://img.shields.io/npm/v/%40monumental-archive%2Fedtf-wasm.svg)](https://www.npmjs.com/package/@monumental-archive/edtf-wasm)
+[![ghcr edtf](https://img.shields.io/badge/ghcr.io-monumental--archive%2Fedtf-blue)](https://github.com/orgs/monumental-archive/packages/container/package/edtf)
+[![fair-software](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%E2%97%8F%20%E2%97%8F%20%E2%97%8F%20%E2%97%8F-green)](https://fair-software.eu)
+<!-- badges:end -->
 
 A complete, spec-exact Rust implementation of **EDTF** — the Extended
 Date/Time Format, standardized as the profile in **ISO 8601-2:2019 Annex A**
@@ -131,28 +137,57 @@ FROM artworks;
 
 ### Installing the Postgres extension
 
-Prebuilt, attested tarballs are attached to each `edtf-postgres-v*` release
-from **v1.1.0** onward, so installing needs no Rust toolchain and no
-`cargo-pgrx`. **Verify before extracting** — the archive unpacks into `/` as
-root, so checking the signature afterwards is a postmortem, not verification.
+Prebuilt, attested tarballs are attached to each release, so installing
+needs no Rust toolchain and no `cargo-pgrx`. **Verify before extracting** —
+the archive unpacks into `/` as root, so checking the signature afterwards
+is a postmortem, not verification.
+
+From **v1.3.0** on, releases are unified (one `v*` tag for the repository)
+and are signed by the organisation's signer, not by this repository:
 
 ```bash
-VERSION=1.1.0
+VERSION=1.3.0
 PG=18                 # 14, 15, 16, 17 or 18
 ARCH=amd64            # amd64 or arm64 — dpkg's spelling, not uname's
 FILE="edtf_postgres-${VERSION}-pg${PG}-linux-${ARCH}.tar.gz"
 
-gh release download "edtf-postgres-v${VERSION}" --repo CarlAllenn/edtf \
+gh release download "v${VERSION}" --repo monumental-archive/edtf \
   --pattern "${FILE}" --pattern SHA256SUMS
 
-gh attestation verify "${FILE}" --repo CarlAllenn/edtf \
+# <signer-commit> is looked up fresh: it is the sign.yml@<sha> `uses:` pin
+# in the tree that produced this release — the tree's one statement of
+# which signer it trusts.
+gh attestation verify "${FILE}" --owner monumental-archive \
+  --signer-workflow monumental-archive/signer/.github/workflows/sign.yml \
+  --signer-digest <signer-commit> \
   --source-ref "refs/tags/v${VERSION}" \
-  --signer-workflow CarlAllenn/edtf/.github/workflows/publish.yml
+  --deny-self-hosted-runners
 
 sha256sum --check --ignore-missing SHA256SUMS
 
 sudo tar -xzf "${FILE}" -C /
 ```
+
+Every release also carries a verification verdict (an artifact VSA) in the
+attestation store, signed under a second, separate identity. The full
+consumer recipe — verdicts, SBOMs and VEX included — is
+[the organisation's runbook](https://github.com/monumental-archive/.github/blob/main/docs/runbook.md#verifying-as-a-consumer-would).
+
+**Releases up to and including `edtf-*-v1.2.3` (2026-08-08) predate the
+transfer** into `monumental-archive`, which happened on 2026-08-21. They
+were per-crate, and they were signed by this repository's own
+`publish.yml` under its former owner, so they verify with the older recipe
+and not the one above:
+
+```bash
+gh attestation verify "${FILE}" --repo monumental-archive/edtf \
+  --source-ref "refs/tags/edtf-postgres-v${VERSION}" \
+  --signer-workflow CarlAllenn/edtf/.github/workflows/publish.yml
+```
+
+That identity is recorded here rather than removed: those artifacts are
+immutable and were genuinely signed that way, and a consumer holding one
+needs to be able to check it. Nothing new is signed under it.
 
 Then, as any user with `CREATE` on the database — the extension is marked
 `trusted`, so superuser is not required:

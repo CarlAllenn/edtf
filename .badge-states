@@ -1,0 +1,20 @@
+# Badge states nothing can derive (.github#316): one line per shield that
+# waits on a human step, or that names a registry coordinate the tree
+# cannot infer. Everything else in the block is computed by fix:badges
+# from this repository's own facts; lint:badges reddens a hand edit.
+#
+# crates: the crate whose version and docs stand for the family. edtf-core
+# is the one every other member is built on, so its version is the family's.
+# npm: the package name WITHOUT the scope; fix:badges adds
+# @monumental-archive/ itself.
+# bestpractices: edtf earned this before the transfer — project 13992, at
+# Silver. The entry binds to a repository URL, so it is re-pointed rather
+# than re-earned; the id does not change.
+# reuse: pending. The pre-transfer registration named
+# github.com/CarlAllenn/edtf, and api.reuse.software binds the badge to
+# that URL, so the org path needs its own registration and crawl before
+# this may read 'registered'. lint:reuse already proves the tree compliant.
+crates edtf-core
+npm edtf-wasm
+bestpractices 13992
+reuse pending

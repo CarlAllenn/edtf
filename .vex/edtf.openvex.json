@@ -1,6 +1,6 @@
 {
   "@context": "https://openvex.dev/ns/v0.2.0",
-  "@id": "https://github.com/CarlAllenn/edtf/blob/main/.vex/edtf.openvex.json",
+  "@id": "https://github.com/monumental-archive/edtf/blob/main/.vex/edtf.openvex.json",
   "author": "Carl Allen",
   "timestamp": "2026-08-08T05:50:00Z",
   "version": 1,

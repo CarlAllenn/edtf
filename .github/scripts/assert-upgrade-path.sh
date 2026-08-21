@@ -29,10 +29,27 @@
 # pipeline dependency (verify-registry-bytes.sh, schema-snapshot.sh), and a
 # graph search reads better in it than in string-splitting bash.
 #
-# RELEASED is enumerated, never derived from git tags: the lint job checks
-# out shallow and without tags, and the pre-1.0 releases predate the
-# per-crate tag scheme anyway. Enumerating is also house style — a glob is
-# what let a crate be silently skipped at v1.0.0. Append to it on release.
+# RELEASED is derived from the upgrade graph itself, and still never from
+# git tags: the lint job checks out shallow and without tags, and the
+# pre-1.0 releases predate the per-crate tag scheme anyway.
+#
+# It used to be a hand-maintained array with "append to it on release" in
+# this comment. That instruction had no owner once the org's release path
+# took over: the Release PR is machine-generated, so nothing appends, and
+# the first canonical release (v1.3.0) reddened its own gate asking for a
+# line only a human could add — to a file the machinery had already
+# finished writing.
+#
+# Every published version is an endpoint of some upgrade script, so the
+# union of the `from` and `to` halves of `edtf_postgres--<from>--<to>.sql`
+# IS the released set. Measured at the change: the derived union equals the
+# eleven versions the array listed, exactly. And it is the same source the
+# org's own derivation reads to pick an upgrade baseline
+# (monumental-archive/.github#762), so the two agree by construction.
+#
+# The glob worry that motivated enumerating is still right and still
+# handled: a glob matching NO scripts is a hard error below, not an empty
+# set that vacuously passes.
 #
 # Cheap to satisfy: `module_pathname` is set, so pgrx's versioned-.so mode
 # is off and existing definitions keep resolving after the library is
@@ -43,8 +60,24 @@ set -euo pipefail
 CRATE_DIR="crates/edtf-postgres"
 SQL_DIR="${CRATE_DIR}/sql"
 
-# Every version ever published to crates.io.
-RELEASED=(0.2.0 1.0.0 1.0.1 1.0.2 1.1.0 1.1.1 1.1.2 1.2.0 1.2.1 1.2.2 1.2.3)
+# Every version ever published, derived from the upgrade graph's endpoints.
+RELEASED=()
+# shellcheck disable=SC2312  # process substitution over local state: the
+# only interesting failure is "no scripts matched", and capturing the
+# pipeline first would turn that into one blank line. The empty case is
+# checked explicitly below, which is stronger than the masked status.
+while IFS= read -r released_version; do
+  [[ -n ${released_version} ]] && RELEASED+=("${released_version}")
+done < <(
+  find "${SQL_DIR}" -maxdepth 1 -name 'edtf_postgres--*--*.sql' -exec basename {} \; \
+    | sed -nE 's/^edtf_postgres--(.+)--(.+)\.sql$/\1\n\2/p' \
+    | sort -uV
+)
+if ((${#RELEASED[@]} == 0)); then
+  echo "::error::no upgrade scripts in ${SQL_DIR}, so no released versions could be derived"
+  echo "::error::a glob matching nothing must fail, never pass vacuously"
+  exit 1
+fi
 
 VERSION=""
 VERSION=$(cargo pkgid --manifest-path "${CRATE_DIR}/Cargo.toml" | sed 's/.*[@#]//')

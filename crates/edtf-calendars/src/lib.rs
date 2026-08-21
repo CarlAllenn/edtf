@@ -67,6 +67,66 @@
     clippy::min_ident_chars,
     reason = "the conversions keep their published algorithms' own variable names (y, m, d, a); renaming them breaks the correspondence to the sources they are checked against"
 )]
+#![expect(
+    clippy::arithmetic_side_effects,
+    reason = "every flagged operation is bounded where it stands: slice indices by a length guard on the line above, digit values to 0-9 by the match arm that binds them, and the JDN forms by being computed in i128 so any i64 year fits. The operations that genuinely could leave range already use checked_/saturating_ and return an error rather than wrapping"
+)]
+#![expect(
+    clippy::absolute_paths,
+    reason = "a one-use std path written in full at the call site is clearer than an import that only appears once"
+)]
+#![expect(
+    clippy::shadow_reuse,
+    reason = "the algorithms shadow deliberately — the JDN forms rebind y and m as the published derivation does, step by step, and renaming each step would break the correspondence to the source"
+)]
+#![expect(
+    clippy::missing_docs_in_private_items,
+    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
+)]
+#![expect(
+    clippy::missing_inline_in_public_items,
+    reason = "inlining is the compiler's call across a crate boundary, and the release profile enables fat LTO — annotating every public item would assert a decision this crate has not measured"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
+)]
+#![expect(
+    clippy::as_conversions,
+    reason = "the operands are proven in range by the guard or type immediately above each cast, and try_from at these sites would add an unreachable error path"
+)]
+#![expect(
+    clippy::exhaustive_enums,
+    reason = "these enums enumerate what ISO 8601-2 defines; the spec fixes the variants, so non_exhaustive would promise additions the format cannot make"
+)]
+#![expect(
+    clippy::let_underscore_untyped,
+    reason = "the discarded value's type is fixed by the call it comes from"
+)]
+#![expect(
+    clippy::map_err_ignore,
+    reason = "the source error carries no information the caller can act on; the replacement names the failing production instead"
+)]
+#![expect(
+    clippy::exhaustive_structs,
+    reason = "these types are the public data model of an ISO 8601-2 value; the spec fixes their fields, so a non_exhaustive that promised future additions would be a promise this format cannot make"
+)]
+#![expect(
+    clippy::inline_modules,
+    reason = "a module small enough to read in place belongs in place; splitting it into a file would hide it"
+)]
+#![expect(
+    clippy::missing_trait_methods,
+    reason = "the default implementations are what this type wants; overriding them to satisfy a lint would be code with no reason to exist"
+)]
+#![expect(
+    clippy::pattern_type_mismatch,
+    reason = "matching through a reference without restating & at every level is the idiomatic form the rest of this crate uses"
+)]
+#![expect(
+    clippy::unreachable,
+    reason = "an unreachable! whose comment names the caller-side check that makes it unreachable — a deliberate assertion of an invariant, not an unhandled case"
+)]
 
 use edtf_core::BoundDate;
 

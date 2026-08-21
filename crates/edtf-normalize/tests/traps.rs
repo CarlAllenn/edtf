@@ -18,6 +18,20 @@
     clippy::min_ident_chars,
     reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
 )]
+#![expect(clippy::panic, reason = "a panic in a test IS the failure signal")]
+#![expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "the wildcard covers variants the assertion has already excluded"
+)]
+#![expect(
+    clippy::absolute_paths,
+    reason = "a one-use std path written in full at the call site"
+)]
+#![expect(
+    clippy::missing_assert_message,
+    reason = "the assertion's expression is its message"
+)]
+#![expect(clippy::std_instead_of_alloc, reason = "this target links std")]
 
 use edtf_core::Edtf;
 use edtf_normalize::{Note, NumericOrder, Options, Outcome, normalize, normalize_with};

@@ -23,6 +23,11 @@
     clippy::min_ident_chars,
     reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
 )]
+#![expect(clippy::panic, reason = "a panic in a test IS the failure signal")]
+#![expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "the wildcard covers variants the assertion has already excluded"
+)]
 
 use edtf_core::Edtf;
 use edtf_normalize::{Language, NoMatchReason, Note, Options, Outcome, normalize_with};

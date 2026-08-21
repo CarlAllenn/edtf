@@ -34,6 +34,50 @@
     clippy::min_ident_chars,
     reason = "a and b are the two operands of the interval relation algebra and ab/ba its two directions; that is the notation the invariants are written in"
 )]
+#![expect(
+    clippy::single_call_fn,
+    reason = "one named helper per assertion group is what makes the test readable"
+)]
+#![expect(
+    clippy::arithmetic_side_effects,
+    reason = "test arithmetic is over literal fixtures and generator-bounded values; an overflow here would fail the test, which is the signal"
+)]
+#![expect(
+    clippy::integer_division_remainder_used,
+    reason = "same integer calendar arithmetic as the code under test"
+)]
+#![expect(
+    clippy::as_conversions,
+    reason = "casting fixture values the test itself bounded"
+)]
+#![expect(
+    clippy::pattern_type_mismatch,
+    reason = "matching through a reference without restating & at every level"
+)]
+#![expect(
+    clippy::shadow_reuse,
+    reason = "rebinding a value through the transformation under test"
+)]
+#![expect(
+    clippy::integer_division,
+    reason = "same integer calendar arithmetic as the code under test"
+)]
+#![expect(
+    clippy::absolute_paths,
+    reason = "a one-use std path written in full at the call site"
+)]
+#![expect(
+    clippy::indexing_slicing,
+    reason = "indexing a fixture the test itself constructed; an out-of-range index is a failing test, not a crash path"
+)]
+#![expect(
+    clippy::unreachable,
+    reason = "an unreachable! naming the invariant the fixture guarantees"
+)]
+#![expect(
+    clippy::unnecessary_lazy_evaluations,
+    reason = "the closure form keeps the two arms parallel to read"
+)]
 
 use edtf_core::{
     Bound, Date, DateField, DateTime, Edtf, Interval, IntervalEndpoint, Modality, Qualifier,

@@ -18,6 +18,7 @@
     clippy::min_ident_chars,
     reason = "the conversions keep their published algorithms' own variable names (y, m, d, a); renaming them breaks the correspondence to the sources they are checked against"
 )]
+#![expect(clippy::panic, reason = "a panic in a test IS the failure signal")]
 
 use edtf_calendars::{
     CalendarError, Converted, JulianDate, convert, gregorian_to_julian, is_julian_leap,

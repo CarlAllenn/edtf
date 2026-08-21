@@ -24,6 +24,22 @@
     clippy::min_ident_chars,
     reason = "the conversions keep their published algorithms' own variable names (y, m, d, a); renaming them breaks the correspondence to the sources they are checked against"
 )]
+#![expect(
+    clippy::arithmetic_side_effects,
+    reason = "test arithmetic is over literal fixtures and generator-bounded values; an overflow here would fail the test, which is the signal"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "one named helper per assertion group is what makes the test readable"
+)]
+#![expect(
+    clippy::shadow_reuse,
+    reason = "rebinding a value through the transformation under test"
+)]
+#![expect(
+    clippy::unreachable,
+    reason = "an unreachable! naming the invariant the fixture guarantees"
+)]
 
 use edtf_calendars::{
     Converted, JulianDate, convert, gregorian_to_julian, is_julian_leap, julian_to_gregorian,

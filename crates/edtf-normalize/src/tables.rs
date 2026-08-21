@@ -11,6 +11,19 @@
 //! lowercase (input is lowercased in preprocessing) and dotless where the
 //! comparison strips dots (era phrases, trailing noise).
 
+#![expect(
+    clippy::redundant_pub_crate,
+    reason = "pub(crate) states the intended visibility even where the module tree makes it redundant today"
+)]
+#![expect(
+    clippy::missing_docs_in_private_items,
+    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
+)]
+
 use crate::NumericOrder;
 
 /// Which part of a century a modifier selects (N1).

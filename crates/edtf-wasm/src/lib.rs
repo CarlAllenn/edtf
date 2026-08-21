@@ -24,6 +24,42 @@
     clippy::min_ident_chars,
     reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
 )]
+#![expect(
+    clippy::missing_inline_in_public_items,
+    reason = "inlining is the compiler's call across a crate boundary, and the release profile enables fat LTO — annotating every public item would assert a decision this crate has not measured"
+)]
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "short-lived rebinding inside one expression chain, where a second name would say nothing"
+)]
+#![expect(
+    clippy::missing_docs_in_private_items,
+    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
+)]
+#![expect(
+    clippy::exhaustive_structs,
+    reason = "these types are the public data model of an ISO 8601-2 value; the spec fixes their fields, so a non_exhaustive that promised future additions would be a promise this format cannot make"
+)]
+#![expect(
+    clippy::default_numeric_fallback,
+    reason = "the inferred integer type is the one the surrounding signature already fixes; spelling it out at each literal adds noise, not information"
+)]
+#![expect(
+    clippy::exhaustive_enums,
+    reason = "these enums enumerate what ISO 8601-2 defines; the spec fixes the variants, so non_exhaustive would promise additions the format cannot make"
+)]
+#![expect(
+    clippy::inline_modules,
+    reason = "a module small enough to read in place belongs in place; splitting it into a file would hide it"
+)]
+#![expect(
+    clippy::pattern_type_mismatch,
+    reason = "matching through a reference without restating & at every level is the idiomatic form the rest of this crate uses"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
+)]
 
 use edtf_core::{Bound, Edtf, Relation};
 use edtf_normalize::{Language, NoMatchReason, NumericOrder, Options, Outcome, normalize_with};

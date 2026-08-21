@@ -26,6 +26,80 @@
     clippy::min_ident_chars,
     reason = "y, m and d are the universal notation for a date's components, and this crate is about little else"
 )]
+#![expect(
+    clippy::arithmetic_side_effects,
+    reason = "every flagged operation is bounded where it stands: slice indices by a length guard on the line above, digit values to 0-9 by the match arm that binds them, and the JDN forms by being computed in i128 so any i64 year fits. The operations that genuinely could leave range already use checked_/saturating_ and return an error rather than wrapping"
+)]
+#![expect(
+    clippy::missing_docs_in_private_items,
+    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
+)]
+#![expect(
+    clippy::pattern_type_mismatch,
+    reason = "matching through a reference without restating & at every level is the idiomatic form the rest of this crate uses"
+)]
+#![expect(
+    clippy::redundant_pub_crate,
+    reason = "pub(crate) states the intended visibility even where the module tree makes it redundant today"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
+)]
+#![expect(
+    clippy::absolute_paths,
+    reason = "a one-use std path written in full at the call site is clearer than an import that only appears once"
+)]
+#![expect(
+    clippy::let_underscore_untyped,
+    reason = "the discarded value's type is fixed by the call it comes from"
+)]
+#![expect(
+    clippy::as_conversions,
+    reason = "the operands are proven in range by the guard or type immediately above each cast, and try_from at these sites would add an unreachable error path"
+)]
+#![expect(
+    clippy::indexing_slicing,
+    reason = "each index is preceded by the bounds check that justifies it, or indexes a fixed-size array whose length is in its type"
+)]
+#![expect(
+    clippy::integer_division_remainder_used,
+    reason = "calendar arithmetic is integer division by definition — the leap rules are /4, /100 and /400, and a float would be wrong"
+)]
+#![expect(
+    clippy::unreachable,
+    reason = "an unreachable! whose comment names the caller-side check that makes it unreachable — a deliberate assertion of an invariant, not an unhandled case"
+)]
+#![expect(
+    clippy::exhaustive_structs,
+    reason = "these types are the public data model of an ISO 8601-2 value; the spec fixes their fields, so a non_exhaustive that promised future additions would be a promise this format cannot make"
+)]
+#![expect(
+    clippy::missing_inline_in_public_items,
+    reason = "inlining is the compiler's call across a crate boundary, and the release profile enables fat LTO — annotating every public item would assert a decision this crate has not measured"
+)]
+#![expect(
+    clippy::exhaustive_enums,
+    reason = "these enums enumerate what ISO 8601-2 defines; the spec fixes the variants, so non_exhaustive would promise additions the format cannot make"
+)]
+#![expect(
+    clippy::inline_modules,
+    reason = "a module small enough to read in place belongs in place; splitting it into a file would hide it"
+)]
+#![expect(
+    clippy::integer_division,
+    reason = "calendar arithmetic is integer division by definition — the leap rules are /4, /100 and /400, and a float would be wrong"
+)]
+#![expect(
+    clippy::missing_assert_message,
+    reason = "the assertion's expression is its message"
+)]
+#![expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "the wildcard covers variants the arm above has already narrowed by construction; naming them would be dead code the compiler cannot check"
+)]
+
+#![expect(clippy::too_long_first_doc_paragraph, reason = "the items are crate-private, so these paragraphs render in no rustdoc summary; they are written to be read in the file, next to the code they describe")]
 
 use crate::types::{Date, DateField, Edtf, Interval, IntervalEndpoint, Set, SetElement, YearKind};
 
@@ -489,6 +563,7 @@ fn max_bound(a: Bound, b: Bound) -> Bound {
 /// never a wrong answer — where it does not.
 #[cfg(test)]
 mod tests {
+    #![expect(clippy::missing_panics_doc, reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn")]
     use super::{
         Bound, BoundDate, Bounds, Date, DateField, YearKind, date_bounds, extremum, last_day,
         max_bound, min_bound, season_months, significant_range, year_range,

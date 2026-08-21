@@ -16,6 +16,70 @@
     clippy::min_ident_chars,
     reason = "a byte scanner's b, c, s and i, alongside a date's y, m and d, are this grammar's notation; spelling them out makes the productions harder to follow, not easier"
 )]
+#![expect(
+    clippy::arithmetic_side_effects,
+    reason = "every flagged operation is bounded where it stands: slice indices by a length guard on the line above, digit values to 0-9 by the match arm that binds them, and the JDN forms by being computed in i128 so any i64 year fits. The operations that genuinely could leave range already use checked_/saturating_ and return an error rather than wrapping"
+)]
+#![expect(
+    clippy::missing_docs_in_private_items,
+    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
+)]
+#![expect(
+    clippy::default_numeric_fallback,
+    reason = "the inferred integer type is the one the surrounding signature already fixes; spelling it out at each literal adds noise, not information"
+)]
+#![expect(
+    clippy::indexing_slicing,
+    reason = "each index is preceded by the bounds check that justifies it, or indexes a fixed-size array whose length is in its type"
+)]
+#![expect(
+    clippy::shadow_reuse,
+    reason = "the algorithms shadow deliberately — the JDN forms rebind y and m as the published derivation does, step by step, and renaming each step would break the correspondence to the source"
+)]
+#![expect(
+    clippy::integer_division_remainder_used,
+    reason = "calendar arithmetic is integer division by definition — the leap rules are /4, /100 and /400, and a float would be wrong"
+)]
+#![expect(
+    clippy::pattern_type_mismatch,
+    reason = "matching through a reference without restating & at every level is the idiomatic form the rest of this crate uses"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
+)]
+#![expect(
+    clippy::integer_division,
+    reason = "calendar arithmetic is integer division by definition — the leap rules are /4, /100 and /400, and a float would be wrong"
+)]
+#![expect(
+    clippy::string_slice,
+    reason = "the slice boundaries are byte offsets the parser itself produced and has already proven to be char boundaries"
+)]
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "short-lived rebinding inside one expression chain, where a second name would say nothing"
+)]
+#![expect(
+    clippy::single_char_lifetime_names,
+    reason = "'a is the conventional name for the single borrowed input's lifetime"
+)]
+#![expect(
+    clippy::as_conversions,
+    reason = "the operands are proven in range by the guard or type immediately above each cast, and try_from at these sites would add an unreachable error path"
+)]
+#![expect(
+    clippy::cognitive_complexity,
+    reason = "the function is one flat match over the grammar's productions; splitting it would scatter a single reading of the spec across call sites"
+)]
+#![expect(
+    clippy::redundant_pub_crate,
+    reason = "pub(crate) states the intended visibility even where the module tree makes it redundant today"
+)]
+#![expect(
+    clippy::shadow_same,
+    reason = "rebinding a value to itself after a narrowing conversion"
+)]
 
 use alloc::{
     format,

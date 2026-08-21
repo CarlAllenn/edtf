@@ -15,6 +15,22 @@
     clippy::min_ident_chars,
     reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
 )]
+#![expect(
+    clippy::pattern_type_mismatch,
+    reason = "matching through a reference without restating & at every level"
+)]
+#![expect(
+    clippy::missing_docs_in_private_items,
+    reason = "test helpers are named for what they assert"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "one named helper per assertion group is what makes the test readable"
+)]
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "short-lived rebinding inside one assertion chain"
+)]
 
 use core::hint::black_box;
 

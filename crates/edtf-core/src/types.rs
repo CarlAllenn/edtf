@@ -11,6 +11,66 @@
     clippy::min_ident_chars,
     reason = "y, m and d are the universal notation for a date's components, and this crate is about little else"
 )]
+#![expect(
+    clippy::missing_inline_in_public_items,
+    reason = "inlining is the compiler's call across a crate boundary, and the release profile enables fat LTO — annotating every public item would assert a decision this crate has not measured"
+)]
+#![expect(
+    clippy::exhaustive_structs,
+    reason = "these types are the public data model of an ISO 8601-2 value; the spec fixes their fields, so a non_exhaustive that promised future additions would be a promise this format cannot make"
+)]
+#![expect(
+    clippy::exhaustive_enums,
+    reason = "these enums enumerate what ISO 8601-2 defines; the spec fixes the variants, so non_exhaustive would promise additions the format cannot make"
+)]
+#![expect(
+    clippy::absolute_paths,
+    reason = "a one-use std path written in full at the call site is clearer than an import that only appears once"
+)]
+#![expect(
+    clippy::missing_docs_in_private_items,
+    reason = "the module-level //! block carries this file's design; per-item docs on small private helpers named for what they do would restate it"
+)]
+#![expect(
+    clippy::pattern_type_mismatch,
+    reason = "matching through a reference without restating & at every level is the idiomatic form the rest of this crate uses"
+)]
+#![expect(
+    clippy::arithmetic_side_effects,
+    reason = "every flagged operation is bounded where it stands: slice indices by a length guard on the line above, digit values to 0-9 by the match arm that binds them, and the JDN forms by being computed in i128 so any i64 year fits. The operations that genuinely could leave range already use checked_/saturating_ and return an error rather than wrapping"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
+)]
+#![expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "the wildcard covers variants the arm above has already narrowed by construction; naming them would be dead code the compiler cannot check"
+)]
+#![expect(
+    clippy::doc_paragraphs_missing_punctuation,
+    reason = "the paragraph ends in a code span, where a full stop would read as part of the code"
+)]
+#![expect(
+    clippy::else_if_without_else,
+    reason = "the chain is exhaustive over the values its guard admits"
+)]
+#![expect(
+    clippy::indexing_slicing,
+    reason = "each index is preceded by the bounds check that justifies it, or indexes a fixed-size array whose length is in its type"
+)]
+#![expect(
+    clippy::inline_modules,
+    reason = "a module small enough to read in place belongs in place; splitting it into a file would hide it"
+)]
+#![expect(
+    clippy::missing_trait_methods,
+    reason = "the default implementations are what this type wants; overriding them to satisfy a lint would be code with no reason to exist"
+)]
+#![expect(
+    clippy::multiple_inherent_impl,
+    reason = "the impl blocks group by concern, which is how the module docs describe this type"
+)]
 
 use alloc::vec::Vec;
 
@@ -506,6 +566,8 @@ fn mask_level(d: &Date) -> u8 {
 
 #[cfg(test)]
 mod tests {
+    #![expect(clippy::too_long_first_doc_paragraph, reason = "these doc comments describe test intent for a reader of the file, not a rustdoc summary — a private test module renders nowhere")]
+    #![expect(clippy::missing_panics_doc, reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn")]
     use alloc::vec;
 
     use super::*;

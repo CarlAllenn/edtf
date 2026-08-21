@@ -26,7 +26,7 @@ fn corpus() -> Value {
 #[test]
 fn corpus_valid_cases_parse_at_expected_level() {
     let c = corpus();
-    for (section, want_level) in [("level0", 0u8), ("level1", 1), ("level2", 2)] {
+    for (section, want_level) in [("level0", 0_u8), ("level1", 1), ("level2", 2)] {
         for case in c[section].as_array().expect("section is an array") {
             let s = case["edtf"].as_str().expect("edtf field");
             match Edtf::parse(s) {

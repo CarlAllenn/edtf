@@ -10,7 +10,7 @@
 )]
 
 use std::{
-    io::Write,
+    io::Write as _,
     process::{Command, Stdio},
 };
 

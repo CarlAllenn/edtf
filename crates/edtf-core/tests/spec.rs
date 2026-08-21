@@ -240,7 +240,7 @@ fn component_flags_reach_into_sets() {
 fn edtf_implements_fromstr() {
     let v: Edtf = "1985-04".parse().unwrap();
     assert_eq!(v.to_string(), "1985-04");
-    assert!("1985-13".parse::<Edtf>().is_err());
+    "1985-13".parse::<Edtf>().unwrap_err();
 }
 
 #[test]

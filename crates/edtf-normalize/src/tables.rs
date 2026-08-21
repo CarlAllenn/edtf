@@ -15,7 +15,7 @@ use crate::NumericOrder;
 
 /// Which part of a century a modifier selects (N1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Span {
+pub(crate) enum Span {
     /// First three decades ("early", "начало").
     Early,
     /// Middle four decades ("mid", "середина").
@@ -29,7 +29,7 @@ pub enum Span {
 }
 
 /// One language's complete table set.
-pub struct Lang {
+pub(crate) struct Lang {
     /// Month names and abbreviations (all grammatical forms), → month 1–12.
     pub months: &'static [(&'static str, u8)],
     /// Season names (all grammatical forms) → sub-year codes 21–24 (N7).
@@ -79,7 +79,7 @@ pub struct Lang {
 }
 
 /// Table set for the requested language.
-pub fn lang_for(language: crate::Language) -> &'static Lang {
+pub(crate) fn lang_for(language: crate::Language) -> &'static Lang {
     match language {
         crate::Language::English => &EN,
         crate::Language::Russian => &RU,
@@ -87,7 +87,7 @@ pub fn lang_for(language: crate::Language) -> &'static Lang {
 }
 
 /// Human-readable name for a sub-year grouping code, for ambiguity readings.
-pub const fn season_name(code: u8) -> &'static str {
+pub(crate) const fn season_name(code: u8) -> &'static str {
     match code {
         21 => "spring",
         22 => "summer",

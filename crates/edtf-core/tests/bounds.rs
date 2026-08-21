@@ -104,7 +104,7 @@ fn significant_digit_bounds() {
     assert_bounds("Y9E18S1", "unknown", "unknown");
     // Parsing computes bounds for interval ordering (D18); huge exponents on
     // both ends must stay total there too.
-    assert!(Edtf::parse("Y8E20202/Y9E18S1").is_ok());
+    Edtf::parse("Y8E20202/Y9E18S1").unwrap();
 }
 
 #[test]

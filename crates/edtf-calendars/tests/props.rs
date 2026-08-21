@@ -68,8 +68,8 @@ fn offset(y: i64, m: u8, d: u8) -> i128 {
 
 /// A valid proleptic Julian date across a wide year range.
 fn julian_date() -> impl Strategy<Value = JulianDate> {
-    (-1_000_000i64..=1_000_000, 1u8..=12).prop_flat_map(|(year, month)| {
-        (1u8..=julian_last_day(month, is_julian_leap(year))).prop_map(move |day| JulianDate {
+    (-1_000_000_i64..=1_000_000, 1_u8..=12).prop_flat_map(|(year, month)| {
+        (1_u8..=julian_last_day(month, is_julian_leap(year))).prop_map(move |day| JulianDate {
             year,
             month,
             day,
@@ -83,8 +83,8 @@ const fn is_gregorian_leap(y: i64) -> bool {
 
 /// A valid proleptic Gregorian date across a wide year range.
 fn gregorian_date() -> impl Strategy<Value = BoundDate> {
-    (-1_000_000i64..=1_000_000, 1u8..=12).prop_flat_map(|(year, month)| {
-        (1u8..=julian_last_day(month, is_gregorian_leap(year))).prop_map(move |day| BoundDate {
+    (-1_000_000_i64..=1_000_000, 1_u8..=12).prop_flat_map(|(year, month)| {
+        (1_u8..=julian_last_day(month, is_gregorian_leap(year))).prop_map(move |day| BoundDate {
             year,
             month,
             day,
@@ -114,8 +114,8 @@ proptest! {
     /// year's (day <= 28 so the nominal date exists in every year).
     #[test]
     fn offset_is_monotonic(
-        y1 in -100_000i64..=100_000, span in 0i64..=100_000,
-        m in 1u8..=12, d in 1u8..=28
+        y1 in -100_000_i64..=100_000, span in 0_i64..=100_000,
+        m in 1_u8..=12, d in 1_u8..=28
     ) {
         let y2 = y1 + span;
         prop_assert!(offset(y1, m, d) <= offset(y2, m, d));
@@ -124,7 +124,7 @@ proptest! {
     /// A year span covers exactly the Julian year's own day count, and its
     /// endpoints are the converted first and last days.
     #[test]
-    fn year_span_has_julian_length(y in -100_000i64..=100_000) {
+    fn year_span_has_julian_length(y in -100_000_i64..=100_000) {
         let Ok(Converted::Span { earliest, latest }) = convert(y, None, None) else {
             return Err(TestCaseError::fail("year must convert to a span"));
         };
@@ -135,7 +135,7 @@ proptest! {
 
     /// A month span covers exactly the Julian month's own day count.
     #[test]
-    fn month_span_has_julian_length(y in -100_000i64..=100_000, m in 1u8..=12) {
+    fn month_span_has_julian_length(y in -100_000_i64..=100_000, m in 1_u8..=12) {
         let Ok(Converted::Span { earliest, latest }) = convert(y, Some(m), None) else {
             return Err(TestCaseError::fail("month must convert to a span"));
         };
@@ -146,7 +146,7 @@ proptest! {
     /// Day-precision conversion agrees with the span endpoints: converting
     /// the first/last Julian day of a month lands on its span's bounds.
     #[test]
-    fn day_conversion_agrees_with_spans(y in -100_000i64..=100_000, m in 1u8..=12) {
+    fn day_conversion_agrees_with_spans(y in -100_000_i64..=100_000, m in 1_u8..=12) {
         let Ok(Converted::Span { earliest, latest }) = convert(y, Some(m), None) else {
             return Err(TestCaseError::fail("month must convert to a span"));
         };

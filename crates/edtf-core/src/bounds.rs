@@ -87,7 +87,7 @@ impl Edtf {
     }
 }
 
-pub fn date_bounds(d: &Date) -> Bounds {
+pub(crate) fn date_bounds(d: &Date) -> Bounds {
     // Y-prefixed / exponential years are year-precision by construction.
     if !matches!(d.year.kind, YearKind::Standard { .. }) {
         let Some(value) = d.year.value() else {
@@ -170,7 +170,7 @@ pub fn date_bounds(d: &Date) -> Bounds {
 }
 
 /// Digit width of the year form, for significant-digit ranges.
-pub fn big_width(kind: &YearKind) -> u32 {
+pub(crate) fn big_width(kind: &YearKind) -> u32 {
     match kind {
         YearKind::Standard { .. } => 4,
         YearKind::Big { value } => decimal_digits(value.unsigned_abs()),
@@ -195,7 +195,7 @@ const fn decimal_digits(mut v: u64) -> u32 {
 /// `precision` digits, sweep the rest 0..9. `None` when the top of the swept
 /// range exceeds the numeric range this library computes with (e.g.
 /// `Y9E18S1`), mirroring how un-valuable years bound to `Unknown`.
-pub fn significant_range(value: i64, precision: Option<u32>, width: u32) -> Option<(i64, i64)> {
+pub(crate) fn significant_range(value: i64, precision: Option<u32>, width: u32) -> Option<(i64, i64)> {
     let Some(p) = precision else {
         return Some((value, value));
     };
@@ -375,14 +375,14 @@ fn extremum_in_year(d: &Date, y: i64, ascending: bool) -> Option<BoundDate> {
     None
 }
 
-pub fn month_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
+pub(crate) fn month_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
     f.value().map_or_else(
         || (1..=12).filter(|v| field_matches(f, *v)).collect(),
         |v| alloc::vec![v],
     )
 }
 
-pub fn day_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
+pub(crate) fn day_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
     f.value().map_or_else(
         || (1..=31).filter(|v| field_matches(f, *v)).collect(),
         |v| alloc::vec![v],
@@ -394,11 +394,11 @@ fn field_matches(f: DateField, v: u8) -> bool {
 }
 
 /// Proleptic Gregorian leap rule on the astronomical year number.
-pub const fn is_leap(y: i64) -> bool {
+pub(crate) const fn is_leap(y: i64) -> bool {
     y.rem_euclid(4) == 0 && (y.rem_euclid(100) != 0 || y.rem_euclid(400) == 0)
 }
 
-pub fn last_day(month: u8, leap: bool) -> u8 {
+pub(crate) fn last_day(month: u8, leap: bool) -> u8 {
     match month {
         1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
         4 | 6 | 9 | 11 => 30,

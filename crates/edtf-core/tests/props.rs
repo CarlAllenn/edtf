@@ -100,7 +100,7 @@ fn qualifier() -> impl Strategy<Value = Qualifier> {
 /// Four-digit year, possibly negative (then unmasked, and never -0000) or
 /// masked (then non-negative) — the parser's standard-year rules.
 fn standard_year() -> impl Strategy<Value = Year> {
-    (any::<bool>(), 0u16..=9999, any::<[bool; 4]>(), qualifier()).prop_map(
+    (any::<bool>(), 0_u16..=9999, any::<[bool; 4]>(), qualifier()).prop_map(
         |(negative, y, bits, qualifier)| {
             let negative = negative && y != 0;
             let digits = if negative {
@@ -119,7 +119,7 @@ fn standard_year() -> impl Strategy<Value = Year> {
 
 /// Standard year with an `S` suffix: unmasked, 1-4 significant digits.
 fn sig_standard_year() -> impl Strategy<Value = Year> {
-    (any::<bool>(), 0u16..=9999, 1u32..=4, qualifier()).prop_map(|(negative, y, s, qualifier)| {
+    (any::<bool>(), 0_u16..=9999, 1_u32..=4, qualifier()).prop_map(|(negative, y, s, qualifier)| {
         Year {
             kind: YearKind::Standard {
                 negative: negative && y != 0,
@@ -135,9 +135,9 @@ fn sig_standard_year() -> impl Strategy<Value = Year> {
 /// count.
 fn big_year() -> impl Strategy<Value = Year> {
     (
-        10_000i64..=9_999_999_999_999,
+        10_000_i64..=9_999_999_999_999,
         any::<bool>(),
-        proptest::option::of(1u32..=13),
+        proptest::option::of(1_u32..=13),
         qualifier(),
     )
         .prop_map(|(mag, negative, sig, qualifier)| {
@@ -156,14 +156,14 @@ fn big_year() -> impl Strategy<Value = Year> {
 /// within significand digits + exponent.
 fn exp_year() -> impl Strategy<Value = Year> {
     (
-        1i64..=999_999,
+        1_i64..=999_999,
         any::<bool>(),
-        0u32..=12,
-        proptest::option::of(1u32..=18),
+        0_u32..=12,
+        proptest::option::of(1_u32..=18),
         qualifier(),
     )
         .prop_filter("|value| must exceed 9999", |(mag, _, exp, ..)| {
-            i128::from(*mag) * 10i128.pow(*exp) > 9999
+            i128::from(*mag) * 10_i128.pow(*exp) > 9999
         })
         .prop_map(|(mag, negative, exponent, sig, qualifier)| {
             let digit_count = mag.ilog10() + 1 + exponent;
@@ -180,9 +180,9 @@ fn exp_year() -> impl Strategy<Value = Year> {
 
 /// A concrete, valid calendar (year, month, day) triple.
 fn ymd() -> impl Strategy<Value = (u16, u8, u8)> {
-    (0u16..=9999, 1u8..=12).prop_flat_map(|(y, m)| {
+    (0_u16..=9999, 1_u8..=12).prop_flat_map(|(y, m)| {
         let hi = last_day(m, is_leap(i64::from(y)));
-        (Just(y), Just(m), 1u8..=hi)
+        (Just(y), Just(m), 1_u8..=hi)
     })
 }
 
@@ -202,7 +202,7 @@ fn year_only_date() -> impl Strategy<Value = Date> {
 
 /// Standard year plus an explicit sub-year grouping code 21-41 (no day).
 fn season_date() -> impl Strategy<Value = Date> {
-    (standard_year(), 21u8..=41, qualifier()).prop_map(|(year, code, q)| Date {
+    (standard_year(), 21_u8..=41, qualifier()).prop_map(|(year, code, q)| Date {
         year,
         month: Some(DateField {
             digits: field_digits(code),
@@ -265,11 +265,11 @@ fn shift() -> impl Strategy<Value = Option<TimeShift>> {
     prop_oneof![
         1 => Just(None),
         1 => Just(Some(TimeShift::Utc)),
-        1 => (-14i16..=14).prop_map(|h| Some(TimeShift::Offset {
+        1 => (-14_i16..=14).prop_map(|h| Some(TimeShift::Offset {
             minutes: h * 60,
             hours_only: true,
         })),
-        1 => (-840i16..=840).prop_map(|minutes| Some(TimeShift::Offset {
+        1 => (-840_i16..=840).prop_map(|minutes| Some(TimeShift::Offset {
             minutes,
             hours_only: false,
         })),
@@ -278,7 +278,7 @@ fn shift() -> impl Strategy<Value = Option<TimeShift>> {
 
 /// Date-times exist only at level 0: plain, complete, unqualified date.
 fn datetime() -> impl Strategy<Value = DateTime> {
-    (ymd(), (0u8..=23, 0u8..=59, 0u8..=60, shift())).prop_map(
+    (ymd(), (0_u8..=23, 0_u8..=59, 0_u8..=60, shift())).prop_map(
         |((y, m, d), (hour, minute, second, shift))| DateTime {
             date: Date {
                 year: Year {
@@ -368,7 +368,7 @@ fn plain_date(y: i64, m: u8, d: u8, precision: u8) -> Date {
 /// D27 range elements: both endpoints concrete, unqualified, non-season,
 /// same-precision, compare-and-swapped into order at that precision.
 fn range_element() -> impl Strategy<Value = SetElement> {
-    (ymd(), ymd(), any::<[bool; 2]>(), 0u8..=2).prop_map(
+    (ymd(), ymd(), any::<[bool; 2]>(), 0_u8..=2).prop_map(
         |((y1, m1, d1), (y2, m2, d2), neg, precision)| {
             let sy1 = if neg[0] && y1 != 0 {
                 -i64::from(y1)
@@ -581,7 +581,7 @@ proptest! {
 /// does not share the implementation's checked arithmetic).
 fn sweep_overflows(value: i64, precision: u32, width: u32) -> bool {
     let sweep = width.saturating_sub(precision).min(38);
-    let modulus = 10i128.pow(sweep);
+    let modulus = 10_i128.pow(sweep);
     let mag = i128::from(value.unsigned_abs());
     let lo = mag - mag.rem_euclid(modulus);
     lo + (modulus - 1) > i128::from(i64::MAX)
@@ -626,11 +626,7 @@ fn expected_unenumerable(v: &Edtf) -> Option<Unenumerable> {
                     }
                     SetElement::Date(d) => date_unenumerable(d),
                     SetElement::Range(a, b) => {
-                        if a.year.value().is_none() || b.year.value().is_none() {
-                            Some(Unenumerable::YearRangeOverflow)
-                        } else {
-                            None
-                        }
+                        (a.year.value().is_none() || b.year.value().is_none()).then(|| Unenumerable::YearRangeOverflow)
                     }
                 };
                 if err.is_some() {
@@ -713,7 +709,7 @@ proptest! {
     /// elements, verbatim, in written order (D29).
     #[test]
     fn set_of_singletons_yields_elements_in_order(
-        parts in proptest::collection::vec((ymd(), 0u8..=2), 1..=4),
+        parts in proptest::collection::vec((ymd(), 0_u8..=2), 1..=4),
         all in any::<bool>(),
     ) {
         let dates: Vec<Date> = parts
@@ -743,7 +739,7 @@ proptest! {
         };
         let years: Vec<i64> = d.year.value().map_or_else(
             || {
-                (0i64..=9999)
+                (0_i64..=9999)
                     .filter(|y| {
                         let ds = year_digits(*y as u16);
                         (0..4).all(|i| digits[i].is_none() || digits[i] == ds[i])
@@ -755,7 +751,7 @@ proptest! {
         let month = d.month.expect("month_day_date always has a month");
         let mut want: Vec<Edtf> = Vec::new();
         for y in years {
-            for m in (1..=12u8).filter(|m| field_admits(&month, *m)) {
+            for m in (1..=12_u8).filter(|m| field_admits(&month, *m)) {
                 match d.day {
                     None => want.push(Edtf::Date(Date {
                         year: Year {
@@ -773,7 +769,7 @@ proptest! {
                         day: None,
                     })),
                     Some(day) => {
-                        for dd in (1..=31u8).filter(|x| field_admits(&day, *x)) {
+                        for dd in (1..=31_u8).filter(|x| field_admits(&day, *x)) {
                             if dd > last_day(m, is_leap(y)) {
                                 continue;
                             }

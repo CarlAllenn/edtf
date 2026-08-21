@@ -12,7 +12,7 @@
     reason = "test/bench code: a panic here is the failure signal, not a crash path"
 )]
 
-use std::hint::black_box;
+use core::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use edtf_core::Edtf;
@@ -47,7 +47,7 @@ const INVALID: &[(&str, &str)] = &[
     ("truncated-set", "{1984-10-10..1984-11-01"),
 ];
 
-#[allow(
+#[expect(
     clippy::significant_drop_tightening,
     reason = "false positive: criterion's finish() consumes the group; the lint misreads the guard"
 )]

@@ -1377,7 +1377,7 @@ fn outcome_from(single: Single, q: Qualifier, base_notes: Vec<Note>) -> Outcome 
 // ---------------------------------------------------------------------------
 // Entry point
 
-pub fn run(input: &str, opts: Options) -> Outcome {
+pub(crate) fn run(input: &str, opts: Options) -> Outcome {
     let lang = lang_for(opts.language);
     let trimmed = input.trim();
     if trimmed.is_empty() {

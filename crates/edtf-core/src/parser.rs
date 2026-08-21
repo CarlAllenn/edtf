@@ -21,7 +21,7 @@ use crate::{
     },
 };
 
-pub fn parse(input: &str) -> Result<Edtf, ParseError> {
+pub(crate) fn parse(input: &str) -> Result<Edtf, ParseError> {
     if input.is_empty() {
         return Err(err(0, "empty input"));
     }
@@ -163,7 +163,7 @@ impl<'a> Cur<'a> {
     clippy::too_many_lines,
     reason = "one linear scan; splitting scatters the offset bookkeeping"
 )]
-pub fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
+pub(crate) fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
     // Every caller (dispatcher, interval endpoints, set elements) rejects
     // empty slices with its own message first; a graceful error beats a
     // panic if that invariant ever breaks.
@@ -1011,6 +1011,6 @@ mod tests {
         assert_eq!(thirteen.message, "month must be 01-12");
         assert_eq!(thirteen.offset, 5);
 
-        assert!(check_plain_month(field([Some(0), Some(4)])).is_ok());
+        check_plain_month(field([Some(0), Some(4)])).unwrap();
     }
 }

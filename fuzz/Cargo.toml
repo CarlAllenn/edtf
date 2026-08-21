@@ -54,7 +54,6 @@ todo = "warn"
 print_stdout = "warn"
 print_stderr = "warn"
 
-
 [dependencies]
 libfuzzer-sys = "0.4"
 edtf-core = { path = "../crates/edtf-core" }

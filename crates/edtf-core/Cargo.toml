@@ -20,7 +20,9 @@ serde = { workspace = true, features = ["alloc"], optional = true }
 serde_json = { workspace = true }
 proptest = { workspace = true }
 # Bench-only; default features off to keep plotters/rayon out of the tree.
-criterion = { version = "=0.8.2", default-features = false, features = ["cargo_bench_support"] }
+criterion = { version = "=0.8.2", default-features = false, features = [
+  "cargo_bench_support",
+] }
 
 [[bench]]
 name = "core"

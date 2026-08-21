@@ -102,7 +102,11 @@ run = "wasm-pack build crates/edtf-wasm --target web --out-dir pkg"
 description = "clippy over the Postgres extension (requires `cargo pgrx init`)"
 # Not reachable from lint:rust: edtf-postgres is not a default member and
 # linting it needs $PGRX_HOME plus exactly one pg feature.
-run = "cargo clippy -p edtf-postgres --all-targets --no-default-features --features pg18 -- -D warnings"
+# `--no-deps` is load-bearing: without it clippy also lints edtf-core under
+# --no-default-features, where eight of its lint expectations do not fire and
+# `-D warnings` turns every one into an error. Measured: this task has never
+# passed without it.
+run = "cargo clippy -p edtf-postgres --all-targets --no-default-features --features pg18 --no-deps -- -D warnings"
 
 [tasks."pg:test"]
 description = "The Postgres extension test suite (requires `cargo pgrx init`)"

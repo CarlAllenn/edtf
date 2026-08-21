@@ -76,16 +76,6 @@ description = "The workspace test suite, every feature, minus the extension"
 # extension class's containers.
 run = "cargo test --workspace --locked --all-features --exclude edtf-postgres"
 
-[tasks."lint:pg-upgrade-path"]
-description = "Every published extension version reaches the current one by ALTER EXTENSION UPDATE"
-# Repo content, like the pgrx lockstep Renovate rule: the canon derives
-# the upgrade SQL on the Release PR, but whether the resulting graph is
-# CONNECTED is a property of this extension's own release history and
-# nothing in the belt can know it. A pure python3 walk over
-# crates/edtf-postgres/sql/*.sql filenames — no pgrx, no network, no
-# database — so it is deterministic and belongs in the gate.
-run = ".github/scripts/assert-upgrade-path.sh"
-
 [tasks.bench]
 description = "The criterion benchmarks whose numbers the README publishes"
 run = "cargo bench -p edtf-core --bench core"

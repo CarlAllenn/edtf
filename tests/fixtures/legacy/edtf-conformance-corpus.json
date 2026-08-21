@@ -14,77 +14,608 @@
   "_bounds_conventions": "Bounds are date-typed (range 4713 BC – 5874897 AD). EDTF years outside that (exponential 'Y..E..', deep pre-4713-BC) validate but bound to null (lossless string is the SoT). Open interval end '..' -> infinity/-infinity; unknown end '' -> null. These bound expectations are the design target; rows whose bounds depend on an OPEN sub-decision carry \"bounds_open\": true.",
 
   "level0": [
-    { "edtf": "1985-04-12", "level": 0, "valid": true, "earliest": "1985-04-12", "latest": "1985-04-12", "precision": "day", "type": "date", "note": "A.4.2 complete calendar date" },
-    { "edtf": "1985-04", "level": 0, "valid": true, "earliest": "1985-04-01", "latest": "1985-04-30", "precision": "month", "type": "date", "note": "A.4.2 reduced precision (month)" },
-    { "edtf": "1985", "level": 0, "valid": true, "earliest": "1985-01-01", "latest": "1985-12-31", "precision": "year", "type": "date", "note": "A.4.2 reduced precision (year)" },
-    { "edtf": "1985-04-12T23:20:30", "level": 0, "valid": true, "earliest": "1985-04-12", "latest": "1985-04-12", "precision": "datetime", "type": "datetime", "note": "A.4.3 date+time, local" },
-    { "edtf": "1985-04-12T23:20:30Z", "level": 0, "valid": true, "earliest": "1985-04-12", "latest": "1985-04-12", "precision": "datetime", "type": "datetime", "note": "A.4.3 date+time UTC" },
-    { "edtf": "1985-04-12T23:20:30+04:30", "level": 0, "valid": true, "earliest": "1985-04-12", "latest": "1985-04-12", "precision": "datetime", "type": "datetime", "note": "A.4.3 date+time, shiftX (hh:mm)" },
-    { "edtf": "1985-04-12T23:20:30+04", "level": 0, "valid": true, "earliest": "1985-04-12", "latest": "1985-04-12", "precision": "datetime", "type": "datetime", "note": "A.4.3 date+time, shiftH (hour only)" },
-    { "edtf": "1964/2008", "level": 0, "valid": true, "earliest": "1964-01-01", "latest": "2008-12-31", "precision": "interval", "type": "interval", "note": "A.4.4 interval, year precision" },
-    { "edtf": "2004-06/2006-08", "level": 0, "valid": true, "earliest": "2004-06-01", "latest": "2006-08-31", "precision": "interval", "type": "interval", "note": "A.4.4 interval, month precision" },
-    { "edtf": "2004-02-01/2005-02-08", "level": 0, "valid": true, "earliest": "2004-02-01", "latest": "2005-02-08", "precision": "interval", "type": "interval", "note": "A.4.4 interval, day precision" },
-    { "edtf": "2004-02-01/2005", "level": 0, "valid": true, "earliest": "2004-02-01", "latest": "2005-12-31", "precision": "interval", "type": "interval", "note": "A.4.4 mixed-precision interval (undefined overall precision)" }
+    {
+      "edtf": "1985-04-12",
+      "level": 0,
+      "valid": true,
+      "earliest": "1985-04-12",
+      "latest": "1985-04-12",
+      "precision": "day",
+      "type": "date",
+      "note": "A.4.2 complete calendar date"
+    },
+    {
+      "edtf": "1985-04",
+      "level": 0,
+      "valid": true,
+      "earliest": "1985-04-01",
+      "latest": "1985-04-30",
+      "precision": "month",
+      "type": "date",
+      "note": "A.4.2 reduced precision (month)"
+    },
+    {
+      "edtf": "1985",
+      "level": 0,
+      "valid": true,
+      "earliest": "1985-01-01",
+      "latest": "1985-12-31",
+      "precision": "year",
+      "type": "date",
+      "note": "A.4.2 reduced precision (year)"
+    },
+    {
+      "edtf": "1985-04-12T23:20:30",
+      "level": 0,
+      "valid": true,
+      "earliest": "1985-04-12",
+      "latest": "1985-04-12",
+      "precision": "datetime",
+      "type": "datetime",
+      "note": "A.4.3 date+time, local"
+    },
+    {
+      "edtf": "1985-04-12T23:20:30Z",
+      "level": 0,
+      "valid": true,
+      "earliest": "1985-04-12",
+      "latest": "1985-04-12",
+      "precision": "datetime",
+      "type": "datetime",
+      "note": "A.4.3 date+time UTC"
+    },
+    {
+      "edtf": "1985-04-12T23:20:30+04:30",
+      "level": 0,
+      "valid": true,
+      "earliest": "1985-04-12",
+      "latest": "1985-04-12",
+      "precision": "datetime",
+      "type": "datetime",
+      "note": "A.4.3 date+time, shiftX (hh:mm)"
+    },
+    {
+      "edtf": "1985-04-12T23:20:30+04",
+      "level": 0,
+      "valid": true,
+      "earliest": "1985-04-12",
+      "latest": "1985-04-12",
+      "precision": "datetime",
+      "type": "datetime",
+      "note": "A.4.3 date+time, shiftH (hour only)"
+    },
+    {
+      "edtf": "1964/2008",
+      "level": 0,
+      "valid": true,
+      "earliest": "1964-01-01",
+      "latest": "2008-12-31",
+      "precision": "interval",
+      "type": "interval",
+      "note": "A.4.4 interval, year precision"
+    },
+    {
+      "edtf": "2004-06/2006-08",
+      "level": 0,
+      "valid": true,
+      "earliest": "2004-06-01",
+      "latest": "2006-08-31",
+      "precision": "interval",
+      "type": "interval",
+      "note": "A.4.4 interval, month precision"
+    },
+    {
+      "edtf": "2004-02-01/2005-02-08",
+      "level": 0,
+      "valid": true,
+      "earliest": "2004-02-01",
+      "latest": "2005-02-08",
+      "precision": "interval",
+      "type": "interval",
+      "note": "A.4.4 interval, day precision"
+    },
+    {
+      "edtf": "2004-02-01/2005",
+      "level": 0,
+      "valid": true,
+      "earliest": "2004-02-01",
+      "latest": "2005-12-31",
+      "precision": "interval",
+      "type": "interval",
+      "note": "A.4.4 mixed-precision interval (undefined overall precision)"
+    }
   ],
 
   "level1": [
-    { "edtf": "Y170000002", "level": 1, "valid": true, "earliest": "170000002-01-01", "latest": "170000002-12-31", "precision": "year", "type": "date", "note": "A.5.2 letter-prefixed year (>4 digits, within date range)" },
-    { "edtf": "-1985", "level": 1, "valid": true, "earliest": "-1985-01-01", "latest": "-1985-12-31", "precision": "year", "type": "date", "note": "A.5.2 negative year (BCE). CURRENT CODE WRONGLY REJECTS." },
-    { "edtf": "2001-21", "level": 1, "valid": true, "earliest": "2001-03-01", "latest": "2001-05-31", "precision": "season", "type": "season", "note": "A.5.3 season 21=Spring" },
-    { "edtf": "2001-24", "level": 1, "valid": true, "earliest": "2001-12-01", "latest": "2002-02-28", "precision": "season", "type": "season", "note": "season 24=Winter (spans year end)" },
-    { "edtf": "1985-04-12?", "level": 1, "valid": true, "earliest": "1985-04-12", "latest": "1985-04-12", "precision": "day", "type": "date", "note": "A.5.4 complete-date uncertain" },
-    { "edtf": "1985-04?", "level": 1, "valid": true, "earliest": "1985-04-01", "latest": "1985-04-30", "precision": "month", "type": "date", "note": "A.5.4 year+month uncertain (group)" },
-    { "edtf": "1985~", "level": 1, "valid": true, "earliest": "1985-01-01", "latest": "1985-12-31", "precision": "year", "type": "date", "note": "A.5.4 year approximate" },
-    { "edtf": "1985%", "level": 1, "valid": true, "earliest": "1985-01-01", "latest": "1985-12-31", "precision": "year", "type": "date", "note": "4.5 combined uncertain+approximate" },
-    { "edtf": "1985-04-XX", "level": 1, "valid": true, "earliest": "1985-04-01", "latest": "1985-04-30", "precision": "day", "type": "date", "note": "A.5.5 day unspecified" },
-    { "edtf": "1985-XX-XX", "level": 1, "valid": true, "earliest": "1985-01-01", "latest": "1985-12-31", "precision": "day", "type": "date", "note": "A.5.5 month+day unspecified (complete rep)" },
-    { "edtf": "2004-XX", "level": 1, "valid": true, "earliest": "2004-01-01", "latest": "2004-12-31", "precision": "month", "type": "date", "note": "A.5.5 month unspecified (reduced)" },
-    { "edtf": "201X", "level": 1, "valid": true, "earliest": "2010-01-01", "latest": "2019-12-31", "precision": "year", "type": "date", "note": "A.5.5 one rightmost year digit unspecified" },
-    { "edtf": "20XX", "level": 1, "valid": true, "earliest": "2000-01-01", "latest": "2099-12-31", "precision": "year", "type": "date", "note": "A.5.5 two rightmost year digits unspecified" },
-    { "edtf": "1985-04-12/..", "level": 1, "valid": true, "earliest": "1985-04-12", "latest": "infinity", "precision": "interval", "type": "interval", "bounds_open": true, "note": "A.5.6 / 10.2a OPEN end (-> +infinity)" },
-    { "edtf": "../1985-04-12", "level": 1, "valid": true, "earliest": "-infinity", "latest": "1985-04-12", "precision": "interval", "type": "interval", "bounds_open": true, "note": "10.2b OPEN start (-> -infinity)" },
-    { "edtf": "1986-04/", "level": 1, "valid": true, "earliest": "1986-04-01", "latest": null, "precision": "interval", "type": "interval", "note": "10.2c UNKNOWN end (-> null, NOT infinity)" },
-    { "edtf": "/1985", "level": 1, "valid": true, "earliest": null, "latest": "1985-12-31", "precision": "interval", "type": "interval", "note": "10.2d UNKNOWN start (-> null)" },
-    { "edtf": "1984?/2004%", "level": 1, "valid": true, "earliest": "1984-01-01", "latest": "2004-12-31", "precision": "interval", "type": "interval", "note": "A.5.6 / 10.3.2 both endpoints qualified" },
-    { "edtf": "1984-01-02~/2004-06-04", "level": 1, "valid": true, "earliest": "1984-01-02", "latest": "2004-06-04", "precision": "interval", "type": "interval", "note": "10.3.2 approximate start endpoint" },
-    { "edtf": "1985-04-12~/", "level": 1, "valid": true, "earliest": "1985-04-12", "latest": null, "precision": "interval", "type": "interval", "note": "A.5.6 qualified start + unknown end" }
+    {
+      "edtf": "Y170000002",
+      "level": 1,
+      "valid": true,
+      "earliest": "170000002-01-01",
+      "latest": "170000002-12-31",
+      "precision": "year",
+      "type": "date",
+      "note": "A.5.2 letter-prefixed year (>4 digits, within date range)"
+    },
+    {
+      "edtf": "-1985",
+      "level": 1,
+      "valid": true,
+      "earliest": "-1985-01-01",
+      "latest": "-1985-12-31",
+      "precision": "year",
+      "type": "date",
+      "note": "A.5.2 negative year (BCE). CURRENT CODE WRONGLY REJECTS."
+    },
+    {
+      "edtf": "2001-21",
+      "level": 1,
+      "valid": true,
+      "earliest": "2001-03-01",
+      "latest": "2001-05-31",
+      "precision": "season",
+      "type": "season",
+      "note": "A.5.3 season 21=Spring"
+    },
+    {
+      "edtf": "2001-24",
+      "level": 1,
+      "valid": true,
+      "earliest": "2001-12-01",
+      "latest": "2002-02-28",
+      "precision": "season",
+      "type": "season",
+      "note": "season 24=Winter (spans year end)"
+    },
+    {
+      "edtf": "1985-04-12?",
+      "level": 1,
+      "valid": true,
+      "earliest": "1985-04-12",
+      "latest": "1985-04-12",
+      "precision": "day",
+      "type": "date",
+      "note": "A.5.4 complete-date uncertain"
+    },
+    {
+      "edtf": "1985-04?",
+      "level": 1,
+      "valid": true,
+      "earliest": "1985-04-01",
+      "latest": "1985-04-30",
+      "precision": "month",
+      "type": "date",
+      "note": "A.5.4 year+month uncertain (group)"
+    },
+    {
+      "edtf": "1985~",
+      "level": 1,
+      "valid": true,
+      "earliest": "1985-01-01",
+      "latest": "1985-12-31",
+      "precision": "year",
+      "type": "date",
+      "note": "A.5.4 year approximate"
+    },
+    {
+      "edtf": "1985%",
+      "level": 1,
+      "valid": true,
+      "earliest": "1985-01-01",
+      "latest": "1985-12-31",
+      "precision": "year",
+      "type": "date",
+      "note": "4.5 combined uncertain+approximate"
+    },
+    {
+      "edtf": "1985-04-XX",
+      "level": 1,
+      "valid": true,
+      "earliest": "1985-04-01",
+      "latest": "1985-04-30",
+      "precision": "day",
+      "type": "date",
+      "note": "A.5.5 day unspecified"
+    },
+    {
+      "edtf": "1985-XX-XX",
+      "level": 1,
+      "valid": true,
+      "earliest": "1985-01-01",
+      "latest": "1985-12-31",
+      "precision": "day",
+      "type": "date",
+      "note": "A.5.5 month+day unspecified (complete rep)"
+    },
+    {
+      "edtf": "2004-XX",
+      "level": 1,
+      "valid": true,
+      "earliest": "2004-01-01",
+      "latest": "2004-12-31",
+      "precision": "month",
+      "type": "date",
+      "note": "A.5.5 month unspecified (reduced)"
+    },
+    {
+      "edtf": "201X",
+      "level": 1,
+      "valid": true,
+      "earliest": "2010-01-01",
+      "latest": "2019-12-31",
+      "precision": "year",
+      "type": "date",
+      "note": "A.5.5 one rightmost year digit unspecified"
+    },
+    {
+      "edtf": "20XX",
+      "level": 1,
+      "valid": true,
+      "earliest": "2000-01-01",
+      "latest": "2099-12-31",
+      "precision": "year",
+      "type": "date",
+      "note": "A.5.5 two rightmost year digits unspecified"
+    },
+    {
+      "edtf": "1985-04-12/..",
+      "level": 1,
+      "valid": true,
+      "earliest": "1985-04-12",
+      "latest": "infinity",
+      "precision": "interval",
+      "type": "interval",
+      "bounds_open": true,
+      "note": "A.5.6 / 10.2a OPEN end (-> +infinity)"
+    },
+    {
+      "edtf": "../1985-04-12",
+      "level": 1,
+      "valid": true,
+      "earliest": "-infinity",
+      "latest": "1985-04-12",
+      "precision": "interval",
+      "type": "interval",
+      "bounds_open": true,
+      "note": "10.2b OPEN start (-> -infinity)"
+    },
+    {
+      "edtf": "1986-04/",
+      "level": 1,
+      "valid": true,
+      "earliest": "1986-04-01",
+      "latest": null,
+      "precision": "interval",
+      "type": "interval",
+      "note": "10.2c UNKNOWN end (-> null, NOT infinity)"
+    },
+    {
+      "edtf": "/1985",
+      "level": 1,
+      "valid": true,
+      "earliest": null,
+      "latest": "1985-12-31",
+      "precision": "interval",
+      "type": "interval",
+      "note": "10.2d UNKNOWN start (-> null)"
+    },
+    {
+      "edtf": "1984?/2004%",
+      "level": 1,
+      "valid": true,
+      "earliest": "1984-01-01",
+      "latest": "2004-12-31",
+      "precision": "interval",
+      "type": "interval",
+      "note": "A.5.6 / 10.3.2 both endpoints qualified"
+    },
+    {
+      "edtf": "1984-01-02~/2004-06-04",
+      "level": 1,
+      "valid": true,
+      "earliest": "1984-01-02",
+      "latest": "2004-06-04",
+      "precision": "interval",
+      "type": "interval",
+      "note": "10.3.2 approximate start endpoint"
+    },
+    {
+      "edtf": "1985-04-12~/",
+      "level": 1,
+      "valid": true,
+      "earliest": "1985-04-12",
+      "latest": null,
+      "precision": "interval",
+      "type": "interval",
+      "note": "A.5.6 qualified start + unknown end"
+    }
   ],
 
   "level2": [
-    { "edtf": "Y-17E7", "level": 2, "valid": true, "earliest": null, "latest": null, "precision": "year", "type": "date", "bounds_open": true, "note": "A.6.2 exponential year -170000000: VALID but un-date-boundable (< 4713 BC) -> null bounds. CURRENT CODE WRONGLY REJECTS." },
-    { "edtf": "Y17E7", "level": 2, "valid": true, "earliest": null, "latest": null, "precision": "year", "type": "date", "bounds_open": true, "note": "exponential year 170000000: VALID, > 5874897 AD -> null bounds" },
-    { "edtf": "1950S2", "level": 2, "valid": true, "earliest": "1900-01-01", "latest": "1999-12-31", "precision": "year", "type": "date", "note": "A.6.3 significant digits: 1900-1999, est 1950" },
-    { "edtf": "Y171010000S3", "level": 2, "valid": true, "earliest": null, "latest": null, "precision": "year", "type": "date", "bounds_open": true, "note": "A.6.3 Y-prefixed significant digits (range 171010000-171010999) -> null date bounds. CURRENT CODE REJECTS the Y-form." },
-    { "edtf": "Y3388E2S3", "level": 2, "valid": true, "earliest": "338000-01-01", "latest": "338999-12-31", "precision": "year", "type": "date", "note": "A.6.3 exponential + significant digits: 338000-338999 (within date range)" },
-    { "edtf": "2001-34", "level": 2, "valid": true, "earliest": "2001-04-01", "latest": "2001-06-30", "precision": "season", "type": "season", "note": "A.6.4 code 34 = Quarter 2 (Apr-Jun). edtf.js gives proper sub-year bounds; current code collapses to whole year." },
-    { "edtf": "{1960,1961-12}", "level": 2, "valid": true, "earliest": "1960-01-01", "latest": "1961-12-31", "precision": "set", "type": "list", "note": "A.6.5 all-of set (curly) with mixed precision" },
-    { "edtf": "[1667,1760-12]", "level": 2, "valid": true, "earliest": "1667-01-01", "latest": "1760-12-31", "precision": "set", "type": "set", "note": "A.6.5 one-of set (square)" },
-    { "edtf": "[..1984]", "level": 2, "valid": true, "earliest": "-infinity", "latest": "1984-12-31", "precision": "set", "type": "set", "bounds_open": true, "note": "A.6.5 / 6.3a on-or-before (one-of, open earlier)" },
-    { "edtf": "[1984..]", "level": 2, "valid": true, "earliest": "1984-01-01", "latest": "infinity", "precision": "set", "type": "set", "bounds_open": true, "note": "6.3b on-or-after (one-of, open later)" },
-    { "edtf": "[1670..1672]", "level": 2, "valid": true, "earliest": "1670-01-01", "latest": "1672-12-31", "precision": "set", "type": "set", "note": "6.3c range expansion within a set (1670,1671,1672)" },
-    { "edtf": "{1667,1668,1670..1672}", "level": 2, "valid": true, "earliest": "1667-01-01", "latest": "1672-12-31", "precision": "set", "type": "list", "note": "6.4 set with embedded range expansion" },
-    { "edtf": "2004-06~-11", "level": 2, "valid": true, "earliest": "2004-06-11", "latest": "2004-06-11", "precision": "day", "type": "date", "note": "A.6.6 / 8.2.2 GROUP qualification: ~ applies to month AND year (not day)" },
-    { "edtf": "2004?-06-11", "level": 2, "valid": true, "earliest": "2004-06-11", "latest": "2004-06-11", "precision": "day", "type": "date", "note": "A.6.6 group-right: ? applies to year only" },
-    { "edtf": "?2004-06-~11", "level": 2, "valid": true, "earliest": "2004-06-11", "latest": "2004-06-11", "precision": "day", "type": "date", "note": "A.6.6 / 8.2.3 INDIVIDUAL: year uncertain, day approximate, month known. CURRENT CODE CANNOT PARSE." },
-    { "edtf": "2004-%06-11", "level": 2, "valid": true, "earliest": "2004-06-11", "latest": "2004-06-11", "precision": "day", "type": "date", "note": "8.2.3 individual: month uncertain+approximate" },
-    { "edtf": "156X-12-25", "level": 2, "valid": true, "earliest": "1560-12-25", "latest": "1569-12-25", "precision": "day", "type": "date", "note": "A.6.7 / 9.2.2 X in year + full month-day: Dec 25 in the 1560s. CURRENT CODE REJECTS." },
-    { "edtf": "XXXX-12-XX", "level": 2, "valid": true, "earliest": null, "latest": null, "precision": "day", "type": "date", "bounds_open": true, "note": "9.2.2 some day in December in some (unknown) year -> unbounded by design" },
-    { "edtf": "1XXX-XX", "level": 2, "valid": true, "earliest": "1000-01-01", "latest": "1999-12-31", "precision": "month", "type": "date", "note": "9.2.2 some month in the 1000s. CURRENT CODE REJECTS." },
-    { "edtf": "1560-X2", "level": 2, "valid": true, "earliest": "1560-02-01", "latest": "1560-12-31", "precision": "month", "type": "date", "note": "9.2.2 X in month tens place = Feb OR Dec (disjunction); bounds span both. A digit-position disjunction, not a contiguous range." },
-    { "edtf": "2004-06-~01/2004-06-~20", "level": 2, "valid": true, "earliest": "2004-06-01", "latest": "2004-06-20", "precision": "interval", "type": "interval", "note": "A.6.6 / 10.3.3 partial qualification of interval endpoints" },
-    { "edtf": "..2004-06-01/2004-06-20..", "level": 2, "valid": true, "earliest": "-infinity", "latest": "infinity", "precision": "interval", "type": "interval", "bounds_open": true, "note": "10.6 before/after with the .. notation on interval endpoints" }
+    {
+      "edtf": "Y-17E7",
+      "level": 2,
+      "valid": true,
+      "earliest": null,
+      "latest": null,
+      "precision": "year",
+      "type": "date",
+      "bounds_open": true,
+      "note": "A.6.2 exponential year -170000000: VALID but un-date-boundable (< 4713 BC) -> null bounds. CURRENT CODE WRONGLY REJECTS."
+    },
+    {
+      "edtf": "Y17E7",
+      "level": 2,
+      "valid": true,
+      "earliest": null,
+      "latest": null,
+      "precision": "year",
+      "type": "date",
+      "bounds_open": true,
+      "note": "exponential year 170000000: VALID, > 5874897 AD -> null bounds"
+    },
+    {
+      "edtf": "1950S2",
+      "level": 2,
+      "valid": true,
+      "earliest": "1900-01-01",
+      "latest": "1999-12-31",
+      "precision": "year",
+      "type": "date",
+      "note": "A.6.3 significant digits: 1900-1999, est 1950"
+    },
+    {
+      "edtf": "Y171010000S3",
+      "level": 2,
+      "valid": true,
+      "earliest": null,
+      "latest": null,
+      "precision": "year",
+      "type": "date",
+      "bounds_open": true,
+      "note": "A.6.3 Y-prefixed significant digits (range 171010000-171010999) -> null date bounds. CURRENT CODE REJECTS the Y-form."
+    },
+    {
+      "edtf": "Y3388E2S3",
+      "level": 2,
+      "valid": true,
+      "earliest": "338000-01-01",
+      "latest": "338999-12-31",
+      "precision": "year",
+      "type": "date",
+      "note": "A.6.3 exponential + significant digits: 338000-338999 (within date range)"
+    },
+    {
+      "edtf": "2001-34",
+      "level": 2,
+      "valid": true,
+      "earliest": "2001-04-01",
+      "latest": "2001-06-30",
+      "precision": "season",
+      "type": "season",
+      "note": "A.6.4 code 34 = Quarter 2 (Apr-Jun). edtf.js gives proper sub-year bounds; current code collapses to whole year."
+    },
+    {
+      "edtf": "{1960,1961-12}",
+      "level": 2,
+      "valid": true,
+      "earliest": "1960-01-01",
+      "latest": "1961-12-31",
+      "precision": "set",
+      "type": "list",
+      "note": "A.6.5 all-of set (curly) with mixed precision"
+    },
+    {
+      "edtf": "[1667,1760-12]",
+      "level": 2,
+      "valid": true,
+      "earliest": "1667-01-01",
+      "latest": "1760-12-31",
+      "precision": "set",
+      "type": "set",
+      "note": "A.6.5 one-of set (square)"
+    },
+    {
+      "edtf": "[..1984]",
+      "level": 2,
+      "valid": true,
+      "earliest": "-infinity",
+      "latest": "1984-12-31",
+      "precision": "set",
+      "type": "set",
+      "bounds_open": true,
+      "note": "A.6.5 / 6.3a on-or-before (one-of, open earlier)"
+    },
+    {
+      "edtf": "[1984..]",
+      "level": 2,
+      "valid": true,
+      "earliest": "1984-01-01",
+      "latest": "infinity",
+      "precision": "set",
+      "type": "set",
+      "bounds_open": true,
+      "note": "6.3b on-or-after (one-of, open later)"
+    },
+    {
+      "edtf": "[1670..1672]",
+      "level": 2,
+      "valid": true,
+      "earliest": "1670-01-01",
+      "latest": "1672-12-31",
+      "precision": "set",
+      "type": "set",
+      "note": "6.3c range expansion within a set (1670,1671,1672)"
+    },
+    {
+      "edtf": "{1667,1668,1670..1672}",
+      "level": 2,
+      "valid": true,
+      "earliest": "1667-01-01",
+      "latest": "1672-12-31",
+      "precision": "set",
+      "type": "list",
+      "note": "6.4 set with embedded range expansion"
+    },
+    {
+      "edtf": "2004-06~-11",
+      "level": 2,
+      "valid": true,
+      "earliest": "2004-06-11",
+      "latest": "2004-06-11",
+      "precision": "day",
+      "type": "date",
+      "note": "A.6.6 / 8.2.2 GROUP qualification: ~ applies to month AND year (not day)"
+    },
+    {
+      "edtf": "2004?-06-11",
+      "level": 2,
+      "valid": true,
+      "earliest": "2004-06-11",
+      "latest": "2004-06-11",
+      "precision": "day",
+      "type": "date",
+      "note": "A.6.6 group-right: ? applies to year only"
+    },
+    {
+      "edtf": "?2004-06-~11",
+      "level": 2,
+      "valid": true,
+      "earliest": "2004-06-11",
+      "latest": "2004-06-11",
+      "precision": "day",
+      "type": "date",
+      "note": "A.6.6 / 8.2.3 INDIVIDUAL: year uncertain, day approximate, month known. CURRENT CODE CANNOT PARSE."
+    },
+    {
+      "edtf": "2004-%06-11",
+      "level": 2,
+      "valid": true,
+      "earliest": "2004-06-11",
+      "latest": "2004-06-11",
+      "precision": "day",
+      "type": "date",
+      "note": "8.2.3 individual: month uncertain+approximate"
+    },
+    {
+      "edtf": "156X-12-25",
+      "level": 2,
+      "valid": true,
+      "earliest": "1560-12-25",
+      "latest": "1569-12-25",
+      "precision": "day",
+      "type": "date",
+      "note": "A.6.7 / 9.2.2 X in year + full month-day: Dec 25 in the 1560s. CURRENT CODE REJECTS."
+    },
+    {
+      "edtf": "XXXX-12-XX",
+      "level": 2,
+      "valid": true,
+      "earliest": null,
+      "latest": null,
+      "precision": "day",
+      "type": "date",
+      "bounds_open": true,
+      "note": "9.2.2 some day in December in some (unknown) year -> unbounded by design"
+    },
+    {
+      "edtf": "1XXX-XX",
+      "level": 2,
+      "valid": true,
+      "earliest": "1000-01-01",
+      "latest": "1999-12-31",
+      "precision": "month",
+      "type": "date",
+      "note": "9.2.2 some month in the 1000s. CURRENT CODE REJECTS."
+    },
+    {
+      "edtf": "1560-X2",
+      "level": 2,
+      "valid": true,
+      "earliest": "1560-02-01",
+      "latest": "1560-12-31",
+      "precision": "month",
+      "type": "date",
+      "note": "9.2.2 X in month tens place = Feb OR Dec (disjunction); bounds span both. A digit-position disjunction, not a contiguous range."
+    },
+    {
+      "edtf": "2004-06-~01/2004-06-~20",
+      "level": 2,
+      "valid": true,
+      "earliest": "2004-06-01",
+      "latest": "2004-06-20",
+      "precision": "interval",
+      "type": "interval",
+      "note": "A.6.6 / 10.3.3 partial qualification of interval endpoints"
+    },
+    {
+      "edtf": "..2004-06-01/2004-06-20..",
+      "level": 2,
+      "valid": true,
+      "earliest": "-infinity",
+      "latest": "infinity",
+      "precision": "interval",
+      "type": "interval",
+      "bounds_open": true,
+      "note": "10.6 before/after with the .. notation on interval endpoints"
+    }
   ],
 
   "invalid": [
-    { "edtf": "1985-13", "level": "x", "valid": false, "note": "month 13 — no production for it (months are 01-12; codes 21-41 are seasons, 13-20 unassigned)" },
-    { "edtf": "1985-00", "level": "x", "valid": false, "note": "month 00 invalid" },
-    { "edtf": "2004-20", "level": "x", "valid": false, "note": "sub-year code 20 unassigned (gap between months<=12 and seasons>=21)" },
-    { "edtf": "1985-02-30", "level": "x", "valid": false, "note": "Feb 30 — grammar caps February at 29; CURRENT CODE WRONGLY ACCEPTS" },
-    { "edtf": "1985-04-31", "level": "x", "valid": false, "note": "Apr 31 — 30-day month capped at 30; CURRENT CODE WRONGLY ACCEPTS" },
-    { "edtf": "1985-04-12T25:00:00", "level": "x", "valid": false, "note": "hour 25 invalid; CURRENT CODE WRONGLY ACCEPTS (datetime time-range unvalidated)" },
-    { "edtf": "1985-1", "level": "x", "valid": false, "note": "single-digit month not allowed (extended format requires 2-digit month)" },
+    {
+      "edtf": "1985-13",
+      "level": "x",
+      "valid": false,
+      "note": "month 13 — no production for it (months are 01-12; codes 21-41 are seasons, 13-20 unassigned)"
+    },
+    {
+      "edtf": "1985-00",
+      "level": "x",
+      "valid": false,
+      "note": "month 00 invalid"
+    },
+    {
+      "edtf": "2004-20",
+      "level": "x",
+      "valid": false,
+      "note": "sub-year code 20 unassigned (gap between months<=12 and seasons>=21)"
+    },
+    {
+      "edtf": "1985-02-30",
+      "level": "x",
+      "valid": false,
+      "note": "Feb 30 — grammar caps February at 29; CURRENT CODE WRONGLY ACCEPTS"
+    },
+    {
+      "edtf": "1985-04-31",
+      "level": "x",
+      "valid": false,
+      "note": "Apr 31 — 30-day month capped at 30; CURRENT CODE WRONGLY ACCEPTS"
+    },
+    {
+      "edtf": "1985-04-12T25:00:00",
+      "level": "x",
+      "valid": false,
+      "note": "hour 25 invalid; CURRENT CODE WRONGLY ACCEPTS (datetime time-range unvalidated)"
+    },
+    {
+      "edtf": "1985-1",
+      "level": "x",
+      "valid": false,
+      "note": "single-digit month not allowed (extended format requires 2-digit month)"
+    },
     { "edtf": "hello", "level": "x", "valid": false, "note": "not a date" },
-    { "edtf": "1985-04-12T23:20:30+15:00", "level": "x", "valid": false, "note": "time shift > +14:00 invalid" },
-    { "edtf": "198", "level": "x", "valid": false, "note": "EDTF is extended-format only; bare 3-digit decade '198' is Part-1 basic format, NOT in the EDTF profile (decade is written 198X)" }
+    {
+      "edtf": "1985-04-12T23:20:30+15:00",
+      "level": "x",
+      "valid": false,
+      "note": "time shift > +14:00 invalid"
+    },
+    {
+      "edtf": "198",
+      "level": "x",
+      "valid": false,
+      "note": "EDTF is extended-format only; bare 3-digit decade '198' is Part-1 basic format, NOT in the EDTF profile (decade is written 198X)"
+    }
   ]
 }

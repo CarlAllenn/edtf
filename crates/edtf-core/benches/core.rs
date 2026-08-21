@@ -11,13 +11,39 @@
     clippy::expect_used,
     reason = "test/bench code: a panic here is the failure signal, not a crash path"
 )]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
+#![expect(
+    clippy::pattern_type_mismatch,
+    reason = "matching through a reference without restating & at every level"
+)]
+#![expect(
+    clippy::missing_docs_in_private_items,
+    reason = "test helpers are named for what they assert"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "one named helper per assertion group is what makes the test readable"
+)]
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "short-lived rebinding inside one assertion chain"
+)]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
-use std::hint::black_box;
+use core::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use edtf_core::Edtf;
 
-/// (label, input) pairs chosen to cover the grammar, not to flatter it:
+/// The benchmark corpus: (label, input) pairs.
+///
+/// Chosen to cover the grammar, not to flatter it:
 /// level 0 calendar forms, level 1 qualification/masks, and the level 2
 /// shapes (per-component qualifiers, exponential years, sets) that take the
 /// deepest parser paths.
@@ -47,7 +73,7 @@ const INVALID: &[(&str, &str)] = &[
     ("truncated-set", "{1984-10-10..1984-11-01"),
 ];
 
-#[allow(
+#[expect(
     clippy::significant_drop_tightening,
     reason = "false positive: criterion's finish() consumes the group; the lint misreads the guard"
 )]

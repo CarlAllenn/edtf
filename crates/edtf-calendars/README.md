@@ -11,6 +11,6 @@ dependencies (only `edtf-core`).
   archival records, producing the Gregorian parts EDTF expressions are
   built from.
 
-Part of the [`edtf`](https://github.com/CarlAllenn/edtf) crate family
+Part of the [`edtf`](https://github.com/monumental-archive/edtf) crate family
 (`edtf-core`, `edtf-normalize`, `edtf-calendars`, `edtf-cli`, `edtf-wasm`,
 `edtf-postgres`).

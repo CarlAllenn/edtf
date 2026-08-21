@@ -9,6 +9,59 @@
 //! yields a semantically identical value; spellings that mean the same
 //! thing (`?2004-?06-?11` vs `2004-06-11?`) normalize to one form.
 
+#![expect(
+    clippy::min_ident_chars,
+    reason = "y, m and d are the universal notation for a date's components, and this crate is about little else"
+)]
+#![expect(
+    clippy::pattern_type_mismatch,
+    reason = "matching through a reference without restating & at every level is the idiomatic form the rest of this crate uses"
+)]
+#![expect(
+    clippy::missing_inline_in_public_items,
+    reason = "inlining is the compiler's call across a crate boundary, and the release profile enables fat LTO — annotating every public item would assert a decision this crate has not measured"
+)]
+#![expect(
+    clippy::arithmetic_side_effects,
+    reason = "every flagged operation is bounded where it stands: slice indices by a length guard on the line above, digit values to 0-9 by the match arm that binds them, and the JDN forms by being computed in i128 so any i64 year fits. The operations that genuinely could leave range already use checked_/saturating_ and return an error rather than wrapping"
+)]
+#![expect(
+    clippy::indexing_slicing,
+    reason = "each index is preceded by the bounds check that justifies it, or indexes a fixed-size array whose length is in its type"
+)]
+#![expect(
+    clippy::let_underscore_must_use,
+    reason = "the result is deliberately discarded at a point where the error is already reported"
+)]
+#![expect(
+    clippy::as_conversions,
+    reason = "the operands are proven in range by the guard or type immediately above each cast, and try_from at these sites would add an unreachable error path"
+)]
+#![expect(
+    clippy::integer_division_remainder_used,
+    reason = "calendar arithmetic is integer division by definition — the leap rules are /4, /100 and /400, and a float would be wrong"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
+)]
+#![expect(
+    clippy::integer_division,
+    reason = "calendar arithmetic is integer division by definition — the leap rules are /4, /100 and /400, and a float would be wrong"
+)]
+#![expect(
+    clippy::unreachable,
+    reason = "an unreachable! whose comment names the caller-side check that makes it unreachable — a deliberate assertion of an invariant, not an unhandled case"
+)]
+#![expect(
+    clippy::missing_errors_doc,
+    reason = "edtf-core declares every module private and exports only named types, so nothing flagged here is reachable from outside the crate and there is no published error contract to document"
+)]
+#![expect(
+    clippy::too_long_first_doc_paragraph,
+    reason = "the items are crate-private, so these paragraphs render in no rustdoc summary; they are written to be read next to the code they describe"
+)]
+
 use alloc::{string::String, vec::Vec};
 use core::fmt::{self, Display, Formatter, Write as _};
 
@@ -28,6 +81,7 @@ impl Display for Edtf {
     }
 }
 
+/// The single character EDTF writes for a qualifier (`?`, `~`, `%`).
 fn qual_symbol(q: Qualifier) -> char {
     match (q.uncertain, q.approximate) {
         (true, true) => '%',
@@ -37,6 +91,7 @@ fn qual_symbol(q: Qualifier) -> char {
     }
 }
 
+/// The year's digits in the form the level requires, without its qualifier.
 fn year_body(year: &Year) -> String {
     let mut s = String::new();
     match year.kind {
@@ -50,16 +105,16 @@ fn year_body(year: &Year) -> String {
                     None => s.push('X'),
                 }
             }
-        },
+        }
         YearKind::Big { value } => {
             let _ = write!(s, "Y{value}");
-        },
+        }
         YearKind::Exponential {
             significand,
             exponent,
         } => {
             let _ = write!(s, "Y{significand}E{exponent}");
-        },
+        }
     }
     if let Some(p) = year.significant_digits {
         let _ = write!(s, "S{p}");
@@ -67,6 +122,7 @@ fn year_body(year: &Year) -> String {
     s
 }
 
+/// A date field's two digits, with `X` in every masked position.
 fn field_body(f: DateField) -> String {
     let mut s = String::new();
     for d in f.digits {
@@ -121,11 +177,7 @@ impl Display for Date {
         // Longest qualified prefix sharing the year's qualifier becomes one
         // group marker; anything after it gets individual (left) qualifiers.
         let q0 = parts[0].1;
-        let prefix_end = if q0.is_qualified() {
-            Some(qualified_prefix_end(&parts, q0))
-        } else {
-            None
-        };
+        let prefix_end = q0.is_qualified().then(|| qualified_prefix_end(&parts, q0));
         for (i, (body, q)) in parts.iter().enumerate() {
             if i > 0 {
                 f.write_char('-')?;
@@ -163,7 +215,7 @@ impl Display for Time {
                 } else {
                     write!(f, "{sign}{h:02}:{m:02}")
                 }
-            },
+            }
         }
     }
 }
@@ -215,6 +267,14 @@ impl Display for Set {
 
 #[cfg(test)]
 mod tests {
+    #![expect(
+        clippy::missing_panics_doc,
+        reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+    )]
+    #![expect(
+        clippy::inline_modules,
+        reason = "a module small enough to read in place belongs in place"
+    )]
     use alloc::format;
 
     use super::*;

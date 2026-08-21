@@ -16,6 +16,31 @@
 //!   "numericOrder": "dayFirst"|"monthFirst", "defaultCentury": 1900}` — all
 //!   fields optional.
 
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
+#![expect(
+    clippy::missing_inline_in_public_items,
+    reason = "inlining is the compiler's call across a crate boundary, and the release profile enables fat LTO — annotating every public item would assert a decision this crate has not measured"
+)]
+#![expect(
+    clippy::exhaustive_structs,
+    reason = "these types are the public data model of an ISO 8601-2 value; the spec fixes their fields, so a non_exhaustive that promised future additions would be a promise this format cannot make"
+)]
+#![expect(
+    clippy::exhaustive_enums,
+    reason = "these enums enumerate what ISO 8601-2 defines; the spec fixes the variants, so non_exhaustive would promise additions the format cannot make"
+)]
+#![expect(
+    clippy::pattern_type_mismatch,
+    reason = "matching through a reference without restating & at every level is the idiomatic form the rest of this crate uses"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
+)]
+
 use edtf_core::{Bound, Edtf, Relation};
 use edtf_normalize::{Language, NoMatchReason, NumericOrder, Options, Outcome, normalize_with};
 use serde::{Deserialize, Serialize};
@@ -45,6 +70,7 @@ pub struct Summary {
     pub unspecified: bool,
 }
 
+/// Render a bound as its date string, or `None` for an unknown bound.
 fn bound_json(b: Bound) -> Option<String> {
     match b {
         Bound::Date(d) => Some(d.to_string()),
@@ -78,6 +104,7 @@ pub fn summarize(input: &str) -> Option<Summary> {
     })
 }
 
+/// The precision of a date as the lowercase word the JSON surface uses.
 fn precision_str(d: &edtf_core::Date) -> &'static str {
     match d.precision() {
         edtf_core::Precision::Year => "year",
@@ -188,11 +215,15 @@ pub struct InterpretationJson {
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase", default, deny_unknown_fields)]
 struct NormalizeOptionsJson {
+    /// BCP-47-ish language tag selecting the table set ("en", "ru").
     language: Option<String>,
+    /// How to read an ambiguous all-numeric date ("day-first", "month-first").
     numeric_order: Option<String>,
+    /// Century assumed for a two-digit year, when the caller states one.
     default_century: Option<u16>,
 }
 
+/// Decode the caller's JSON options object into normaliser [`Options`].
 fn parse_options(options: Option<&str>) -> Option<Options> {
     let Some(raw) = options.filter(|s| !s.trim().is_empty()) else {
         return Some(Options::default());
@@ -221,6 +252,7 @@ fn parse_options(options: Option<&str>) -> Option<Options> {
     })
 }
 
+/// Render the normaliser's notes as the JSON surface's note objects.
 fn notes_json(notes: &[edtf_normalize::Note]) -> Vec<NoteJson> {
     notes
         .iter()
@@ -247,10 +279,10 @@ pub fn normalize_summary(input: &str, options: Option<&str>) -> Option<Normalize
                 .interpretations
                 .into_iter()
                 .map(|i| InterpretationJson {
-                    level: i.value.level(),
-                    notes: notes_json(&i.notes),
                     edtf: i.edtf,
+                    level: i.value.level(),
                     reading: i.reading,
+                    notes: notes_json(&i.notes),
                 })
                 .collect(),
         },
@@ -274,7 +306,7 @@ pub fn normalize_summary(input: &str, options: Option<&str>) -> Option<Normalize
 /// for the object shape.
 #[wasm_bindgen]
 #[must_use]
-#[allow(
+#[expect(
     clippy::needless_pass_by_value,
     reason = "wasm-bindgen passes JS strings owned, not as Option<&str>"
 )]
@@ -323,6 +355,26 @@ pub fn relation(a: &str, b: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    #![expect(
+        clippy::missing_panics_doc,
+        reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+    )]
+    #![expect(
+        clippy::inline_modules,
+        reason = "unit tests live beside the code they exercise; a separate file would put the invariants further from what they constrain"
+    )]
+    #![expect(
+        clippy::default_numeric_fallback,
+        reason = "literal fixtures whose type the assertion already fixes"
+    )]
+    #![expect(
+        clippy::shadow_unrelated,
+        reason = "short-lived rebinding inside one assertion chain"
+    )]
+    #![expect(
+        clippy::non_ascii_literal,
+        reason = "Russian prose dates are the input this normaliser exists to read; Cyrillic literals are the subject under test, not stray non-ASCII"
+    )]
     #![allow(
         clippy::unwrap_used,
         reason = "test code: a panic here is the failure signal, not a crash path"

@@ -10,6 +10,19 @@
     clippy::expect_used,
     reason = "test/bench code: a panic here is the failure signal, not a crash path"
 )]
+#![expect(
+    clippy::tests_outside_test_module,
+    reason = "an integration test under tests/ is compiled as its own crate whose every item is test support, so there is no non-test code for a mod tests to separate it from"
+)]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the conversions keep their published algorithms' own variable names (y, m, d, a); renaming them breaks the correspondence to the sources they are checked against"
+)]
+#![expect(clippy::panic, reason = "a panic in a test IS the failure signal")]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_calendars::{
     CalendarError, Converted, JulianDate, convert, gregorian_to_julian, is_julian_leap,

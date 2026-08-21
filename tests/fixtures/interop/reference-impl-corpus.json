@@ -17,37 +17,130 @@
     { "edtf": "2016-12", "sources": ["edtf.js"], "our_level": 0 },
     { "edtf": "2016-05-29", "sources": ["edtf.js"], "our_level": 0 },
     { "edtf": "2016-05-31", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "-0002", "sources": ["edtf.js"], "our_level": 1, "their_level": 0, "note": "negative year is a Level 1 feature (A.5.2); edtf.js files it under Level 0" },
-    { "edtf": "-9999", "sources": ["edtf.js"], "our_level": 1, "their_level": 0, "note": "negative year is a Level 1 feature (A.5.2); edtf.js files it under Level 0" },
+    {
+      "edtf": "-0002",
+      "sources": ["edtf.js"],
+      "our_level": 1,
+      "their_level": 0,
+      "note": "negative year is a Level 1 feature (A.5.2); edtf.js files it under Level 0"
+    },
+    {
+      "edtf": "-9999",
+      "sources": ["edtf.js"],
+      "our_level": 1,
+      "their_level": 0,
+      "note": "negative year is a Level 1 feature (A.5.2); edtf.js files it under Level 0"
+    },
     { "edtf": "-0999", "sources": ["python-edtf"], "our_level": 1 },
 
     { "edtf": "2016-05-02T16:54:59", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "1985-04-12T23:20:30", "sources": ["python-edtf"], "our_level": 0 },
-    { "edtf": "2001-02-03T09:30:01", "sources": ["python-edtf"], "our_level": 0 },
+    {
+      "edtf": "1985-04-12T23:20:30",
+      "sources": ["python-edtf"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2001-02-03T09:30:01",
+      "sources": ["python-edtf"],
+      "our_level": 0
+    },
     { "edtf": "2016-05-02T16:54:59Z", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "2004-01-01T10:10:10Z", "sources": ["python-edtf"], "our_level": 0 },
-    { "edtf": "2004-01-01T10:10:10+05:00", "sources": ["python-edtf"], "our_level": 0 },
-    { "edtf": "2016-05-02T16:54:59+02:30", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "2016-05-02T16:54:59+00:00", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "2016-05-02T16:54:59+14:00", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "2016-05-02T16:54:59+13:30", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "2016-05-02T16:54:59+12:00", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "2016-05-02T16:54:59+04:10", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "2016-05-02T16:54:59-00:15", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "2016-05-02T16:54:59-11:59", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "2016-05-02T16:54:59-12:00", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "2016-05-02T16:54:59+14", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "2016-05-02T16:54:59-12", "sources": ["edtf.js"], "our_level": 0 },
+    {
+      "edtf": "2004-01-01T10:10:10Z",
+      "sources": ["python-edtf"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2004-01-01T10:10:10+05:00",
+      "sources": ["python-edtf"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2016-05-02T16:54:59+02:30",
+      "sources": ["edtf.js"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2016-05-02T16:54:59+00:00",
+      "sources": ["edtf.js"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2016-05-02T16:54:59+14:00",
+      "sources": ["edtf.js"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2016-05-02T16:54:59+13:30",
+      "sources": ["edtf.js"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2016-05-02T16:54:59+12:00",
+      "sources": ["edtf.js"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2016-05-02T16:54:59+04:10",
+      "sources": ["edtf.js"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2016-05-02T16:54:59-00:15",
+      "sources": ["edtf.js"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2016-05-02T16:54:59-11:59",
+      "sources": ["edtf.js"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2016-05-02T16:54:59-12:00",
+      "sources": ["edtf.js"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2016-05-02T16:54:59+14",
+      "sources": ["edtf.js"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2016-05-02T16:54:59-12",
+      "sources": ["edtf.js"],
+      "our_level": 0
+    },
 
     { "edtf": "1980/1994", "sources": ["edtf.js"], "our_level": 0 },
     { "edtf": "1980-08/1994", "sources": ["edtf.js"], "our_level": 0 },
-    { "edtf": "2004-02-01/2005", "sources": ["edtf.js", "python-edtf"], "our_level": 0 },
-    { "edtf": "2004-02-01/2005-02", "sources": ["python-edtf"], "our_level": 0 },
-    { "edtf": "2004-06/2006-08", "sources": ["edtf.js", "python-edtf"], "our_level": 0 },
-    { "edtf": "2004-02-01/2005-02-08", "sources": ["edtf.js", "python-edtf"], "our_level": 0 },
+    {
+      "edtf": "2004-02-01/2005",
+      "sources": ["edtf.js", "python-edtf"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2004-02-01/2005-02",
+      "sources": ["python-edtf"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2004-06/2006-08",
+      "sources": ["edtf.js", "python-edtf"],
+      "our_level": 0
+    },
+    {
+      "edtf": "2004-02-01/2005-02-08",
+      "sources": ["edtf.js", "python-edtf"],
+      "our_level": 0
+    },
     { "edtf": "1964/2008", "sources": ["python-edtf"], "our_level": 0 },
     { "edtf": "2005/2006-02", "sources": ["python-edtf"], "our_level": 0 },
-    { "edtf": "-2005/-1999-02", "sources": ["python-edtf"], "our_level": 1, "note": "negative year-month endpoint: direct evidence for D17 (negative years compose with month components)" },
+    {
+      "edtf": "-2005/-1999-02",
+      "sources": ["python-edtf"],
+      "our_level": 1,
+      "note": "negative year-month endpoint: direct evidence for D17 (negative years compose with month components)"
+    },
 
     { "edtf": "2016?", "sources": ["edtf.js"], "our_level": 1 },
     { "edtf": "2016~", "sources": ["edtf.js"], "our_level": 1 },
@@ -79,9 +172,27 @@
     { "edtf": "156X~", "sources": ["python-edtf"], "our_level": 1 },
     { "edtf": "16XX~", "sources": ["python-edtf"], "our_level": 1 },
     { "edtf": "16XX%", "sources": ["python-edtf"], "our_level": 1 },
-    { "edtf": "XXXX", "sources": ["edtf.js"], "our_level": 2, "their_level": 1, "note": "D5: fully-masked year is Level 2 (matches LoC); edtf.js claims Level 1" },
-    { "edtf": "XXXX-XX", "sources": ["edtf.js"], "our_level": 2, "their_level": 1, "note": "D5: not one of the Annex A.5.5 Level 1 shapes; edtf.js claims Level 1" },
-    { "edtf": "XXXX-XX-XX", "sources": ["edtf.js"], "our_level": 2, "their_level": 1, "note": "D5: not one of the Annex A.5.5 Level 1 shapes; edtf.js claims Level 1" },
+    {
+      "edtf": "XXXX",
+      "sources": ["edtf.js"],
+      "our_level": 2,
+      "their_level": 1,
+      "note": "D5: fully-masked year is Level 2 (matches LoC); edtf.js claims Level 1"
+    },
+    {
+      "edtf": "XXXX-XX",
+      "sources": ["edtf.js"],
+      "our_level": 2,
+      "their_level": 1,
+      "note": "D5: not one of the Annex A.5.5 Level 1 shapes; edtf.js claims Level 1"
+    },
+    {
+      "edtf": "XXXX-XX-XX",
+      "sources": ["edtf.js"],
+      "our_level": 2,
+      "their_level": 1,
+      "note": "D5: not one of the Annex A.5.5 Level 1 shapes; edtf.js claims Level 1"
+    },
     { "edtf": "1XXX", "sources": ["python-edtf"], "our_level": 2 },
     { "edtf": "1XXX~", "sources": ["python-edtf"], "our_level": 2 },
 
@@ -93,7 +204,11 @@
     { "edtf": "Y170000002", "sources": ["python-edtf"], "our_level": 1 },
     { "edtf": "Y-170000002", "sources": ["python-edtf"], "our_level": 1 },
 
-    { "edtf": "2001-21", "sources": ["edtf.js", "python-edtf"], "our_level": 1 },
+    {
+      "edtf": "2001-21",
+      "sources": ["edtf.js", "python-edtf"],
+      "our_level": 1
+    },
     { "edtf": "2001-22", "sources": ["edtf.js"], "our_level": 1 },
     { "edtf": "2001-23", "sources": ["edtf.js"], "our_level": 1 },
     { "edtf": "2001-24", "sources": ["edtf.js"], "our_level": 1 },
@@ -108,7 +223,11 @@
     { "edtf": "1984~/2004-06", "sources": ["python-edtf"], "our_level": 1 },
     { "edtf": "1984/2004-06~", "sources": ["python-edtf"], "our_level": 1 },
     { "edtf": "1984-06?/2004-08?", "sources": ["python-edtf"], "our_level": 1 },
-    { "edtf": "1984-06-02?/2004-08-08~", "sources": ["python-edtf"], "our_level": 1 },
+    {
+      "edtf": "1984-06-02?/2004-08-08~",
+      "sources": ["python-edtf"],
+      "our_level": 1
+    },
     { "edtf": "1984-06-02?/", "sources": ["python-edtf"], "our_level": 1 },
     { "edtf": "../2016", "sources": ["edtf.js"], "our_level": 1 },
     { "edtf": "2016-05/..", "sources": ["edtf.js"], "our_level": 1 },
@@ -123,7 +242,13 @@
     { "edtf": "/2006", "sources": ["python-edtf"], "our_level": 1 },
     { "edtf": "2004-06-01/", "sources": ["python-edtf"], "our_level": 1 },
 
-    { "edtf": "?2001", "sources": ["edtf.js"], "our_level": 1, "their_level": 2, "note": "individual qualification of the only component is semantically complete qualification (8.2.4): ?2001 canonicalizes to 2001? at Level 1" },
+    {
+      "edtf": "?2001",
+      "sources": ["edtf.js"],
+      "our_level": 1,
+      "their_level": 2,
+      "note": "individual qualification of the only component is semantically complete qualification (8.2.4): ?2001 canonicalizes to 2001? at Level 1"
+    },
     { "edtf": "?1945", "sources": ["python-edtf"], "our_level": 1 },
     { "edtf": "~1945", "sources": ["python-edtf"], "our_level": 1 },
     { "edtf": "%1945", "sources": ["python-edtf"], "our_level": 1 },
@@ -138,7 +263,11 @@
     { "edtf": "%1945/1959", "sources": ["python-edtf"], "our_level": 1 },
     { "edtf": "2001~-09", "sources": ["edtf.js"], "our_level": 2 },
     { "edtf": "2001-?09~-09", "sources": ["edtf.js"], "our_level": 2 },
-    { "edtf": "2004?-06-~11", "sources": ["edtf.js", "python-edtf"], "our_level": 2 },
+    {
+      "edtf": "2004?-06-~11",
+      "sources": ["edtf.js", "python-edtf"],
+      "our_level": 2
+    },
     { "edtf": "2004?-06-11", "sources": ["python-edtf"], "our_level": 2 },
     { "edtf": "2004-06~-11", "sources": ["python-edtf"], "our_level": 2 },
     { "edtf": "2004-06-~11", "sources": ["python-edtf"], "our_level": 2 },
@@ -151,8 +280,16 @@
 
     { "edtf": "156X-12-31", "sources": ["edtf.js"], "our_level": 2 },
     { "edtf": "156X-12-25", "sources": ["python-edtf"], "our_level": 2 },
-    { "edtf": "15XX-12-25", "sources": ["edtf.js", "python-edtf"], "our_level": 2 },
-    { "edtf": "15XX-12-XX", "sources": ["edtf.js", "python-edtf"], "our_level": 2 },
+    {
+      "edtf": "15XX-12-25",
+      "sources": ["edtf.js", "python-edtf"],
+      "our_level": 2
+    },
+    {
+      "edtf": "15XX-12-XX",
+      "sources": ["edtf.js", "python-edtf"],
+      "our_level": 2
+    },
     { "edtf": "15XX-01-3X", "sources": ["edtf.js"], "our_level": 2 },
     { "edtf": "15XX-XX-25", "sources": ["edtf.js"], "our_level": 2 },
     { "edtf": "1500-1X-25", "sources": ["edtf.js"], "our_level": 2 },
@@ -170,7 +307,12 @@
     { "edtf": "1953S2", "sources": ["python-edtf"], "our_level": 2 },
     { "edtf": "1953S3", "sources": ["python-edtf"], "our_level": 2 },
     { "edtf": "Y17101000S3", "sources": ["edtf.js"], "our_level": 2 },
-    { "edtf": "Y171010000S3", "sources": ["python-edtf"], "our_level": 2, "note": "python-edtf's expected estimate range 171000000-171999999 independently agrees with the D19 reading of §4.4.3" },
+    {
+      "edtf": "Y171010000S3",
+      "sources": ["python-edtf"],
+      "our_level": 2,
+      "note": "python-edtf's expected estimate range 171000000-171999999 independently agrees with the D19 reading of §4.4.3"
+    },
     { "edtf": "Y-17101E3S3", "sources": ["edtf.js"], "our_level": 2 },
     { "edtf": "Y17101E4S3", "sources": ["python-edtf"], "our_level": 2 },
     { "edtf": "Y3388E2S3", "sources": ["python-edtf"], "our_level": 2 },
@@ -181,90 +323,356 @@
     { "edtf": "2001-29", "sources": ["python-edtf"], "our_level": 2 },
     { "edtf": "2001-34", "sources": ["python-edtf"], "our_level": 2 },
 
-    { "edtf": "2004-06-~01/2004-06-~20", "sources": ["edtf.js", "python-edtf"], "our_level": 2 },
-    { "edtf": "2004-06-XX/2004-07-03", "sources": ["edtf.js", "python-edtf"], "our_level": 2 },
+    {
+      "edtf": "2004-06-~01/2004-06-~20",
+      "sources": ["edtf.js", "python-edtf"],
+      "our_level": 2
+    },
+    {
+      "edtf": "2004-06-XX/2004-07-03",
+      "sources": ["edtf.js", "python-edtf"],
+      "our_level": 2
+    },
     { "edtf": "1800/1X01", "sources": ["edtf.js"], "our_level": 2 },
 
-    { "edtf": "[..1760-12-03]", "sources": ["edtf.js", "python-edtf"], "our_level": 2 },
-    { "edtf": "[1760-12..]", "sources": ["edtf.js", "python-edtf"], "our_level": 2 },
+    {
+      "edtf": "[..1760-12-03]",
+      "sources": ["edtf.js", "python-edtf"],
+      "our_level": 2
+    },
+    {
+      "edtf": "[1760-12..]",
+      "sources": ["edtf.js", "python-edtf"],
+      "our_level": 2
+    },
     { "edtf": "[1760..]", "sources": ["edtf.js"], "our_level": 2 },
     { "edtf": "[2016-03]", "sources": ["edtf.js"], "our_level": 2 },
     { "edtf": "{1760..}", "sources": ["edtf.js"], "our_level": 2 },
     { "edtf": "{..1760}", "sources": ["edtf.js"], "our_level": 2 },
     { "edtf": "{2016..2020}", "sources": ["edtf.js"], "our_level": 2 },
-    { "edtf": "[1667,1668,1670..1672]", "sources": ["edtf.js", "python-edtf"], "our_level": 2, "note": "whitespace-free normalization of the spaced originals in must_reject" },
-    { "edtf": "[1760-01,1760-02,1760-12..]", "sources": ["python-edtf"], "our_level": 2, "note": "whitespace-free normalization" },
-    { "edtf": "[1667,1760-12]", "sources": ["python-edtf"], "our_level": 2, "note": "whitespace-free normalization" },
-    { "edtf": "{1667,1668,1670..1672}", "sources": ["python-edtf"], "our_level": 2, "note": "whitespace-free normalization" },
-    { "edtf": "{1960,1961-12}", "sources": ["python-edtf"], "our_level": 2, "note": "whitespace-free normalization" },
-    { "edtf": "{1667,1670..1672}", "sources": ["edtf.js"], "our_level": 2, "note": "whitespace-free normalization" }
+    {
+      "edtf": "[1667,1668,1670..1672]",
+      "sources": ["edtf.js", "python-edtf"],
+      "our_level": 2,
+      "note": "whitespace-free normalization of the spaced originals in must_reject"
+    },
+    {
+      "edtf": "[1760-01,1760-02,1760-12..]",
+      "sources": ["python-edtf"],
+      "our_level": 2,
+      "note": "whitespace-free normalization"
+    },
+    {
+      "edtf": "[1667,1760-12]",
+      "sources": ["python-edtf"],
+      "our_level": 2,
+      "note": "whitespace-free normalization"
+    },
+    {
+      "edtf": "{1667,1668,1670..1672}",
+      "sources": ["python-edtf"],
+      "our_level": 2,
+      "note": "whitespace-free normalization"
+    },
+    {
+      "edtf": "{1960,1961-12}",
+      "sources": ["python-edtf"],
+      "our_level": 2,
+      "note": "whitespace-free normalization"
+    },
+    {
+      "edtf": "{1667,1670..1672}",
+      "sources": ["edtf.js"],
+      "our_level": 2,
+      "note": "whitespace-free normalization"
+    }
   ],
   "rejects": [
-    { "edtf": "-0000", "sources": ["edtf.js"], "reason": "D2: the year before 0000 is -0001" },
-    { "edtf": "-0000-01-01", "sources": ["python-edtf"], "reason": "D2 extended to full dates" },
-    { "edtf": "12345", "sources": ["edtf.js"], "reason": "five-digit year requires the Y prefix (D13/P1 4.5)" },
-    { "edtf": "2016-13", "sources": ["edtf.js"], "reason": "month out of range" },
-    { "edtf": "2016-00", "sources": ["edtf.js"], "reason": "month out of range" },
-    { "edtf": "2016-13-08", "sources": ["python-edtf"], "reason": "month out of range" },
-    { "edtf": "2016-05-00", "sources": ["edtf.js"], "reason": "day out of range" },
-    { "edtf": "2016-05-32", "sources": ["edtf.js"], "reason": "day out of range" },
-    { "edtf": "2016-02-39", "sources": ["python-edtf"], "reason": "day out of range" },
-    { "edtf": "2016-02-30", "sources": ["edtf.js"], "reason": "calendar validity" },
-    { "edtf": "2016-02-31", "sources": ["edtf.js"], "reason": "calendar validity" },
-    { "edtf": "2016-04-31", "sources": ["edtf.js"], "reason": "calendar validity" },
-    { "edtf": "2016-06-31", "sources": ["edtf.js"], "reason": "calendar validity" },
-    { "edtf": "2016-09-31", "sources": ["edtf.js"], "reason": "calendar validity" },
-    { "edtf": "2016-11-31", "sources": ["edtf.js"], "reason": "calendar validity" },
-    { "edtf": "2016-13-XX", "sources": ["edtf.js"], "reason": "month out of range under mask" },
-    { "edtf": "156X-09-31", "sources": ["edtf.js"], "reason": "D11: no valid completion" },
-    { "edtf": "156X-11-31", "sources": ["edtf.js"], "reason": "D11: no valid completion" },
-    { "edtf": "15XX-02-3X", "sources": ["edtf.js"], "reason": "D11: no valid completion" },
-    { "edtf": "15XX-2X-25", "sources": ["edtf.js"], "reason": "D14: masked months match calendar months 01-12 only" },
-    { "edtf": "2016-05-02T24:00:01", "sources": ["edtf.js"], "reason": "hour out of range" },
-    { "edtf": "2016-05-02T00:61:00", "sources": ["edtf.js"], "reason": "minute out of range" },
-    { "edtf": "2016-05-02T12:00:00-00:00", "sources": ["edtf.js"], "reason": "D4: negative zero shift" },
-    { "edtf": "2016-05-02T12:00:00-00", "sources": ["edtf.js"], "reason": "D4: negative zero shift" },
-    { "edtf": "2016-05-02T12:00:00+14:01", "sources": ["edtf.js"], "reason": "D15: shift beyond +14:00" },
-    { "edtf": "2016-05-02T12:00:00+15", "sources": ["edtf.js"], "reason": "D15: shift beyond +14:00" },
-    { "edtf": "Y9999", "sources": ["edtf.js"], "reason": "D1: Y-prefix requires |year| > 9999" },
-    { "edtf": "Y-9999", "sources": ["edtf.js"], "reason": "D1: Y-prefix requires |year| > 9999" },
-    { "edtf": "Y00001", "sources": ["edtf.js"], "reason": "D20: no leading zeros in Y-year significands" },
-    { "edtf": "Y-00001", "sources": ["edtf.js"], "reason": "D20: no leading zeros in Y-year significands" },
-    { "edtf": "Y17E7-12-26", "sources": ["python-edtf"], "reason": "Y-years are year-precision only (4.7.2)" },
-    { "edtf": "[1999}", "sources": ["edtf.js"], "reason": "mismatched set brackets" },
-    { "edtf": "{1999]", "sources": ["edtf.js"], "reason": "mismatched set brackets" },
+    {
+      "edtf": "-0000",
+      "sources": ["edtf.js"],
+      "reason": "D2: the year before 0000 is -0001"
+    },
+    {
+      "edtf": "-0000-01-01",
+      "sources": ["python-edtf"],
+      "reason": "D2 extended to full dates"
+    },
+    {
+      "edtf": "12345",
+      "sources": ["edtf.js"],
+      "reason": "five-digit year requires the Y prefix (D13/P1 4.5)"
+    },
+    {
+      "edtf": "2016-13",
+      "sources": ["edtf.js"],
+      "reason": "month out of range"
+    },
+    {
+      "edtf": "2016-00",
+      "sources": ["edtf.js"],
+      "reason": "month out of range"
+    },
+    {
+      "edtf": "2016-13-08",
+      "sources": ["python-edtf"],
+      "reason": "month out of range"
+    },
+    {
+      "edtf": "2016-05-00",
+      "sources": ["edtf.js"],
+      "reason": "day out of range"
+    },
+    {
+      "edtf": "2016-05-32",
+      "sources": ["edtf.js"],
+      "reason": "day out of range"
+    },
+    {
+      "edtf": "2016-02-39",
+      "sources": ["python-edtf"],
+      "reason": "day out of range"
+    },
+    {
+      "edtf": "2016-02-30",
+      "sources": ["edtf.js"],
+      "reason": "calendar validity"
+    },
+    {
+      "edtf": "2016-02-31",
+      "sources": ["edtf.js"],
+      "reason": "calendar validity"
+    },
+    {
+      "edtf": "2016-04-31",
+      "sources": ["edtf.js"],
+      "reason": "calendar validity"
+    },
+    {
+      "edtf": "2016-06-31",
+      "sources": ["edtf.js"],
+      "reason": "calendar validity"
+    },
+    {
+      "edtf": "2016-09-31",
+      "sources": ["edtf.js"],
+      "reason": "calendar validity"
+    },
+    {
+      "edtf": "2016-11-31",
+      "sources": ["edtf.js"],
+      "reason": "calendar validity"
+    },
+    {
+      "edtf": "2016-13-XX",
+      "sources": ["edtf.js"],
+      "reason": "month out of range under mask"
+    },
+    {
+      "edtf": "156X-09-31",
+      "sources": ["edtf.js"],
+      "reason": "D11: no valid completion"
+    },
+    {
+      "edtf": "156X-11-31",
+      "sources": ["edtf.js"],
+      "reason": "D11: no valid completion"
+    },
+    {
+      "edtf": "15XX-02-3X",
+      "sources": ["edtf.js"],
+      "reason": "D11: no valid completion"
+    },
+    {
+      "edtf": "15XX-2X-25",
+      "sources": ["edtf.js"],
+      "reason": "D14: masked months match calendar months 01-12 only"
+    },
+    {
+      "edtf": "2016-05-02T24:00:01",
+      "sources": ["edtf.js"],
+      "reason": "hour out of range"
+    },
+    {
+      "edtf": "2016-05-02T00:61:00",
+      "sources": ["edtf.js"],
+      "reason": "minute out of range"
+    },
+    {
+      "edtf": "2016-05-02T12:00:00-00:00",
+      "sources": ["edtf.js"],
+      "reason": "D4: negative zero shift"
+    },
+    {
+      "edtf": "2016-05-02T12:00:00-00",
+      "sources": ["edtf.js"],
+      "reason": "D4: negative zero shift"
+    },
+    {
+      "edtf": "2016-05-02T12:00:00+14:01",
+      "sources": ["edtf.js"],
+      "reason": "D15: shift beyond +14:00"
+    },
+    {
+      "edtf": "2016-05-02T12:00:00+15",
+      "sources": ["edtf.js"],
+      "reason": "D15: shift beyond +14:00"
+    },
+    {
+      "edtf": "Y9999",
+      "sources": ["edtf.js"],
+      "reason": "D1: Y-prefix requires |year| > 9999"
+    },
+    {
+      "edtf": "Y-9999",
+      "sources": ["edtf.js"],
+      "reason": "D1: Y-prefix requires |year| > 9999"
+    },
+    {
+      "edtf": "Y00001",
+      "sources": ["edtf.js"],
+      "reason": "D20: no leading zeros in Y-year significands"
+    },
+    {
+      "edtf": "Y-00001",
+      "sources": ["edtf.js"],
+      "reason": "D20: no leading zeros in Y-year significands"
+    },
+    {
+      "edtf": "Y17E7-12-26",
+      "sources": ["python-edtf"],
+      "reason": "Y-years are year-precision only (4.7.2)"
+    },
+    {
+      "edtf": "[1999}",
+      "sources": ["edtf.js"],
+      "reason": "mismatched set brackets"
+    },
+    {
+      "edtf": "{1999]",
+      "sources": ["edtf.js"],
+      "reason": "mismatched set brackets"
+    },
     { "edtf": "[1999", "sources": ["edtf.js"], "reason": "unterminated set" },
     { "edtf": "{1999", "sources": ["edtf.js"], "reason": "unterminated set" },
-    { "edtf": "", "sources": ["edtf.js", "python-edtf"], "reason": "empty input" },
+    {
+      "edtf": "",
+      "sources": ["edtf.js", "python-edtf"],
+      "reason": "empty input"
+    },
     { "edtf": "-", "sources": ["edtf.js"], "reason": "bare sign" },
-    { "edtf": "not a edtf string", "sources": ["python-edtf"], "reason": "not EDTF" },
-    { "edtf": "2004-(06)?-11", "sources": ["python-edtf"], "reason": "pre-2018 parenthesized qualification is not in the ratified spec" },
-    { "edtf": "2004-06-(11)~", "sources": ["python-edtf"], "reason": "pre-2018 parenthesized qualification" },
-    { "edtf": "2004-(06)%", "sources": ["python-edtf"], "reason": "pre-2018 parenthesized qualification" },
-    { "edtf": "2004-(06-11)?", "sources": ["python-edtf"], "reason": "pre-2018 parenthesized qualification" },
-    { "edtf": "2004?-06-(11)~", "sources": ["python-edtf"], "reason": "pre-2018 parenthesized qualification" },
-    { "edtf": "(2004-(06)~)?", "sources": ["python-edtf"], "reason": "pre-2018 parenthesized qualification" },
-    { "edtf": "(2004)?-06-04~", "sources": ["python-edtf"], "reason": "pre-2018 parenthesized qualification" },
-    { "edtf": "(2011)-06-04~", "sources": ["python-edtf"], "reason": "pre-2018 parenthesized qualification" },
-    { "edtf": "2011-(06-04)~", "sources": ["python-edtf"], "reason": "pre-2018 parenthesized qualification" },
-    { "edtf": "2004-06-(01)~/2004-06-(20)~", "sources": ["python-edtf"], "reason": "pre-2018 parenthesized qualification" }
+    {
+      "edtf": "not a edtf string",
+      "sources": ["python-edtf"],
+      "reason": "not EDTF"
+    },
+    {
+      "edtf": "2004-(06)?-11",
+      "sources": ["python-edtf"],
+      "reason": "pre-2018 parenthesized qualification is not in the ratified spec"
+    },
+    {
+      "edtf": "2004-06-(11)~",
+      "sources": ["python-edtf"],
+      "reason": "pre-2018 parenthesized qualification"
+    },
+    {
+      "edtf": "2004-(06)%",
+      "sources": ["python-edtf"],
+      "reason": "pre-2018 parenthesized qualification"
+    },
+    {
+      "edtf": "2004-(06-11)?",
+      "sources": ["python-edtf"],
+      "reason": "pre-2018 parenthesized qualification"
+    },
+    {
+      "edtf": "2004?-06-(11)~",
+      "sources": ["python-edtf"],
+      "reason": "pre-2018 parenthesized qualification"
+    },
+    {
+      "edtf": "(2004-(06)~)?",
+      "sources": ["python-edtf"],
+      "reason": "pre-2018 parenthesized qualification"
+    },
+    {
+      "edtf": "(2004)?-06-04~",
+      "sources": ["python-edtf"],
+      "reason": "pre-2018 parenthesized qualification"
+    },
+    {
+      "edtf": "(2011)-06-04~",
+      "sources": ["python-edtf"],
+      "reason": "pre-2018 parenthesized qualification"
+    },
+    {
+      "edtf": "2011-(06-04)~",
+      "sources": ["python-edtf"],
+      "reason": "pre-2018 parenthesized qualification"
+    },
+    {
+      "edtf": "2004-06-(01)~/2004-06-(20)~",
+      "sources": ["python-edtf"],
+      "reason": "pre-2018 parenthesized qualification"
+    }
   ],
   "must_reject": [
-    { "edtf": "2016-05-02T16:54:59.042", "sources": ["edtf.js"], "ism": "fractional seconds — Annex A.4.3 admits complete hh:mm:ss only (spec-notes §2.2)" },
-    { "edtf": "2016-05-02T16:54:59.4", "sources": ["edtf.js"], "ism": "fractional seconds" },
-    { "edtf": "2016-05-02T16:54:59.042123", "sources": ["edtf.js"], "ism": "fractional seconds" },
-    { "edtf": "2016-05-02T16:54:59.042Z", "sources": ["edtf.js"], "ism": "fractional seconds" },
-    { "edtf": "2016-05-02T24:00:00", "sources": ["edtf.js"], "ism": "24:00 end-of-day — explicitly disallowed (P1 5.3.2, spec-notes §2.2)" },
-    { "edtf": "2016-05-02T16:54:59+0230", "sources": ["edtf.js"], "ism": "basic-format shift without colon — EDTF is extended format only (A.3)" },
-    { "edtf": "2016-05-02T16:54:59+0000", "sources": ["edtf.js"], "ism": "basic-format shift without colon" },
-    { "edtf": "2016-05-02T16:54:59-1200", "sources": ["edtf.js"], "ism": "basic-format shift without colon" },
-    { "edtf": "19", "sources": ["edtf.js"], "ism": "bare century — not in Annex A (spec-notes §5); previously noted in tests/fixtures/legacy" },
+    {
+      "edtf": "2016-05-02T16:54:59.042",
+      "sources": ["edtf.js"],
+      "ism": "fractional seconds — Annex A.4.3 admits complete hh:mm:ss only (spec-notes §2.2)"
+    },
+    {
+      "edtf": "2016-05-02T16:54:59.4",
+      "sources": ["edtf.js"],
+      "ism": "fractional seconds"
+    },
+    {
+      "edtf": "2016-05-02T16:54:59.042123",
+      "sources": ["edtf.js"],
+      "ism": "fractional seconds"
+    },
+    {
+      "edtf": "2016-05-02T16:54:59.042Z",
+      "sources": ["edtf.js"],
+      "ism": "fractional seconds"
+    },
+    {
+      "edtf": "2016-05-02T24:00:00",
+      "sources": ["edtf.js"],
+      "ism": "24:00 end-of-day — explicitly disallowed (P1 5.3.2, spec-notes §2.2)"
+    },
+    {
+      "edtf": "2016-05-02T16:54:59+0230",
+      "sources": ["edtf.js"],
+      "ism": "basic-format shift without colon — EDTF is extended format only (A.3)"
+    },
+    {
+      "edtf": "2016-05-02T16:54:59+0000",
+      "sources": ["edtf.js"],
+      "ism": "basic-format shift without colon"
+    },
+    {
+      "edtf": "2016-05-02T16:54:59-1200",
+      "sources": ["edtf.js"],
+      "ism": "basic-format shift without colon"
+    },
+    {
+      "edtf": "19",
+      "sources": ["edtf.js"],
+      "ism": "bare century — not in Annex A (spec-notes §5); previously noted in tests/fixtures/legacy"
+    },
     { "edtf": "00", "sources": ["edtf.js"], "ism": "bare century" },
     { "edtf": "-04", "sources": ["edtf.js"], "ism": "bare negative century" },
     { "edtf": "19~", "sources": ["edtf.js"], "ism": "qualified bare century" },
     { "edtf": "19?", "sources": ["edtf.js"], "ism": "qualified bare century" },
     { "edtf": "19%", "sources": ["edtf.js"], "ism": "qualified bare century" },
-    { "edtf": "193", "sources": ["edtf.js"], "ism": "bare decade — not in Annex A (spec-notes §5)" },
+    {
+      "edtf": "193",
+      "sources": ["edtf.js"],
+      "ism": "bare decade — not in Annex A (spec-notes §5)"
+    },
     { "edtf": "019", "sources": ["edtf.js"], "ism": "bare decade" },
     { "edtf": "009", "sources": ["edtf.js"], "ism": "bare decade" },
     { "edtf": "000", "sources": ["edtf.js"], "ism": "bare decade" },
@@ -273,29 +681,131 @@
     { "edtf": "197~", "sources": ["edtf.js"], "ism": "qualified bare decade" },
     { "edtf": "197?", "sources": ["edtf.js"], "ism": "qualified bare decade" },
     { "edtf": "197%", "sources": ["edtf.js"], "ism": "qualified bare decade" },
-    { "edtf": "/", "sources": ["edtf.js"], "ism": "interval with both endpoints unknown — D6 requires at least one dated endpoint" },
-    { "edtf": "../..", "sources": ["edtf.js"], "ism": "interval with both endpoints open — D6" },
-    { "edtf": "[1667,1668, 1670..1672]", "sources": ["edtf.js", "python-edtf"], "ism": "whitespace after set comma — 6.1 NOTE and P1 3.2.1 forbid spaces" },
-    { "edtf": "[1667, 1668, 1670..1672]", "sources": ["python-edtf"], "ism": "whitespace after set comma" },
-    { "edtf": "[1760-01, 1760-02, 1760-12..]", "sources": ["python-edtf"], "ism": "whitespace after set comma" },
-    { "edtf": "[1667, 1760-12]", "sources": ["python-edtf"], "ism": "whitespace after set comma" },
-    { "edtf": "[1667, 1672-12]", "sources": ["edtf.js"], "ism": "whitespace after set comma" },
-    { "edtf": "{1667,1668, 1670..1672}", "sources": ["python-edtf"], "ism": "whitespace after set comma" },
-    { "edtf": "{1667, 1670..1672}", "sources": ["edtf.js"], "ism": "whitespace after set comma" },
-    { "edtf": "{1960, 1961-12}", "sources": ["python-edtf"], "ism": "whitespace after set comma" },
-    { "edtf": "{1960 ,  1961-12}", "sources": ["edtf.js"], "ism": "whitespace around set comma" },
-    { "edtf": "-01XX", "sources": ["python-edtf"], "ism": "negative masked year — D21: unspecified digits require non-negative years" },
-    { "edtf": "-01XX~", "sources": ["python-edtf"], "ism": "negative masked year — D21" }
+    {
+      "edtf": "/",
+      "sources": ["edtf.js"],
+      "ism": "interval with both endpoints unknown — D6 requires at least one dated endpoint"
+    },
+    {
+      "edtf": "../..",
+      "sources": ["edtf.js"],
+      "ism": "interval with both endpoints open — D6"
+    },
+    {
+      "edtf": "[1667,1668, 1670..1672]",
+      "sources": ["edtf.js", "python-edtf"],
+      "ism": "whitespace after set comma — 6.1 NOTE and P1 3.2.1 forbid spaces"
+    },
+    {
+      "edtf": "[1667, 1668, 1670..1672]",
+      "sources": ["python-edtf"],
+      "ism": "whitespace after set comma"
+    },
+    {
+      "edtf": "[1760-01, 1760-02, 1760-12..]",
+      "sources": ["python-edtf"],
+      "ism": "whitespace after set comma"
+    },
+    {
+      "edtf": "[1667, 1760-12]",
+      "sources": ["python-edtf"],
+      "ism": "whitespace after set comma"
+    },
+    {
+      "edtf": "[1667, 1672-12]",
+      "sources": ["edtf.js"],
+      "ism": "whitespace after set comma"
+    },
+    {
+      "edtf": "{1667,1668, 1670..1672}",
+      "sources": ["python-edtf"],
+      "ism": "whitespace after set comma"
+    },
+    {
+      "edtf": "{1667, 1670..1672}",
+      "sources": ["edtf.js"],
+      "ism": "whitespace after set comma"
+    },
+    {
+      "edtf": "{1960, 1961-12}",
+      "sources": ["python-edtf"],
+      "ism": "whitespace after set comma"
+    },
+    {
+      "edtf": "{1960 ,  1961-12}",
+      "sources": ["edtf.js"],
+      "ism": "whitespace around set comma"
+    },
+    {
+      "edtf": "-01XX",
+      "sources": ["python-edtf"],
+      "ism": "negative masked year — D21: unspecified digits require non-negative years"
+    },
+    {
+      "edtf": "-01XX~",
+      "sources": ["python-edtf"],
+      "ism": "negative masked year — D21"
+    }
   ],
   "we_accept_they_reject": [
-    { "edtf": "2016-05-02T01:01:60", "sources": ["edtf.js"], "our_level": 0, "decision": "D3", "note": "leap-second seconds value: accepted syntactically without leap-second-table validation; edtf.js rejects :60 outright" },
-    { "edtf": "2016-05-02T12:00:00-12:01", "sources": ["edtf.js"], "our_level": 0, "decision": "D15", "note": "shift bound is symmetric |shift| <= 14:00 here; edtf.js bounds shifts to [-12:00, +14:00]" },
-    { "edtf": "2016-05-02T12:00:00-13:00", "sources": ["edtf.js"], "our_level": 0, "decision": "D15" },
-    { "edtf": "2016-05-02T12:00:00-14:00", "sources": ["edtf.js"], "our_level": 0, "decision": "D15" },
-    { "edtf": "2012-21/2012-22", "sources": ["edtf.js"], "our_level": 1, "decision": "D22", "note": "season-precision interval endpoints; edtf.js gates these behind its non-standard level 3" },
-    { "edtf": "2018-21/2018-23", "sources": ["edtf.js"], "our_level": 1, "decision": "D22" },
-    { "edtf": "2001?-23", "sources": ["edtf.js"], "our_level": 2, "decision": "D22", "note": "qualified season; edtf.js non-standard level 3" },
-    { "edtf": "2001-33?", "sources": ["edtf.js"], "our_level": 2, "decision": "D22" },
-    { "edtf": "20XX-41", "sources": ["edtf.js"], "our_level": 2, "decision": "D22", "note": "masked year with explicit sub-year code; edtf.js non-standard level 3" }
+    {
+      "edtf": "2016-05-02T01:01:60",
+      "sources": ["edtf.js"],
+      "our_level": 0,
+      "decision": "D3",
+      "note": "leap-second seconds value: accepted syntactically without leap-second-table validation; edtf.js rejects :60 outright"
+    },
+    {
+      "edtf": "2016-05-02T12:00:00-12:01",
+      "sources": ["edtf.js"],
+      "our_level": 0,
+      "decision": "D15",
+      "note": "shift bound is symmetric |shift| <= 14:00 here; edtf.js bounds shifts to [-12:00, +14:00]"
+    },
+    {
+      "edtf": "2016-05-02T12:00:00-13:00",
+      "sources": ["edtf.js"],
+      "our_level": 0,
+      "decision": "D15"
+    },
+    {
+      "edtf": "2016-05-02T12:00:00-14:00",
+      "sources": ["edtf.js"],
+      "our_level": 0,
+      "decision": "D15"
+    },
+    {
+      "edtf": "2012-21/2012-22",
+      "sources": ["edtf.js"],
+      "our_level": 1,
+      "decision": "D22",
+      "note": "season-precision interval endpoints; edtf.js gates these behind its non-standard level 3"
+    },
+    {
+      "edtf": "2018-21/2018-23",
+      "sources": ["edtf.js"],
+      "our_level": 1,
+      "decision": "D22"
+    },
+    {
+      "edtf": "2001?-23",
+      "sources": ["edtf.js"],
+      "our_level": 2,
+      "decision": "D22",
+      "note": "qualified season; edtf.js non-standard level 3"
+    },
+    {
+      "edtf": "2001-33?",
+      "sources": ["edtf.js"],
+      "our_level": 2,
+      "decision": "D22"
+    },
+    {
+      "edtf": "20XX-41",
+      "sources": ["edtf.js"],
+      "our_level": 2,
+      "decision": "D22",
+      "note": "masked year with explicit sub-year code; edtf.js non-standard level 3"
+    }
   ]
 }

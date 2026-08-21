@@ -7,6 +7,63 @@
 //! per-component qualification, unspecified-digit masks, endpoint kinds, and
 //! set semantics (see docs/spec-notes.md §6).
 
+#![expect(
+    clippy::min_ident_chars,
+    reason = "y, m and d are the universal notation for a date's components, and this crate is about little else"
+)]
+#![expect(
+    clippy::missing_inline_in_public_items,
+    reason = "inlining is the compiler's call across a crate boundary, and the release profile enables fat LTO — annotating every public item would assert a decision this crate has not measured"
+)]
+#![expect(
+    clippy::exhaustive_structs,
+    reason = "these types are the public data model of an ISO 8601-2 value; the spec fixes their fields, so a non_exhaustive that promised future additions would be a promise this format cannot make"
+)]
+#![expect(
+    clippy::exhaustive_enums,
+    reason = "these enums enumerate what ISO 8601-2 defines; the spec fixes the variants, so non_exhaustive would promise additions the format cannot make"
+)]
+#![expect(
+    clippy::absolute_paths,
+    reason = "a one-use std path written in full at the call site is clearer than an import that only appears once"
+)]
+#![expect(
+    clippy::pattern_type_mismatch,
+    reason = "matching through a reference without restating & at every level is the idiomatic form the rest of this crate uses"
+)]
+#![expect(
+    clippy::arithmetic_side_effects,
+    reason = "every flagged operation is bounded where it stands: slice indices by a length guard on the line above, digit values to 0-9 by the match arm that binds them, and the JDN forms by being computed in i128 so any i64 year fits. The operations that genuinely could leave range already use checked_/saturating_ and return an error rather than wrapping"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
+)]
+#![expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "the wildcard covers variants the arm above has already narrowed by construction; naming them would be dead code the compiler cannot check"
+)]
+#![expect(
+    clippy::doc_paragraphs_missing_punctuation,
+    reason = "the paragraph ends in a code span, where a full stop would read as part of the code"
+)]
+#![expect(
+    clippy::else_if_without_else,
+    reason = "the chain is exhaustive over the values its guard admits"
+)]
+#![expect(
+    clippy::indexing_slicing,
+    reason = "each index is preceded by the bounds check that justifies it, or indexes a fixed-size array whose length is in its type"
+)]
+#![expect(
+    clippy::missing_trait_methods,
+    reason = "the default implementations are what this type wants; overriding them to satisfy a lint would be code with no reason to exist"
+)]
+#![expect(
+    clippy::multiple_inherent_impl,
+    reason = "the impl blocks group by concern, which is how the module docs describe this type"
+)]
+
 use alloc::vec::Vec;
 
 /// Error returned when an input is not valid EDTF.
@@ -49,6 +106,7 @@ impl Qualifier {
         self.uncertain || self.approximate
     }
 
+    /// Fold another component set into this one.
     pub(crate) fn merge(&mut self, other: Self) {
         self.uncertain |= other.uncertain;
         self.approximate |= other.approximate;
@@ -105,12 +163,12 @@ impl Year {
                     v = v * 10 + i64::from(d?);
                 }
                 Some(if negative { -v } else { v })
-            },
+            }
             YearKind::Big { value } => Some(value),
             YearKind::Exponential {
                 significand,
                 exponent,
-            } => significand.checked_mul(10i64.checked_pow(exponent)?),
+            } => significand.checked_mul(10_i64.checked_pow(exponent)?),
         }
     }
 
@@ -187,7 +245,11 @@ impl Date {
         }
     }
 
-    fn any_component<F: Fn(Qualifier) -> bool>(&self, f: F) -> bool {
+    /// Whether any component of this value satisfies `f`.
+    fn any_component<F>(&self, f: F) -> bool
+    where
+        F: Fn(Qualifier) -> bool,
+    {
         f(self.year.qualifier)
             || self.month.is_some_and(|m| f(m.qualifier))
             || self.day.is_some_and(|d| f(d.qualifier))
@@ -276,6 +338,7 @@ impl IntervalEndpoint {
         !matches!(self, Self::Open | Self::Unknown)
     }
 
+    /// The date this value denotes, when it denotes exactly one.
     pub(crate) const fn date(&self) -> Option<&Date> {
         match self {
             Self::Date(d) | Self::OnOrBefore(d) | Self::OnOrAfter(d) => Some(d),
@@ -366,7 +429,11 @@ impl Edtf {
         }
     }
 
-    fn any_date<F: Fn(&Date) -> bool>(&self, f: F) -> bool {
+    /// Whether any date inside this value satisfies `f`.
+    fn any_date<F>(&self, f: F) -> bool
+    where
+        F: Fn(&Date) -> bool,
+    {
         match self {
             Self::Date(d) => f(d),
             Self::DateTime(dt) => f(&dt.date),
@@ -404,28 +471,30 @@ impl core::str::FromStr for Edtf {
     }
 }
 
+/// The conformance level an interval requires.
 fn interval_level(iv: &Interval) -> u8 {
     let mut level = 0;
     for endpoint in [&iv.start, &iv.end] {
         level = level.max(match endpoint {
             IntervalEndpoint::Open | IntervalEndpoint::Unknown => 1,
             IntervalEndpoint::OnOrBefore(d) | IntervalEndpoint::OnOrAfter(d) => {
-                2u8.max(date_level(d, true))
-            },
+                2_u8.max(date_level(d, true))
+            }
             IntervalEndpoint::Date(d) => date_level(d, true),
         });
     }
     level
 }
 
+/// The conformance level a date requires.
 fn date_level(d: &Date, in_interval: bool) -> u8 {
-    let mut level = 0u8;
+    let mut level = 0_u8;
     match d.year.kind {
         YearKind::Standard { negative, .. } => {
             if negative {
                 level = level.max(1);
             }
-        },
+        }
         YearKind::Big { .. } => level = level.max(1),
         YearKind::Exponential { .. } => level = level.max(2),
     }
@@ -495,6 +564,14 @@ fn mask_level(d: &Date) -> u8 {
 
 #[cfg(test)]
 mod tests {
+    #![expect(
+        clippy::missing_panics_doc,
+        reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+    )]
+    #![expect(
+        clippy::inline_modules,
+        reason = "unit tests live beside the code they exercise; a separate file would put the invariants further from what they constrain"
+    )]
     use alloc::vec;
 
     use super::*;
@@ -514,10 +591,12 @@ mod tests {
         }
     }
 
+    /// Both halves of `f(a) || f(b)` are pinned, structurally.
+    ///
     /// The parser rejects a qualifier on a set-range endpoint (D27), so
     /// `any_date`'s range arm is only reachable from a hand-built value. It
-    /// stays structural — either endpoint answers — so both halves of
-    /// `f(a) || f(b)` are pinned here; dropping either one fails the test.
+    /// stays structural — either endpoint answers — so dropping either half
+    /// fails the test.
     #[test]
     fn set_range_reports_a_qualifier_on_either_endpoint() {
         let both = Qualifier {

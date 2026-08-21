@@ -10,6 +10,32 @@
     clippy::expect_used,
     reason = "test/bench code: a panic here is the failure signal, not a crash path"
 )]
+#![expect(
+    clippy::tests_outside_test_module,
+    reason = "an integration test under tests/ is compiled as its own crate whose every item is test support, so there is no non-test code for a mod tests to separate it from"
+)]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
+#![expect(clippy::panic, reason = "a panic in a test IS the failure signal")]
+#![expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "the wildcard covers variants the assertion has already excluded"
+)]
+#![expect(
+    clippy::absolute_paths,
+    reason = "a one-use std path written in full at the call site"
+)]
+#![expect(
+    clippy::missing_assert_message,
+    reason = "the assertion's expression is its message"
+)]
+#![expect(clippy::std_instead_of_alloc, reason = "this target links std")]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::Edtf;
 use edtf_normalize::{Note, NumericOrder, Options, Outcome, normalize, normalize_with};
@@ -23,7 +49,7 @@ fn ok(input: &str, expected: &str, level: u8) {
             let parsed = Edtf::parse(&n.edtf).expect("output must parse in core");
             assert_eq!(parsed, n.value, "value/edtf mismatch for {input:?}");
             assert_eq!(parsed.level(), level, "level mismatch for {input:?}");
-        },
+        }
         other => panic!("expected Normalized for {input:?}, got {other:?}"),
     }
 }
@@ -41,7 +67,7 @@ fn ambiguous(input: &str, expected: &[&str]) {
                     i.value
                 );
             }
-        },
+        }
         other => panic!("expected Ambiguous for {input:?}, got {other:?}"),
     }
 }
@@ -123,7 +149,7 @@ fn bare_decades_are_ambiguous() {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, "198X");
             assert!(n.notes.contains(&Note::DefaultCenturyApplied));
-        },
+        }
         other => panic!("expected Normalized, got {other:?}"),
     }
 }
@@ -224,7 +250,7 @@ fn numeric_dates_report_ambiguity() {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, "1985-04-12");
             assert!(n.notes.contains(&Note::NumericResolvedByOption));
-        },
+        }
         other => panic!("expected Normalized, got {other:?}"),
     }
     // A field over 12 proves the order (N5).
@@ -310,7 +336,7 @@ fn whole_expression_qualifier_distributes() {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, "1914~/1918~");
             assert!(n.notes.contains(&Note::QualifierDistributed));
-        },
+        }
         other => panic!("expected Normalized, got {other:?}"),
     }
     ok("1868-1871?", "1868?/1871?", 1);
@@ -480,7 +506,7 @@ const fn _every_note_is_listed(note: Note) {
         | Note::RomanCentury
         | Note::DecadeOfCentury
         | Note::EndpointYearDistributed
-        | Note::CrossYearSeason => {},
+        | Note::CrossYearSeason => {}
     }
 }
 

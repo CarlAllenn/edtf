@@ -21,16 +21,53 @@
     clippy::print_stderr,
     reason = "a CLI's job is printing: stdout is output, stderr is diagnostics"
 )]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
+)]
+#![expect(
+    clippy::shadow_reuse,
+    reason = "the algorithms shadow deliberately — the JDN forms rebind y and m as the published derivation does, step by step, and renaming each step would break the correspondence to the source"
+)]
+#![expect(
+    clippy::indexing_slicing,
+    reason = "each index is preceded by the bounds check that justifies it, or indexes a fixed-size array whose length is in its type"
+)]
+#![expect(
+    clippy::absolute_paths,
+    reason = "a one-use std path written in full at the call site is clearer than an import that only appears once"
+)]
+#![expect(
+    clippy::pattern_type_mismatch,
+    reason = "matching through a reference without restating & at every level is the idiomatic form the rest of this crate uses"
+)]
+#![expect(
+    clippy::arithmetic_side_effects,
+    reason = "every flagged operation is bounded where it stands: slice indices by a length guard on the line above, digit values to 0-9 by the match arm that binds them, and the JDN forms by being computed in i128 so any i64 year fits. The operations that genuinely could leave range already use checked_/saturating_ and return an error rather than wrapping"
+)]
+#![expect(
+    clippy::unreachable,
+    reason = "an unreachable! whose comment names the caller-side check that makes it unreachable — a deliberate assertion of an invariant, not an unhandled case"
+)]
+#![expect(
+    clippy::use_debug,
+    reason = "the debug rendering IS the CLI's diagnostic output for an internal value"
+)]
 
 use std::{
-    io::{BufRead, Write},
+    io::{BufRead as _, Write},
     process::ExitCode,
 };
 
 use edtf_core::{Bound, Edtf};
 
+/// The `--help` text, and the usage line every argument error prints.
 const USAGE: &str = "\
-edtf — EDTF (ISO 8601-2:2019 Annex A) validator, levels 0-2
+edtf \u{2014} EDTF (ISO 8601-2:2019 Annex A) validator, levels 0-2
 
 USAGE:
     edtf <COMMAND> [EXPR]...      operate on arguments
@@ -47,7 +84,7 @@ COMMANDS:
         (e.g. 'definitely before', 'possibly overlaps, ...')
     from-julian  convert proleptic Julian (Old Style) dates to Gregorian
         EDTF; input Y, Y-MM or Y-MM-DD (astronomical years). Year/month
-        precision prints an interval, never a bare 'converted' year —
+        precision prints an interval, never a bare 'converted' year \u{2014}
         Julian 1917 is 1917-01-14/1918-01-13
 
 OPTIONS:
@@ -61,22 +98,23 @@ fn main() -> ExitCode {
         None | Some("-h" | "--help" | "help") => {
             print!("{USAGE}");
             ExitCode::SUCCESS
-        },
+        }
         Some("-V" | "--version") => {
             println!("edtf {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
-        },
+        }
         Some(cmd @ ("validate" | "canonical" | "level" | "info" | "from-julian")) => {
             run(cmd, &args[1..])
-        },
+        }
         Some("relation") => relation(&args[1..]),
         Some(other) => {
             eprintln!("edtf: unknown command {other:?}\n\n{USAGE}");
             ExitCode::FAILURE
-        },
+        }
     }
 }
 
+/// Dispatch one command with its arguments and return the process exit code.
 fn run(cmd: &str, rest: &[String]) -> ExitCode {
     let stdout = std::io::stdout();
     let mut out = stdout.lock();
@@ -94,7 +132,7 @@ fn run(cmd: &str, rest: &[String]) -> ExitCode {
                 Err(e) => {
                     eprintln!("edtf: stdin: {e}");
                     return ExitCode::FAILURE;
-                },
+                }
             };
             if !line.is_empty() {
                 handle(&line);
@@ -123,7 +161,7 @@ fn relation(rest: &[String]) -> ExitCode {
         Err(e) => {
             eprintln!("{s}: {e}");
             None
-        },
+        }
     };
     let (Some(a), Some(b)) = (parse(a), parse(b)) else {
         return ExitCode::FAILURE;
@@ -142,7 +180,7 @@ fn process(cmd: &str, input: &str, out: &mut impl Write) -> bool {
         Err(e) => {
             eprintln!("{input}: {e}");
             return false;
-        },
+        }
     };
     let line = match cmd {
         "validate" => format!("{input}: ok (level {})", parsed.level()),
@@ -164,11 +202,11 @@ fn from_julian(input: &str, out: &mut impl Write) -> bool {
         Ok(edtf_calendars::Converted::Day(d)) => writeln!(out, "{d}").is_ok(),
         Ok(edtf_calendars::Converted::Span { earliest, latest }) => {
             writeln!(out, "{earliest}/{latest}").is_ok()
-        },
+        }
         Err(e) => {
             eprintln!("{input}: {e}");
             false
-        },
+        }
     }
 }
 
@@ -189,7 +227,7 @@ fn parse_julian_parts(input: &str) -> Option<(i64, Option<u8>, Option<u8>)> {
         None => Some(None),
         Some(s) if s.len() == 2 && s.bytes().all(|b| b.is_ascii_digit()) => {
             Some(Some(s.parse::<u8>().ok()?))
-        },
+        }
         Some(_) => None,
     };
     let month = two_digit(parts.next())?;
@@ -200,6 +238,7 @@ fn parse_julian_parts(input: &str) -> Option<(i64, Option<u8>, Option<u8>)> {
     Some((year, month, day))
 }
 
+/// Render a bound as JSON: a date string, or `null` for an unknown bound.
 fn bound_value(b: Bound) -> serde_json::Value {
     match b {
         Bound::Date(d) => serde_json::Value::String(d.to_string()),
@@ -209,6 +248,7 @@ fn bound_value(b: Bound) -> serde_json::Value {
     }
 }
 
+/// The `info` command's JSON object for one parsed expression.
 fn info_json(input: &str, parsed: &Edtf) -> String {
     let bounds = parsed.bounds();
     let (kind, precision) = match parsed {
@@ -232,6 +272,7 @@ fn info_json(input: &str, parsed: &Edtf) -> String {
     .to_string()
 }
 
+/// The precision of a date as the lowercase word the JSON surface uses.
 fn precision_str(d: &edtf_core::Date) -> &'static str {
     match d.precision() {
         edtf_core::Precision::Year => "year",
@@ -243,6 +284,14 @@ fn precision_str(d: &edtf_core::Date) -> &'static str {
 
 #[cfg(test)]
 mod tests {
+    #![expect(
+        clippy::missing_panics_doc,
+        reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+    )]
+    #![expect(
+        clippy::inline_modules,
+        reason = "unit tests live beside the code they exercise; a separate file would put the invariants further from what they constrain"
+    )]
     #![allow(
         clippy::unwrap_used,
         reason = "test code: a panic here is the failure signal, not a crash path"
@@ -292,9 +341,11 @@ mod tests {
         assert_eq!(dispatch("validate", "1985-02-30"), (false, String::new()));
     }
 
+    /// The final arm guards an invariant, loudly.
+    ///
     /// `main` only ever hands `process` a command it has already matched, so
-    /// the final arm guards that invariant: a command that slipped through
-    /// must abort loudly rather than print a line for a request nobody made.
+    /// a command that slipped through must abort rather than print a line
+    /// for a request nobody made.
     /// A subprocess can never reach it — `main` rejects unknown commands.
     #[test]
     #[should_panic(expected = "commands are pre-validated")]

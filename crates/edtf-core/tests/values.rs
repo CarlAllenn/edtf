@@ -10,6 +10,26 @@
     clippy::expect_used,
     reason = "test/bench code: a panic here is the failure signal, not a crash path"
 )]
+#![expect(
+    clippy::tests_outside_test_module,
+    reason = "an integration test under tests/ is compiled as its own crate whose every item is test support, so there is no non-test code for a mod tests to separate it from"
+)]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
+#![expect(
+    clippy::default_numeric_fallback,
+    reason = "literal fixtures whose type the assertion already fixes"
+)]
+#![expect(
+    clippy::indexing_slicing,
+    reason = "indexing a fixture the test itself constructed; an out-of-range index is a failing test, not a crash path"
+)]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::{Edtf, Unenumerable};
 

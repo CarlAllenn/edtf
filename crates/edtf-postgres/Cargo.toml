@@ -1,6 +1,6 @@
 [package]
 name = "edtf-postgres"
-version = "1.2.3"
+version.workspace = true
 readme = "README.md"
 description = "Postgres extension (pgrx) exposing edtf-core: EDTF validation, levels, canonical form and date bounds in SQL."
 keywords = ["edtf", "date", "iso8601", "postgres", "pgrx"]

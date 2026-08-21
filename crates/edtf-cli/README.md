@@ -12,4 +12,4 @@ Command-line EDTF (ISO 8601-2:2019 Annex A) toolbox over `edtf-core`:
   `edtf-calendars`.
 
 Run `edtf --help` for usage. Part of the
-[`edtf`](https://github.com/CarlAllenn/edtf) crate family.
+[`edtf`](https://github.com/monumental-archive/edtf) crate family.

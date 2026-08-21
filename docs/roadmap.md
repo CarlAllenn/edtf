@@ -24,7 +24,7 @@ not a promise; when it changes, this file changes with it.
   attested release pipeline; new Postgres majors are picked up as pgrx
   supports them, and Debian base bumps ride the release cadence.
 - **Close the remaining release-pipeline gaps** tracked in
-  [issue #83](https://github.com/CarlAllenn/edtf/issues/83): the strip /
+  [issue #83](https://github.com/monumental-archive/edtf/issues/83): the strip /
   debug-symbols decision, canary architecture coverage, and binding SBOMs
   to the tarball subjects.
 - **Serve the downstream consumers** (the Monumental Archive's database

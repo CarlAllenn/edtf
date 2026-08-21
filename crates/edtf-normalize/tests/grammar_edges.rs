@@ -11,6 +11,31 @@
     clippy::expect_used,
     reason = "test/bench code: a panic here is the failure signal, not a crash path"
 )]
+#![expect(
+    clippy::non_ascii_literal,
+    reason = "Russian prose dates are the input this normaliser exists to read; Cyrillic literals are the subject under test, not stray non-ASCII"
+)]
+#![expect(
+    clippy::tests_outside_test_module,
+    reason = "an integration test under tests/ is compiled as its own crate whose every item is test support, so there is no non-test code for a mod tests to separate it from"
+)]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
+#![expect(clippy::panic, reason = "a panic in a test IS the failure signal")]
+#![expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "the wildcard covers variants the assertion has already excluded"
+)]
+#![expect(
+    clippy::missing_assert_message,
+    reason = "the assertion's expression is its message"
+)]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::Edtf;
 use edtf_normalize::{Language, Options, Outcome, normalize, normalize_with};
@@ -29,7 +54,7 @@ fn ok_with(input: &str, opts: Options, expected: &str) {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, expected, "input: {input:?}");
             assert_eq!(Edtf::parse(&n.edtf).expect("output must parse"), n.value);
-        },
+        }
         other => panic!("expected Normalized for {input:?}, got {other:?}"),
     }
 }
@@ -46,7 +71,7 @@ fn ambiguous(input: &str, expected: &[&str]) {
         Outcome::Ambiguous(a) => {
             let got: Vec<&str> = a.interpretations.iter().map(|i| i.edtf.as_str()).collect();
             assert_eq!(got, expected, "input: {input:?}");
-        },
+        }
         other => panic!("expected Ambiguous for {input:?}, got {other:?}"),
     }
 }

@@ -28,6 +28,39 @@
 //! - Bounds are day-granular (time of day refines within a day), so same-day
 //!   datetimes are definitely equal.
 
+#![expect(
+    clippy::min_ident_chars,
+    reason = "y, m and d are the universal notation for a date's components, and this crate is about little else"
+)]
+#![expect(
+    clippy::missing_inline_in_public_items,
+    reason = "inlining is the compiler's call across a crate boundary, and the release profile enables fat LTO — annotating every public item would assert a decision this crate has not measured"
+)]
+#![expect(
+    clippy::arithmetic_side_effects,
+    reason = "every flagged operation is bounded where it stands: slice indices by a length guard on the line above, digit values to 0-9 by the match arm that binds them, and the JDN forms by being computed in i128 so any i64 year fits. The operations that genuinely could leave range already use checked_/saturating_ and return an error rather than wrapping"
+)]
+#![expect(
+    clippy::absolute_paths,
+    reason = "a one-use std path written in full at the call site is clearer than an import that only appears once"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
+)]
+#![expect(
+    clippy::exhaustive_enums,
+    reason = "these enums enumerate what ISO 8601-2 defines; the spec fixes the variants, so non_exhaustive would promise additions the format cannot make"
+)]
+#![expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "the wildcard covers variants the arm above has already narrowed by construction; naming them would be dead code the compiler cannot check"
+)]
+#![expect(
+    clippy::too_long_first_doc_paragraph,
+    reason = "the items are crate-private, so these paragraphs render in no rustdoc summary; they are written to be read next to the code they describe"
+)]
+
 use crate::{
     bounds::{Bound, BoundDate, is_leap, last_day},
     types::Edtf,
@@ -94,6 +127,7 @@ impl Relation {
         }
     }
 
+    /// The relation's index into a modality table.
     const fn idx(self) -> usize {
         match self {
             Self::Before => 0,
@@ -135,6 +169,7 @@ impl Modality {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Relations {
+    /// One modality per Allen relation, in `Relation`'s own order.
     modalities: [Modality; 6],
 }
 
@@ -228,11 +263,15 @@ impl core::fmt::Display for Relations {
 /// `Unknown` is handled before conversion, so no variant is needed for it.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Ext {
+    /// Earlier than every day: an unbounded start.
     NegInf,
+    /// A concrete calendar day.
     Day(BoundDate),
+    /// Later than every day: an unbounded end.
     PosInf,
 }
 
+/// Lift a bound onto the extended day line, or `None` if unknown.
 const fn ext(b: Bound) -> Option<Ext> {
     match b {
         Bound::NegativeInfinity => Some(Ext::NegInf),

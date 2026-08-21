@@ -2,7 +2,8 @@
 
 Deterministic prose-date → EDTF normalizer: `"1980s"` → `198X`,
 `"circa 1920"` → `1920~`, `"около 1920 г."` → `1920~` — instant, offline,
-the same answer on every keystroke. `no_std` + `alloc`, no third-party dependencies (only `edtf-core`).
+the same answer on every keystroke. `no_std` + `alloc`, no third-party
+dependencies (only `edtf-core`).
 
 Built for the human input boundary: values are constructed through
 [`edtf-core`](https://crates.io/crates/edtf-core)'s model and rendered by its canonical `Display`,
@@ -28,7 +29,7 @@ Pattern tables are per-language (English and Russian today); adding a locale
 means adding one table struct, not touching the grammar. Every judgement call
 — century arithmetic, BC year-zero handling, season codes, ambiguity policy —
 is a numbered N-decision in
-[`docs/normalize-notes.md`](https://github.com/CarlAllenn/edtf/blob/main/docs/normalize-notes.md),
+[`docs/normalize-notes.md`](https://github.com/monumental-archive/edtf/blob/main/docs/normalize-notes.md),
 cited from the `Note` values attached to every result. Disagree with one?
 File an issue against the N-number.
 

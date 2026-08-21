@@ -4,7 +4,7 @@ Why this project's security requirements are met: the threat model, the
 trust boundaries, the design argument, and the argument that common
 implementation weaknesses are countered. The security requirements
 themselves — what a user can and cannot expect — are stated in
-[SECURITY.md](../SECURITY.md); this document is the evidence that they
+[SECURITY.md](https://github.com/monumental-archive/.github/blob/main/SECURITY.md); this document is the evidence that they
 hold.
 
 ## Threat model

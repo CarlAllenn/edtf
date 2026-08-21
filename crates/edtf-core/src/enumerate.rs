@@ -24,6 +24,67 @@
 //! never moves the value set, §8.4.2 NOTE). Decisions D24–D29 in
 //! docs/spec-notes.md.
 
+#![expect(
+    clippy::min_ident_chars,
+    reason = "y, m and d are the universal notation for a date's components, and this crate is about little else"
+)]
+#![expect(
+    clippy::arithmetic_side_effects,
+    reason = "every flagged operation is bounded where it stands: slice indices by a length guard on the line above, digit values to 0-9 by the match arm that binds them, and the JDN forms by being computed in i128 so any i64 year fits. The operations that genuinely could leave range already use checked_/saturating_ and return an error rather than wrapping"
+)]
+#![expect(
+    clippy::integer_division_remainder_used,
+    reason = "calendar arithmetic is integer division by definition — the leap rules are /4, /100 and /400, and a float would be wrong"
+)]
+#![expect(
+    clippy::pattern_type_mismatch,
+    reason = "matching through a reference without restating & at every level is the idiomatic form the rest of this crate uses"
+)]
+#![expect(
+    clippy::as_conversions,
+    reason = "the operands are proven in range by the guard or type immediately above each cast, and try_from at these sites would add an unreachable error path"
+)]
+#![expect(
+    clippy::absolute_paths,
+    reason = "a one-use std path written in full at the call site is clearer than an import that only appears once"
+)]
+#![expect(
+    clippy::indexing_slicing,
+    reason = "each index is preceded by the bounds check that justifies it, or indexes a fixed-size array whose length is in its type"
+)]
+#![expect(
+    clippy::integer_division,
+    reason = "calendar arithmetic is integer division by definition — the leap rules are /4, /100 and /400, and a float would be wrong"
+)]
+#![expect(
+    clippy::missing_inline_in_public_items,
+    reason = "inlining is the compiler's call across a crate boundary, and the release profile enables fat LTO — annotating every public item would assert a decision this crate has not measured"
+)]
+#![expect(
+    clippy::missing_trait_methods,
+    reason = "the default implementations are what this type wants; overriding them to satisfy a lint would be code with no reason to exist"
+)]
+#![expect(
+    clippy::single_call_fn,
+    reason = "a named helper used once is extraction for readability, which is the opposite of a defect; several are also the named steps the module docs describe"
+)]
+#![expect(
+    clippy::unreachable,
+    reason = "an unreachable! whose comment names the caller-side check that makes it unreachable — a deliberate assertion of an invariant, not an unhandled case"
+)]
+#![expect(
+    clippy::exhaustive_enums,
+    reason = "these enums enumerate what ISO 8601-2 defines; the spec fixes the variants, so non_exhaustive would promise additions the format cannot make"
+)]
+#![expect(
+    clippy::missing_errors_doc,
+    reason = "edtf-core declares every module private and exports only named types, so nothing flagged here is reachable from outside the crate and there is no published error contract to document"
+)]
+#![expect(
+    clippy::too_long_first_doc_paragraph,
+    reason = "the items are crate-private, so these paragraphs render in no rustdoc summary; they are written to be read next to the code they describe"
+)]
+
 use alloc::vec::Vec;
 
 use crate::{
@@ -115,11 +176,11 @@ impl Edtf {
                         SetElement::Range(a, b) => ElementValues::Range(RangeWalk::new(a, b)?),
                         SetElement::OnOrBefore(_) | SetElement::OnOrAfter(_) => {
                             return Err(Unenumerable::UnboundedSetElement);
-                        },
+                        }
                     });
                 }
                 State::Set { queue, idx: 0 }
-            },
+            }
         };
         Ok(Values { state })
     }
@@ -128,26 +189,37 @@ impl Edtf {
 /// Lazy iterator over the values an expression denotes; see [`Edtf::values`].
 #[derive(Debug, Clone)]
 pub struct Values {
+    /// What the iterator is currently walking.
     state: State,
 }
 
 #[derive(Debug, Clone)]
+/// The shape of value the expression enumerates.
 enum State {
+    /// A concrete expression: itself, once.
     Singleton(Option<Edtf>),
+    /// A single date with masked or ranged fields.
     Date(DateValues),
+    /// A set: each element walked in written order.
     Set {
+        /// Element walkers still to be drained, in written order.
         queue: Vec<ElementValues>,
+        /// Index of the element currently being drained.
         idx: usize,
     },
 }
 
 #[derive(Debug, Clone)]
+/// How one set element enumerates.
 enum ElementValues {
+    /// A date element, masked or concrete.
     Date(DateValues),
+    /// A range element, walked endpoint to endpoint.
     Range(RangeWalk),
 }
 
 impl ElementValues {
+    /// The next date this element yields, or `None` when drained.
     fn next(&mut self) -> Option<Date> {
         match self {
             Self::Date(dv) => dv.next(),
@@ -199,6 +271,7 @@ fn concrete_year(v: i64, qualifier: Qualifier) -> Year {
     }
 }
 
+/// A concrete value as a `DateField`, carrying the field's qualifier.
 const fn concrete_field(v: u8, qualifier: Qualifier) -> DateField {
     DateField {
         digits: [Some(v / 10), Some(v % 10)],
@@ -213,9 +286,13 @@ enum DateValues {
     Singleton(Option<Date>),
     /// `S`-suffix year sweep (§4.4.3), ascending, year precision.
     Sweep {
+        /// The year currently being yielded.
         cur: i64,
+        /// The last year in the walk, inclusive.
         hi: i64,
+        /// The qualifier every yielded date carries.
         qualifier: Qualifier,
+        /// Set once the walk has passed `hi`.
         done: bool,
     },
     /// Unspecified digits: valid completions in ascending calendar order.
@@ -223,6 +300,7 @@ enum DateValues {
 }
 
 impl DateValues {
+    /// Build a walker for one date, or say why it cannot be enumerated.
     fn new(d: &Date) -> Result<Self, Unenumerable> {
         if d.year.significant_digits.is_some() {
             // S-years are year-precision only (the parser enforces this).
@@ -243,6 +321,7 @@ impl DateValues {
         Ok(Self::Masked(Masked::new(d)))
     }
 
+    /// The next date in the walk, or `None` when it is finished.
     fn next(&mut self) -> Option<Date> {
         match self {
             Self::Singleton(d) => d.take(),
@@ -266,7 +345,7 @@ impl DateValues {
                     month: None,
                     day: None,
                 })
-            },
+            }
             Self::Masked(m) => m.next(),
         }
     }
@@ -287,20 +366,32 @@ enum MaskedYear {
 }
 
 #[derive(Debug, Clone)]
+/// Odometer over a masked date's free digits, most significant first.
 struct Masked {
+    /// The masked year and the completions it admits.
     year: MaskedYear,
+    /// How many year completions the mask has.
     year_count: u32,
+    /// Month candidates, when the month itself is masked.
     months: Option<Vec<u8>>,
+    /// Day candidates, when the day itself is masked.
     days: Option<Vec<u8>>,
+    /// Qualifier carried by every yielded year.
     yq: Qualifier,
+    /// Qualifier carried by every yielded month.
     mq: Qualifier,
+    /// Qualifier carried by every yielded day.
     dq: Qualifier,
+    /// Position in the year odometer.
     yi: u32,
+    /// Position in the month candidates.
     mi: usize,
+    /// Position in the day candidates.
     di: usize,
 }
 
 impl Masked {
+    /// Build the odometer for a masked date.
     fn new(d: &Date) -> Self {
         // Masks only occur on standard years; Y-years are digit-valued.
         let (year, year_count) = match (d.year.value(), d.year.kind) {
@@ -308,8 +399,8 @@ impl Masked {
             (None, YearKind::Standard { digits, .. }) => {
                 // At most four maskable digit positions.
                 let n = u32::try_from(digits.iter().filter(|x| x.is_none()).count()).unwrap_or(4);
-                (MaskedYear::Pattern(digits), 10u32.pow(n))
-            },
+                (MaskedYear::Pattern(digits), 10_u32.pow(n))
+            }
             (None, _) => unreachable!("only standard years carry X digits"),
         };
         Self {
@@ -326,6 +417,7 @@ impl Masked {
         }
     }
 
+    /// The year the odometer's `counter`th position denotes.
     fn year_at(&self, counter: u32) -> i64 {
         match self.year {
             MaskedYear::Fixed(v) => v,
@@ -339,10 +431,11 @@ impl Masked {
                     }
                 }
                 filled.iter().fold(0, |acc, d| acc * 10 + i64::from(*d))
-            },
+            }
         }
     }
 
+    /// The next completion, or `None` once every position is spent.
     fn next(&mut self) -> Option<Date> {
         loop {
             if self.yi >= self.year_count {
@@ -399,12 +492,16 @@ struct RangeWalk {
     /// Current position; slots beyond the precision stay 0 so plain
     /// tuple equality detects the end.
     cur: (i64, u8, u8),
+    /// The last (year, month, day) in the walk, inclusive.
     end: (i64, u8, u8),
+    /// The precision the walk steps at.
     precision: Precision,
+    /// Set once the walk has passed `end`.
     done: bool,
 }
 
 impl RangeWalk {
+    /// Build a walker between two endpoints, or say why it cannot be enumerated.
     fn new(a: &Date, b: &Date) -> Result<Self, Unenumerable> {
         let ay = a.year.value().ok_or(Unenumerable::YearRangeOverflow)?;
         let by = b.year.value().ok_or(Unenumerable::YearRangeOverflow)?;
@@ -417,6 +514,7 @@ impl RangeWalk {
         })
     }
 
+    /// The next date in the range, or `None` when it is finished.
     fn next(&mut self) -> Option<Date> {
         if self.done {
             return None;
@@ -433,7 +531,7 @@ impl RangeWalk {
                     } else {
                         (y, m + 1, 0)
                     }
-                },
+                }
                 Precision::Day => {
                     if d < last_day(m, is_leap(y)) {
                         (y, m, d + 1)
@@ -442,7 +540,7 @@ impl RangeWalk {
                     } else {
                         (y, m + 1, 1)
                     }
-                },
+                }
                 Precision::Season => unreachable!("D27 rejects season range endpoints"),
             };
         }
@@ -457,6 +555,14 @@ impl RangeWalk {
 
 #[cfg(test)]
 mod tests {
+    #![expect(
+        clippy::missing_panics_doc,
+        reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+    )]
+    #![expect(
+        clippy::inline_modules,
+        reason = "a module small enough to read in place belongs in place"
+    )]
     #![allow(
         clippy::unwrap_used,
         reason = "test code: a panic here is the failure signal, not a crash path"

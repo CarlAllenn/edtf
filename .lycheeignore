@@ -22,11 +22,11 @@
 # history, which is the same reason crates/edtf-postgres/CHANGELOG.md states
 # plainly that its 1.0.0 heading carries no comparison link and that one
 # "cannot honestly be created after the fact".
-^https://github\.com/CarlAllenn/edtf/compare/edtf\-calendars\-v0\.1\.0\.\.\.edtf\-calendars\-v1\.0\.0$
-^https://github\.com/CarlAllenn/edtf/compare/edtf\-cli\-v0\.1\.0\.\.\.edtf\-cli\-v1\.0\.0$
-^https://github\.com/CarlAllenn/edtf/compare/edtf\-core\-v0\.2\.0\.\.\.edtf\-core\-v1\.0\.0$
-^https://github\.com/CarlAllenn/edtf/compare/edtf\-normalize\-v0\.1\.0\.\.\.edtf\-normalize\-v1\.0\.0$
-^https://github\.com/CarlAllenn/edtf/compare/edtf\-wasm\-v0\.2\.0\.\.\.edtf\-wasm\-v1\.0\.0$
+^https://github\.com/monumental-archive/edtf/compare/edtf\-calendars\-v0\.1\.0\.\.\.edtf\-calendars\-v1\.0\.0$
+^https://github\.com/monumental-archive/edtf/compare/edtf\-cli\-v0\.1\.0\.\.\.edtf\-cli\-v1\.0\.0$
+^https://github\.com/monumental-archive/edtf/compare/edtf\-core\-v0\.2\.0\.\.\.edtf\-core\-v1\.0\.0$
+^https://github\.com/monumental-archive/edtf/compare/edtf\-normalize\-v0\.1\.0\.\.\.edtf\-normalize\-v1\.0\.0$
+^https://github\.com/monumental-archive/edtf/compare/edtf\-wasm\-v0\.2\.0\.\.\.edtf\-wasm\-v1\.0\.0$
 
 # The npm badge target. npmjs.com answers 403 to lychee's user agent — bot
 # protection, not a broken link; the package resolves fine in a browser and

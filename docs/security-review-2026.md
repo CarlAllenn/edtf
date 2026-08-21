@@ -1,11 +1,21 @@
 # Security review — August 2026
 
 A documented review of the project against its stated security
-requirements ([SECURITY.md](../SECURITY.md)) and the security boundary
+requirements ([SECURITY.md](https://github.com/monumental-archive/.github/blob/main/SECURITY.md)) and the security boundary
 described in the [assurance case](assurance-case.md). Conducted
 2026-08-08 by the maintainer with model-assisted adversarial review;
 recorded here so the review, its findings and their dispositions are
 auditable rather than asserted.
+
+> **Editor's note, 2026-08-21.** This is a dated record of a review
+> conducted on 2026-08-08, when the repository lived at
+> `github.com/CarlAllenn/edtf`. The links and issue numbers below are left
+> as they were written; GitHub redirects them to
+> `monumental-archive/edtf`. Several of the mechanisms it credits —
+> `upgrade-smoke-extension.sh`, the repository's own CodeQL workflow, its
+> `publish.yml` — were replaced by the organisation's shared machinery when
+> edtf was imported. What they were fixing is still fixed; what does the
+> fixing changed. See monumental-archive/.github#669.
 
 ## Scope and method
 

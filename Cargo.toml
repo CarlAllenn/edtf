@@ -42,13 +42,21 @@ serde_json = "1"
 proptest = { version = "=1.11.0", default-features = false, features = ["std"] }
 
 [workspace.package]
+# ONE version for the whole repository (.github#669): the canonical
+# release path derives a single repo version from the tags and mirrors
+# it here, so every member inherits it rather than carrying its own.
+# lint:version-mirrors refuses a workspace that declares neither
+# workspace.package.version nor package.version.
+version = "1.2.3"
 edition = "2021"
 rust-version = "1.82"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/CarlAllenn/edtf"
+repository = "https://github.com/monumental-archive/edtf"
 
-# Lint canon: renovate-config templates/rust-lints/Cargo-lints.toml —
-# drift-audited, identical across the Rust repos; decisions recorded there.
+# Lint canon: the manifest levels below are this workspace's own. The
+# org's clippy and rustfmt knobs are delivered by the toolbelt at run
+# time (ORG_BELT_DIR) and are deliberately not copied here — lint:rust
+# refuses a repo-local clippy.toml or rustfmt.toml outright.
 # Manifest levels are warn; the clippy hook and CI escalate with -D warnings.
 [workspace.lints.rust]
 unsafe_code = "forbid"

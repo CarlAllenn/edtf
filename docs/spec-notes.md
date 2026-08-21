@@ -1,13 +1,18 @@
 # EDTF implementation notes (from ISO 8601-1:2019 and ISO 8601-2:2019)
 
-Working distillation for building `edtf-core`. Paraphrased from the ISO documents in
-`spec/` (never committed); section numbers cite ISO 8601-2:2019 unless prefixed "P1"
-(= ISO 8601-1:2019). This is the authority for what the parser accepts and rejects.
+Working distillation for building `edtf-core`. Paraphrased from the ISO
+documents in
+`spec/` (never committed); section numbers cite ISO 8601-2:2019 unless prefixed
+"P1"
+(= ISO 8601-1:2019). This is the authority for what the parser accepts and
+rejects.
 
 ## 1. The single most important fact
 
-EDTF is **Annex A of ISO 8601-2** — an ISO 8601 *profile* (Clause 15) that selects a
-strict subset of the two documents. Everything we implement is defined by Annex A's
+EDTF is **Annex A of ISO 8601-2** — an ISO 8601 *profile* (Clause 15) that
+selects a
+strict subset of the two documents. Everything we implement is defined by Annex
+A's
 feature list, not by ISO 8601-2 at large. Consequences:
 
 - **Extended format only** (A.3): implicit form with separators (`1985-04-12`).
@@ -20,8 +25,10 @@ feature list, not by ISO 8601-2 at large. Consequences:
   Clause 7 (explicit representation), Clause 11 (explicit duration), Clause 12
   (selection rules), Clause 13 (repeat rules), Clause 14 (arithmetic). We do not
   implement them.
-- Annex A is *informative* and is the ISO codification of Library of Congress EDTF
-  1.0 (2018-10-04) (Bibliography [4]). Where Annex A is ambiguous, LoC EDTF is the
+- Annex A is *informative* and is the ISO codification of Library of Congress
+  EDTF
+  1.0 (2018-10-04) (Bibliography [4]). Where Annex A is ambiguous, LoC EDTF is
+  the
   tiebreaker for interop — flagged in §9 below.
 
 Conformance claims are per level, cumulative: L1 ⊃ L0, L2 ⊃ L1 (A.2).
@@ -39,14 +46,16 @@ Rules inherited from Part 1:
 - Year: exactly 4 digits `0000`–`9999` at L0; leading zeros mandatory (P1 4.5).
   Year 0000 exists (proleptic; P1 4.3.2).
 - Month `01`–`12`; day `01`–`28/29/30/31` per month lengths in P1 4.2.1 Table 1.
-- Leap year: divisible by 4 and not a centennial, or divisible by 400 (P1 3.1.1.21).
+- Leap year: divisible by 4 and not a centennial, or divisible by 400 (P1
+  3.1.1.21).
 - **Day-of-month must be validated against month+year** (`1985-02-30` invalid;
   `2001-02-29` invalid; `2000-02-29` valid).
 - No space characters anywhere (P1 3.2.1).
 
 ### 2.2 Date and time (A.4.3)
 
-`[date]T[hh]:[mm]:[ss]` with optional shift; date part must be complete (P1 5.4.1):
+`[date]T[hh]:[mm]:[ss]` with optional shift; date part must be complete (P1
+5.4.1):
 
 - `1985-04-12T23:20:30` (local)
 - `1985-04-12T23:20:30Z` (UTC)
@@ -55,11 +64,15 @@ Rules inherited from Part 1:
 
 Rules:
 
-- Hour `00`–`23` — **`24:00` is explicitly disallowed** (P1 5.3.2); minute `00`–`59`;
-  second `00`–`60` where `60` exists only for positive leap seconds (P1 4.3.10) —
+- Hour `00`–`23` — **`24:00` is explicitly disallowed** (P1 5.3.2); minute
+  `00`–`59`;
+  second `00`–`60` where `60` exists only for positive leap seconds (P1 4.3.10)
+  —
   see decision D3 in §9.
-- Time is always complete hh:mm:ss in the EDTF profile (A.4.3 shows only complete
-  [timeI]); reduced-precision times (`T23:20`) and decimal fractions are not listed
+- Time is always complete hh:mm:ss in the EDTF profile (A.4.3 shows only
+  complete
+  [timeI]); reduced-precision times (`T23:20`) and decimal fractions are not
+  listed
   in Annex A → reject. (LoC EDTF agrees: complete time only.)
 - Shift sign: `+` for ahead-of/equal-to UTC, `-` behind (P1 4.3.13). `-00:00` is
   not given meaning by the spec — see D4.
@@ -81,14 +94,17 @@ Rules:
 
 ### 3.1 Letter-prefixed ("extended") year (A.5.2, 4.7.2)
 
-`Y[-]digits` — `Y170000002`, `Y-170000002`. For years beyond ±9999. 4.7.2 says it
+`Y[-]digits` — `Y170000002`, `Y-170000002`. For years beyond ±9999. 4.7.2 says
+it
 "should be used only" outside the 4-digit range → we reject `Y1985` (see D1).
-Year-only precision (4.7.2: "only for dates that include the calendar year only") —
+Year-only precision (4.7.2: "only for dates that include the calendar year
+only") —
 no month/day may follow a Y-year.
 
 ### 3.2 Negative calendar year (A.5.2, 4.4.1.2)
 
-`-1985` (4 digits). `-0000` is not a thing: negative years count *before year 0*,
+`-1985` (4 digits). `-0000` is not a thing: negative years count *before year
+0*,
 so the year before `0000` is `-0001` (4.4.1.2 Example 3). Reject `-0000` (D2).
 
 ### 3.3 Seasons (A.5.3, 4.8.1, 4.8.3 a)
@@ -106,7 +122,8 @@ At L1 a single qualifier may appear **only at the rightmost end** of:
 - complete date: `1985-04-12?` (8.4.1 a)
 - year-month: `1985-04?` (8.4.2 a)
 - year: `1985~` (8.4.2 b)
-It qualifies the entire expression (8.2.1). Note 8.4.2's NOTE: `198%`-style decade
+It qualifies the entire expression (8.2.1). Note 8.4.2's NOTE: `198%`-style
+decade
 qualification means "the decade might be a different decade," not "fuzzy edges."
 (Decades/centuries as bare `198`/`19` are NOT EDTF — not listed in Annex A.)
 
@@ -119,9 +136,12 @@ qualification means "the decade might be a different decade," not "fuzzy edges."
 - `2004-XX` (month unspecified, reduced precision, 9.2.1.2 a)
 - `201X`, `20XX` (1 or 2 rightmost year digits, 9.2.1.2 c 1–2)
 NOT at L1: `XXXX`, `2XXX`, `XXXX-XX`, `156X-12-25`, `1560-X2` (those are L2 or
-disallowed entirely — `XXXX`/`2XXX` are 9.2.1.2 c 3–4, listed only under… nothing
-in Annex A explicitly; LoC puts `XXXX` at L2 "unspecified digit anywhere". See D5.)
-Semantics note (9.2.1.2 NOTE): `1985-XX-XX` has *day precision* (some day in 1985);
+disallowed entirely — `XXXX`/`2XXX` are 9.2.1.2 c 3–4, listed only under…
+nothing
+in Annex A explicitly; LoC puts `XXXX` at L2 "unspecified digit anywhere". See
+D5.)
+Semantics note (9.2.1.2 NOTE): `1985-XX-XX` has *day precision* (some day in
+1985);
 `1985` has year precision. Different meanings.
 
 ### 3.6 Extended intervals (A.5.6, 10.2, 10.3.2)
@@ -130,10 +150,12 @@ Interval endpoints gain two special values:
 
 - `..` = **open** (unbounded): `1985-04-12/..`, `../1985-04-12` (10.2 a–b)
 - empty = **unknown**: `1985-04/`, `/1985` (10.2 c–d)
-- `/..`, `../`, and both-sides cases: `../..` and `/` are not exemplified anywhere —
+- `/..`, `../`, and both-sides cases: `../..` and `/` are not exemplified
+  anywhere —
   reject both (D6).
 Endpoint dates may carry L1 whole-date qualification: `1984?/2004%`,
-`1984-01-02~/2004-06-04`, `1984~/2004-06` (10.3.2), and combine with open/unknown:
+`1984-01-02~/2004-06-04`, `1984~/2004-06` (10.3.2), and combine with
+open/unknown:
 `../1985-04-12?`, `1985-04-12~/` (A.5.6 Examples 8–9, 10.5).
 
 ## 4. Level 2 (A.6)
@@ -150,7 +172,8 @@ positive integer power of 10 (4.4.2). Year-only precision.
 - `1950S2` — plain 4-digit year: some year 1900–1999, estimated 1950
 - `Y171010000S3` — prefixed year: some year 171010000–171010999
 - `Y3388E2S3` — exponential year: some year 338000–338999, estimated 338800
-Precision counts significant digits **from the left** of the resolved value (4.4.3).
+Precision counts significant digits **from the left** of the resolved value
+(4.4.3).
 Precision must be ≥1 and ≤ number of digits of the value (D7).
 
 ### 4.3 Extended sub-year groupings (A.6.4, 4.8.1)
@@ -169,7 +192,8 @@ accepts 01–12 and 21–41.
   `..1983-12-31,1984-10-10..1984-11-01,1984-11-05..` (6.3 d) — note A.6.5
   Example 6 shows this bare, without braces (see D8).
 - No spaces after commas (6.1 NOTE).
-- What may be an element: Annex A examples show dates only. Qualified/unspecified
+- What may be an element: Annex A examples show dates only.
+  Qualified/unspecified
   dates inside sets: LoC allows them; Annex A silent (D9).
 
 ### 4.5 Group + individual qualification (A.6.6, 8.2–8.4)
@@ -184,7 +208,8 @@ Three placements now:
   that component only: `?2004-06-~11` (year uncertain, day approx, month known),
   `2004-%06-11` (month uncertain+approx only).
 - Mixing group and individual is legal: `2004-06?-~11` (8.4.6).
-- Preferred/canonical form (8.2.4): complete > group > individual; strip redundant
+- Preferred/canonical form (8.2.4): complete > group > individual; strip
+  redundant
   qualifiers; combine adjacent individuals into a group. (Parser accepts all;
   a formatter should emit preferred form.)
 - Interval endpoints may carry partial qualification: `2004-06-~01/2004-06-~20`
@@ -195,10 +220,13 @@ Three placements now:
 
 ### 4.6 Unspecified digit anywhere (A.6.7, 9.2.2, 4.6.3)
 
-`X` may replace **any** digit in year, month, or day: `156X-12-25`, `15XX-12-25`,
-`XXXX-12-XX`, `1XXX-XX`, `1XXX-12`, `1XX3`, `1560-XX-25`, `1560-X2` (= Feb or Dec —
+`X` may replace **any** digit in year, month, or day: `156X-12-25`,
+`15XX-12-25`,
+`XXXX-12-XX`, `1XXX-XX`, `1XXX-12`, `1XX3`, `1560-XX-25`, `1560-X2` (= Feb or
+Dec —
 partially-specified components constrain the value set, 9.2.2 Example 6).
-Validation question for partially specified components: does `1985-0X-31` need at
+Validation question for partially specified components: does `1985-0X-31` need
+at
 least one consistent completion? See D11.
 
 ## 5. What is NOT EDTF (reject list)
@@ -216,13 +244,15 @@ week/day-of-month/day-of-year; `X*` (explicit-form-only construct, 4.6.2).
 
 - **Precision** of every expression (year / month / season / day / datetime;
   intervals may have mixed or undefined precision, A.4.4 Ex. 4–5).
-- **Qualification flags** per component (uncertain / approximate / both), derived
+- **Qualification flags** per component (uncertain / approximate / both),
+  derived
   from complete/group/individual placement.
 - **Unspecified masks** per component (which digits are X).
 - **Interval endpoint kinds**: date | open (`..`) | unknown (empty).
 - **Set semantics**: all-members vs one-member; range elements expand only for
   enumeration purposes (6.3–6.4).
-- For range queries (`edtf_min`/`edtf_max` style): every expression denotes a time
+- For range queries (`edtf_min`/`edtf_max` style): every expression denotes a
+  time
   interval on the axis (a year = its whole year, `1985-XX-XX` = the year's days,
   `195X` = 1950–1959, `2001-21` = a fuzzy season — season boundaries are
   location/custom dependent per 3.1.3.1; define a documented convention, D12).
@@ -234,11 +264,13 @@ week/day-of-month/day-of-year; `X*` (explicit-form-only construct, 4.6.2).
 2. Fixed widths at L0/L1: year 4 (unless `Y`-prefixed or negative-4), month 2,
    day 2, hh/mm/ss 2 each; leading zeros required (P1 4.5).
 3. Month/day range + calendar validity incl. leap rule (P1 4.2.1, 3.1.1.21).
-4. Season codes 21–24 (L1) / 21–41 (L2) valid only in the month slot with no day.
+4. Season codes 21–24 (L1) / 21–41 (L2) valid only in the month slot with no
+day.
 5. Hour ≤ 23 (never 24), minute ≤ 59, second ≤ 60 (leap-second policy D3).
 6. Qualifiers only `?` `~` `%`; at L1 trailing only; at L2 per 8.2 placements;
    at most one qualifier per position.
-7. `X` placement per level (L1 restricted shapes; L2 anywhere in date components;
+7. `X` placement per level (L1 restricted shapes; L2 anywhere in date
+components;
    never in time-of-day components at any level — 9.3 is explicit-form-only and
    not in Annex A).
 8. Interval endpoints: L0 plain dates; L1 + qualified dates, `..`, empty; L2 +
@@ -304,8 +336,10 @@ of this implementation. Each is enforced by tests in `crates/edtf-core/tests/`.
   convention or the LoC convention) and document that ISO leaves them
   location-dependent (3.1.3.1).
 - **D13 — negative years beyond 4 digits without `Y`:** `-12345` — 4.4.1.2 lifts
-  the old restriction generally, but EDTF's L1 feature list pairs "negative year"
-  with the 4-digit implicit form and provides `Y-…` for longer. Proposal: 4-digit
+  the old restriction generally, but EDTF's L1 feature list pairs "negative
+  year"
+  with the 4-digit implicit form and provides `Y-…` for longer. Proposal:
+  4-digit
   `-YYYY` only; longer requires `Y-`.
 - **D14 — masked months match calendar months only:** `X`-masked month
   candidates are drawn from 01–12 (9.2.2 Example 6 reads `X2` as Feb/Dec, not

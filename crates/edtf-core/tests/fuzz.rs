@@ -19,6 +19,51 @@
     clippy::cast_sign_loss,
     reason = "generator and oracle ranges are bounded by construction"
 )]
+#![expect(
+    clippy::tests_outside_test_module,
+    reason = "an integration test under tests/ is compiled as its own crate whose every item is test support, so there is no non-test code for a mod tests to separate it from"
+)]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
+#![expect(
+    clippy::indexing_slicing,
+    reason = "indexing a fixture the test itself constructed; an out-of-range index is a failing test, not a crash path"
+)]
+#![expect(
+    clippy::absolute_paths,
+    reason = "a one-use std path written in full at the call site"
+)]
+#![expect(
+    clippy::as_conversions,
+    reason = "casting fixture values the test itself bounded"
+)]
+#![expect(
+    clippy::default_numeric_fallback,
+    reason = "literal fixtures whose type the assertion already fixes"
+)]
+#![expect(
+    clippy::arithmetic_side_effects,
+    reason = "test arithmetic is over literal fixtures and generator-bounded values; an overflow here would fail the test, which is the signal"
+)]
+#![expect(
+    clippy::integer_division_remainder_used,
+    reason = "same integer calendar arithmetic as the code under test"
+)]
+#![expect(
+    clippy::let_underscore_must_use,
+    reason = "the result is deliberately discarded; the assertion above covers it"
+)]
+#![expect(
+    clippy::let_underscore_untyped,
+    reason = "the discarded value's type is fixed by the call it comes from"
+)]
+#![expect(clippy::panic, reason = "a panic in a test IS the failure signal")]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::Edtf;
 
@@ -129,18 +174,18 @@ fn mutated_valid_inputs_never_panic() {
                     // replace
                     let i = rng.below(bytes.len());
                     bytes[i] = ALPHABET[rng.below(ALPHABET.len())];
-                },
+                }
                 1 => {
                     // insert
                     let i = rng.below(bytes.len() + 1);
                     bytes.insert(i, ALPHABET[rng.below(ALPHABET.len())]);
-                },
+                }
                 _ if !bytes.is_empty() => {
                     // delete
                     let i = rng.below(bytes.len());
                     bytes.remove(i);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
         if let Ok(s) = core::str::from_utf8(&bytes) {

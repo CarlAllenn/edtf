@@ -62,6 +62,18 @@
 //! The grammar and every validation decision are documented with ISO section
 //! citations in `docs/spec-notes.md` at the repository root.
 #![no_std]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "y, m and d are the universal notation for a date's components, and this crate is about little else"
+)]
+#![expect(
+    clippy::pub_use,
+    reason = "the re-export is this crate's public surface, curated deliberately in lib.rs"
+)]
+#![expect(
+    clippy::missing_inline_in_public_items,
+    reason = "inlining is the compiler's call across a crate boundary, and the release profile enables fat LTO — annotating every public item would assert a decision this crate has not measured"
+)]
 
 extern crate alloc;
 

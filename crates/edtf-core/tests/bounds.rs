@@ -12,6 +12,31 @@
     clippy::expect_used,
     reason = "test/bench code: a panic here is the failure signal, not a crash path"
 )]
+#![expect(
+    clippy::tests_outside_test_module,
+    reason = "an integration test under tests/ is compiled as its own crate whose every item is test support, so there is no non-test code for a mod tests to separate it from"
+)]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
+#![expect(clippy::panic, reason = "a panic in a test IS the failure signal")]
+#![expect(
+    clippy::absolute_paths,
+    reason = "a one-use std path written in full at the call site"
+)]
+#![expect(
+    clippy::indexing_slicing,
+    reason = "indexing a fixture the test itself constructed; an out-of-range index is a failing test, not a crash path"
+)]
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "short-lived rebinding inside one assertion chain"
+)]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::{Bound, Edtf};
 use serde_json::Value;
@@ -25,7 +50,7 @@ fn bound_str(b: Bound) -> String {
             } else {
                 d.to_string()
             }
-        },
+        }
         Bound::NegativeInfinity => "-infinity".into(),
         Bound::PositiveInfinity => "infinity".into(),
         Bound::Unknown => "unknown".into(),
@@ -104,7 +129,7 @@ fn significant_digit_bounds() {
     assert_bounds("Y9E18S1", "unknown", "unknown");
     // Parsing computes bounds for interval ordering (D18); huge exponents on
     // both ends must stay total there too.
-    assert!(Edtf::parse("Y8E20202/Y9E18S1").is_ok());
+    Edtf::parse("Y8E20202/Y9E18S1").unwrap();
 }
 
 #[test]

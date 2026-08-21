@@ -21,6 +21,47 @@
     clippy::cast_sign_loss,
     reason = "generator and oracle ranges are bounded by construction"
 )]
+#![expect(
+    clippy::non_ascii_literal,
+    reason = "Russian prose dates are the input this normaliser exists to read; Cyrillic literals are the subject under test, not stray non-ASCII"
+)]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
+#![expect(
+    clippy::default_numeric_fallback,
+    reason = "literal fixtures whose type the assertion already fixes"
+)]
+#![expect(
+    clippy::arithmetic_side_effects,
+    reason = "test arithmetic is over literal fixtures and generator-bounded values; an overflow here would fail the test, which is the signal"
+)]
+#![expect(
+    clippy::as_conversions,
+    reason = "casting fixture values the test itself bounded"
+)]
+#![expect(
+    clippy::indexing_slicing,
+    reason = "indexing a fixture the test itself constructed; an out-of-range index is a failing test, not a crash path"
+)]
+#![expect(clippy::panic, reason = "a panic in a test IS the failure signal")]
+#![expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "the wildcard covers variants the assertion has already excluded"
+)]
+#![expect(
+    clippy::integer_division_remainder_used,
+    reason = "same integer calendar arithmetic as the code under test"
+)]
+#![expect(
+    clippy::tests_outside_test_module,
+    reason = "an integration test under tests/ is compiled as its own crate whose every item is test support, so there is no non-test code for a mod tests to separate it from"
+)]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::Edtf;
 use edtf_normalize::{Language, Options, Outcome, normalize, normalize_with};
@@ -33,7 +74,7 @@ fn assert_normalized(input: &str, expected: &str, opts: Options) {
             assert_eq!(n.edtf, expected, "input: {input:?}");
             let parsed = Edtf::parse(&n.edtf).expect("output must parse in core");
             assert_eq!(parsed, n.value, "value/edtf mismatch for {input:?}");
-        },
+        }
         other => panic!("expected Normalized for {input:?}, got {other:?}"),
     }
 }
@@ -81,18 +122,18 @@ const MONTHS_RU: [&str; 12] = [
 
 proptest! {
     #[test]
-    fn plain_years_round_trip(y in 100i32..=9999) {
+    fn plain_years_round_trip(y in 100_i32..=9999) {
         assert_normalized(&format!("{y}"), &format!("{y:04}"), en());
     }
 
     #[test]
-    fn circa_years(y in 100i32..=9999) {
+    fn circa_years(y in 100_i32..=9999) {
         assert_normalized(&format!("circa {y}"), &format!("{y:04}~"), en());
         assert_normalized(&format!("около {y}"), &format!("{y:04}~"), ru());
     }
 
     #[test]
-    fn bc_years_use_astronomical_numbering(b in 2u32..=9999) {
+    fn bc_years_use_astronomical_numbering(b in 2_u32..=9999) {
         // N3: year b BC = astronomical -(b-1).
         let astro = -(b as i32 - 1);
         assert_normalized(&format!("{b} BC"), &format!("-{:04}", -astro), en());
@@ -100,21 +141,21 @@ proptest! {
     }
 
     #[test]
-    fn decades_mask_the_final_digit(p3 in 100u16..=999) {
+    fn decades_mask_the_final_digit(p3 in 100_u16..=999) {
         prop_assume!(p3 % 10 != 0); // '..00s' forms are deliberately ambiguous (N6)
         assert_normalized(&format!("{p3}0s"), &format!("{p3}X"), en());
         assert_normalized(&format!("{p3}0-е"), &format!("{p3}X"), ru());
     }
 
     #[test]
-    fn centuries_are_off_by_one(n in 2u32..=20) {
+    fn centuries_are_off_by_one(n in 2_u32..=20) {
         // N2: the nth century masks as (n-1)XX.
         assert_normalized(&format!("{n}th century"), &format!("{:02}XX", n - 1), en());
         assert_normalized(&format!("{n} век"), &format!("{:02}XX", n - 1), ru());
     }
 
     #[test]
-    fn century_parts_partition_the_century(n in 2u32..=20) {
+    fn century_parts_partition_the_century(n in 2_u32..=20) {
         // N1: early ∪ mid ∪ late covers the century exactly, as does
         // first half ∪ second half.
         let s = (n as i32 - 1) * 100 + 1;
@@ -132,14 +173,14 @@ proptest! {
     }
 
     #[test]
-    fn month_year_forms(y in 1000i32..=9999, m in 0usize..12) {
+    fn month_year_forms(y in 1000_i32..=9999, m in 0_usize..12) {
         let expected = format!("{y:04}-{:02}", m + 1);
         assert_normalized(&format!("{} {y}", MONTHS_EN[m]), &expected, en());
         assert_normalized(&format!("{} {y} года", MONTHS_RU[m]), &expected, ru());
     }
 
     #[test]
-    fn unambiguous_numeric_dates(y in 1000i32..=9999, m in 1u32..=12, d in 13u32..=28) {
+    fn unambiguous_numeric_dates(y in 1000_i32..=9999, m in 1_u32..=12, d in 13_u32..=28) {
         // d > 12 proves the order; d ≤ 28 is valid in every month (N5).
         let expected = format!("{y:04}-{m:02}-{d:02}");
         assert_normalized(&format!("{d}/{m}/{y}"), &expected, en());
@@ -148,7 +189,7 @@ proptest! {
 
     #[test]
     fn ambiguous_numeric_dates_always_report_both(
-        y in 1000i32..=9999, a in 1u32..=12, b in 1u32..=12
+        y in 1000_i32..=9999, a in 1_u32..=12, b in 1_u32..=12
     ) {
         prop_assume!(a != b);
         match normalize(&format!("{a}/{b}/{y}")) {
@@ -164,14 +205,14 @@ proptest! {
     }
 
     #[test]
-    fn year_ranges(a in 1000i32..=9998, span in 1i32..=500) {
+    fn year_ranges(a in 1000_i32..=9998, span in 1_i32..=500) {
         let b = (a + span).min(9999);
         assert_normalized(&format!("from {a} to {b}"), &format!("{a:04}/{b:04}"), en());
         assert_normalized(&format!("с {a} по {b}"), &format!("{a:04}/{b:04}"), ru());
     }
 
     #[test]
-    fn before_after_open_intervals(y in 1000i32..=9999) {
+    fn before_after_open_intervals(y in 1000_i32..=9999) {
         assert_normalized(&format!("before {y}"), &format!("../{y:04}"), en());
         assert_normalized(&format!("after {y}"), &format!("{y:04}/.."), en());
         assert_normalized(&format!("до {y}"), &format!("../{y:04}"), ru());
@@ -179,7 +220,7 @@ proptest! {
     }
 
     #[test]
-    fn every_outcome_is_internally_consistent(y in 1000i32..=9999, m in 1u32..=12, d in 1u32..=31) {
+    fn every_outcome_is_internally_consistent(y in 1000_i32..=9999, m in 1_u32..=12, d in 1_u32..=31) {
         // Over arbitrary numeric input (valid or not): whatever comes back,
         // every emitted string parses in core and equals its value.
         match normalize(&format!("{d}/{m}/{y}")) {

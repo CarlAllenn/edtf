@@ -9,6 +9,27 @@
     clippy::expect_used,
     reason = "test/bench code: a panic here is the failure signal, not a crash path"
 )]
+#![expect(
+    clippy::tests_outside_test_module,
+    reason = "an integration test under tests/ is compiled as its own crate whose every item is test support, so there is no non-test code for a mod tests to separate it from"
+)]
+#![expect(
+    clippy::min_ident_chars,
+    reason = "the test bodies use the same y/m/d date-component names as the code they exercise"
+)]
+#![expect(clippy::panic, reason = "a panic in a test IS the failure signal")]
+#![expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "the wildcard covers variants the assertion has already excluded"
+)]
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "short-lived rebinding inside one assertion chain"
+)]
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "a test asserts by panicking; that is the failure signal, so there is no caller to warn"
+)]
 
 use edtf_core::{Edtf, IntervalEndpoint, Precision, SetKind, is_valid, level};
 
@@ -240,7 +261,7 @@ fn component_flags_reach_into_sets() {
 fn edtf_implements_fromstr() {
     let v: Edtf = "1985-04".parse().unwrap();
     assert_eq!(v.to_string(), "1985-04");
-    assert!("1985-13".parse::<Edtf>().is_err());
+    "1985-13".parse::<Edtf>().unwrap_err();
 }
 
 #[test]

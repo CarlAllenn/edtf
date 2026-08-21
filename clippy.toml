@@ -1,6 +1,0 @@
-# msrv mirrors [workspace.package] rust-version — same single source of truth
-# the MSRV CI job derives from; a drift between the two is a bug.
-msrv = "1.82"
-# Post-1.0: clippy must not propose API breaks on a stable surface; breaking
-# changes go through cargo-semver-checks and a major bump, not lint fixes.
-avoid-breaking-exported-api = true

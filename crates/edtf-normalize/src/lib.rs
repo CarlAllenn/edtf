@@ -31,6 +31,18 @@
 //! ```
 
 #![no_std]
+#![expect(
+    clippy::exhaustive_enums,
+    reason = "these enums enumerate what ISO 8601-2 defines; the spec fixes the variants, so non_exhaustive would promise additions the format cannot make"
+)]
+#![expect(
+    clippy::missing_inline_in_public_items,
+    reason = "inlining is the compiler's call across a crate boundary, and the release profile enables fat LTO — annotating every public item would assert a decision this crate has not measured"
+)]
+#![expect(
+    clippy::exhaustive_structs,
+    reason = "these types are the public data model of an ISO 8601-2 value; the spec fixes their fields, so a non_exhaustive that promised future additions would be a promise this format cannot make"
+)]
 
 extern crate alloc;
 
@@ -158,7 +170,7 @@ impl Note {
             | Self::NumericOrderAmbiguous => Some("N5"),
             Self::DecadeAmbiguity | Self::DefaultCenturyApplied | Self::DecadeOfCentury => {
                 Some("N6")
-            },
+            }
             Self::SeasonCode => Some("N7"),
             Self::OpenInterval => Some("N8"),
             Self::MissingYearMasked => Some("N9"),
@@ -178,19 +190,19 @@ impl Note {
             Self::AlreadyValidEdtf => "input was already valid EDTF; canonicalized",
             Self::CenturyPartInterval => {
                 "part-of-century phrase mapped to a decade-rounded year interval"
-            },
+            }
             Self::ModifierDropped => {
                 "early/mid/late modifier dropped (sub-decade precision would be false)"
-            },
+            }
             Self::CenturyMask => "Nth century runs (N-1)01 to N00, so it masks as (N-1)XX",
             Self::BcCenturyInterval => {
                 "BC centuries cannot be digit-masked; emitted as an exact year interval"
-            },
+            }
             Self::AstronomicalYear => "BC year converted to astronomical numbering (year 0 exists)",
             Self::ElidedEndYear => "elided end year inherits the start year's century",
             Self::NumericUnambiguous => {
                 "field order provable from the input (year-first layout or a value over 12)"
-            },
+            }
             Self::NumericResolvedByOption => "field order resolved by caller options",
             Self::NumericResolvedByLocale => "field order implied by the language's convention",
             Self::NumericOrderIrrelevant => "day and month are equal; order cannot matter",
@@ -202,21 +214,21 @@ impl Note {
             Self::MissingYearMasked => "no year given; year masked as XXXX",
             Self::QualifierDistributed => {
                 "whole-expression qualifier applied to every interval endpoint"
-            },
+            }
             Self::OrAlternatives => "alternatives reported instead of picking one",
             Self::SeasonRangeCollision => {
                 "NNNN-NN is both an EDTF sub-year code and a plausible year range"
-            },
+            }
             Self::RomanCentury => {
                 "century read from a Roman numeral (Cyrillic lookalike letters tolerated)"
-            },
+            }
             Self::DecadeOfCentury => "decade tied to the explicitly named century",
             Self::EndpointYearDistributed => {
                 "endpoint without a year inherited the other endpoint's stated year"
-            },
+            }
             Self::CrossYearSeason => {
                 "season-year-pair prose may name one boundary-spanning season or a range"
-            },
+            }
         }
     }
 }

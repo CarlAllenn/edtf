@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   valid, verifiable versions on crates.io/npm. The cause was the canary
   pointing CARGO_HOME at an empty directory while running a toolchain
   mise provisions against it, which hangs the first cargo call; fixed in
+
   #135 and reproduced under test before the fix landed.
 
 ## [1.2.2](https://github.com/CarlAllenn/edtf/compare/edtf-cli-v1.2.1...edtf-cli-v1.2.2) - 2026-08-08
@@ -66,7 +67,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - #8 lint canon — wholesale clippy tiers + full fallout fix ([#45](https://github.com/CarlAllenn/edtf/pull/45))
-- tooling baseline — rustfmt canon, release-plz, doc/coverage gates ([#8](https://github.com/CarlAllenn/edtf/pull/8)) ([#43](https://github.com/CarlAllenn/edtf/pull/43))
+- tooling baseline — rustfmt canon, release-plz, doc/coverage gates
+  ([#8](https://github.com/CarlAllenn/edtf/pull/8))
+  ([#43](https://github.com/CarlAllenn/edtf/pull/43))
 - adopt cargo-deny supply-chain baseline (renovate-config#5) ([#38](https://github.com/CarlAllenn/edtf/pull/38))
 
 ### Other

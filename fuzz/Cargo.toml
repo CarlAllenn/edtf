@@ -14,7 +14,7 @@ cargo-fuzz = true
 # primary checkout's manifest and claim this package.
 [workspace]
 
-# Lint canon: renovate-config templates/rust-lints/Cargo-lints.toml —
+# Lint canon: the org's clippy and rustfmt knobs are belt-delivered —
 # mirrored from the main workspace (this manifest is its own workspace, so
 # it cannot inherit). Keep the three blocks in lockstep.
 [lints.rust]

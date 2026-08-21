@@ -325,34 +325,150 @@
     }
   ],
   "not_adopted": [
-    { "input": "90", "theirs": "1990", "ism": "implied current century (N5); the century of a bare two-digit year is unknowable" },
-    { "input": "1851-1852; printed 1853-1854", "theirs": "1851/1852", "ism": "substring extraction (N11)" },
-    { "input": "1861-67 (later print)", "theirs": "1861/1867", "ism": "substring extraction (N11)" },
-    { "input": "1863, printed 1870", "theirs": "1863", "ism": "substring extraction (N11)" },
-    { "input": "1863, printed ca. 1866", "theirs": "1863", "ism": "substring extraction (N11)" },
-    { "input": "1864, printed ca. 1864", "theirs": "1864", "ism": "substring extraction (N11)" },
-    { "input": "1864-1872, printed 1870s", "theirs": "1864/1872", "ism": "substring extraction (N11)" },
-    { "input": "1870s, printed ca. 1880s", "theirs": "187X", "ism": "substring extraction (N11)" },
-    { "input": "1900-1903, cast before 1929", "theirs": "1900/1903", "ism": "substring extraction (N11)" },
-    { "input": "1900; 1973", "theirs": "1900", "ism": "substring extraction (N11); should arguably be a set" },
-    { "input": "1900; printed 1912", "theirs": "1900", "ism": "substring extraction (N11)" },
-    { "input": "1915, from Camerawork, October 1916", "theirs": "1915", "ism": "substring extraction (N11)" },
-    { "input": "1930s, printed early 1960s", "theirs": "193X", "ism": "substring extraction (N11)" },
-    { "input": "1932, printed 1976 by Gunther Sander", "theirs": "1932", "ism": "substring extraction (N11)" },
-    { "input": "1938, printed 1940s-1950s", "theirs": "1938", "ism": "substring extraction (N11)" },
-    { "input": "notcirca 1860", "theirs": "1860", "ism": "substring extraction (N11); their test exists to prove 'circa' isn't falsely matched, ours proves the whole input must parse" },
-    { "input": "attica 1802", "theirs": "1802", "ism": "substring extraction (N11)" },
-    { "input": "attic. 1802", "theirs": "1802", "ism": "substring extraction (N11)" },
-    { "input": "birthday in 1872", "theirs": "1872", "ism": "substring extraction (N11)" },
-    { "input": "1862 (uncertain)", "theirs": "1862?", "ism": "parenthetical qualifiers not adopted; freeform annotation parsing is out of scope (N11)" },
-    { "input": "decade in 1800s", "theirs": "18XX", "ism": "masked-precision prose ('decade in', 'month in') not adopted (N9 scope)" },
-    { "input": "decade somewhere during the 1800s", "theirs": "18XX", "ism": "masked-precision prose not adopted" },
-    { "input": "month in 1872", "theirs": "1872-XX", "ism": "masked-precision prose not adopted" },
-    { "input": "day in Spring 1849", "theirs": "1849-21-XX", "ism": "masked-precision prose not adopted" },
-    { "input": "day in January 1872", "theirs": "1872-01-XX", "ism": "masked-precision prose not adopted" },
-    { "input": "day in 1872", "theirs": "1872-XX-XX", "ism": "masked-precision prose not adopted" },
-    { "input": "a day in about Spring 1849?", "theirs": "1849-21-XX%", "ism": "masked-precision prose not adopted" },
-    { "input": "1915 late - autumn 1916", "theirs": "1915/1916-23", "ism": "trailing part-of-year modifier prose not adopted (N1 scope)" },
-    { "input": "active late 17th-19th centuries", "theirs": "16XX/18XX", "ism": "modifier inside a plural-century range-left not adopted (N1 scope)" }
+    {
+      "input": "90",
+      "theirs": "1990",
+      "ism": "implied current century (N5); the century of a bare two-digit year is unknowable"
+    },
+    {
+      "input": "1851-1852; printed 1853-1854",
+      "theirs": "1851/1852",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "1861-67 (later print)",
+      "theirs": "1861/1867",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "1863, printed 1870",
+      "theirs": "1863",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "1863, printed ca. 1866",
+      "theirs": "1863",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "1864, printed ca. 1864",
+      "theirs": "1864",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "1864-1872, printed 1870s",
+      "theirs": "1864/1872",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "1870s, printed ca. 1880s",
+      "theirs": "187X",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "1900-1903, cast before 1929",
+      "theirs": "1900/1903",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "1900; 1973",
+      "theirs": "1900",
+      "ism": "substring extraction (N11); should arguably be a set"
+    },
+    {
+      "input": "1900; printed 1912",
+      "theirs": "1900",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "1915, from Camerawork, October 1916",
+      "theirs": "1915",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "1930s, printed early 1960s",
+      "theirs": "193X",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "1932, printed 1976 by Gunther Sander",
+      "theirs": "1932",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "1938, printed 1940s-1950s",
+      "theirs": "1938",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "notcirca 1860",
+      "theirs": "1860",
+      "ism": "substring extraction (N11); their test exists to prove 'circa' isn't falsely matched, ours proves the whole input must parse"
+    },
+    {
+      "input": "attica 1802",
+      "theirs": "1802",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "attic. 1802",
+      "theirs": "1802",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "birthday in 1872",
+      "theirs": "1872",
+      "ism": "substring extraction (N11)"
+    },
+    {
+      "input": "1862 (uncertain)",
+      "theirs": "1862?",
+      "ism": "parenthetical qualifiers not adopted; freeform annotation parsing is out of scope (N11)"
+    },
+    {
+      "input": "decade in 1800s",
+      "theirs": "18XX",
+      "ism": "masked-precision prose ('decade in', 'month in') not adopted (N9 scope)"
+    },
+    {
+      "input": "decade somewhere during the 1800s",
+      "theirs": "18XX",
+      "ism": "masked-precision prose not adopted"
+    },
+    {
+      "input": "month in 1872",
+      "theirs": "1872-XX",
+      "ism": "masked-precision prose not adopted"
+    },
+    {
+      "input": "day in Spring 1849",
+      "theirs": "1849-21-XX",
+      "ism": "masked-precision prose not adopted"
+    },
+    {
+      "input": "day in January 1872",
+      "theirs": "1872-01-XX",
+      "ism": "masked-precision prose not adopted"
+    },
+    {
+      "input": "day in 1872",
+      "theirs": "1872-XX-XX",
+      "ism": "masked-precision prose not adopted"
+    },
+    {
+      "input": "a day in about Spring 1849?",
+      "theirs": "1849-21-XX%",
+      "ism": "masked-precision prose not adopted"
+    },
+    {
+      "input": "1915 late - autumn 1916",
+      "theirs": "1915/1916-23",
+      "ism": "trailing part-of-year modifier prose not adopted (N1 scope)"
+    },
+    {
+      "input": "active late 17th-19th centuries",
+      "theirs": "16XX/18XX",
+      "ism": "modifier inside a plural-century range-left not adopted (N1 scope)"
+    }
   ]
 }

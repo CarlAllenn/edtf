@@ -10,9 +10,7 @@
         "name": "RUSTSEC-2021-0127",
         "description": "serde_cbor is unmaintained (informational advisory, not a vulnerability; there is no patched version)"
       },
-      "products": [
-        { "@id": "pkg:cargo/edtf-postgres" }
-      ],
+      "products": [{ "@id": "pkg:cargo/edtf-postgres" }],
       "status": "not_affected",
       "justification": "vulnerable_code_not_present",
       "impact_statement": "Informational unmaintained-crate notice, not a vulnerability: serde_cbor is a build-graph dependency of pgrx 0.19 (pgrx's direct dependency, not edtf's), tracked upstream as pgcentralfoundation/pgrx#524. The same rationale is enforced in deny.toml, where the ignore is guarded (unused-ignored-advisory = \"deny\") so this record fails the build the moment pgrx drops serde_cbor and cannot go stale. No other advisories are known against any edtf crate."

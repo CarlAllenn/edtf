@@ -1,0 +1,19 @@
+# Domain jargon typos must not correct. The org vocabulary is delivered
+# by the belt (mise/typos.toml, passed with -c); typos MERGES this file
+# with it, so this holds only what is true of edtf and nothing that
+# belongs org-wide. Every entry is a measured false positive from a real
+# run, with the reason it is not a typo.
+[default.extend-words]
+# The English ordinal suffix, as DATA: edtf-normalize's prose-date tables
+# carry ["st", "nd", "rd", "th"] and the natural-language corpora quote
+# them. 22 hits, all the same fact.
+nd = "nd"
+# A legitimate variant spelling, and here it is an identifier: the
+# grammar-edge tests are named for inputs that cannot be parsed.
+unparseable = "unparseable"
+# An a/b pair in the relation property tests — `ab` is a.relation(&b)
+# and `ba` is its converse. Renaming them to satisfy a dictionary would
+# make the algebra harder to read.
+ba = "ba"
+# "mis-attached", a normal hyphenated prefix in prose.
+mis = "mis"

@@ -5,8 +5,8 @@
 # means an in-file header always wins over this blanket annotation.
 version = 1
 SPDX-PackageName = "edtf"
-SPDX-PackageSupplier = "Carl Allen"
-SPDX-PackageDownloadLocation = "https://github.com/CarlAllenn/edtf"
+SPDX-PackageSupplier = "Carl Allen <carl.allen313@gmail.com>"
+SPDX-PackageDownloadLocation = "https://github.com/monumental-archive/edtf"
 
 [[annotations]]
 path = "**"

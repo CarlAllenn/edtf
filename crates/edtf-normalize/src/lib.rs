@@ -158,7 +158,7 @@ impl Note {
             | Self::NumericOrderAmbiguous => Some("N5"),
             Self::DecadeAmbiguity | Self::DefaultCenturyApplied | Self::DecadeOfCentury => {
                 Some("N6")
-            },
+            }
             Self::SeasonCode => Some("N7"),
             Self::OpenInterval => Some("N8"),
             Self::MissingYearMasked => Some("N9"),
@@ -178,19 +178,19 @@ impl Note {
             Self::AlreadyValidEdtf => "input was already valid EDTF; canonicalized",
             Self::CenturyPartInterval => {
                 "part-of-century phrase mapped to a decade-rounded year interval"
-            },
+            }
             Self::ModifierDropped => {
                 "early/mid/late modifier dropped (sub-decade precision would be false)"
-            },
+            }
             Self::CenturyMask => "Nth century runs (N-1)01 to N00, so it masks as (N-1)XX",
             Self::BcCenturyInterval => {
                 "BC centuries cannot be digit-masked; emitted as an exact year interval"
-            },
+            }
             Self::AstronomicalYear => "BC year converted to astronomical numbering (year 0 exists)",
             Self::ElidedEndYear => "elided end year inherits the start year's century",
             Self::NumericUnambiguous => {
                 "field order provable from the input (year-first layout or a value over 12)"
-            },
+            }
             Self::NumericResolvedByOption => "field order resolved by caller options",
             Self::NumericResolvedByLocale => "field order implied by the language's convention",
             Self::NumericOrderIrrelevant => "day and month are equal; order cannot matter",
@@ -202,21 +202,21 @@ impl Note {
             Self::MissingYearMasked => "no year given; year masked as XXXX",
             Self::QualifierDistributed => {
                 "whole-expression qualifier applied to every interval endpoint"
-            },
+            }
             Self::OrAlternatives => "alternatives reported instead of picking one",
             Self::SeasonRangeCollision => {
                 "NNNN-NN is both an EDTF sub-year code and a plausible year range"
-            },
+            }
             Self::RomanCentury => {
                 "century read from a Roman numeral (Cyrillic lookalike letters tolerated)"
-            },
+            }
             Self::DecadeOfCentury => "decade tied to the explicitly named century",
             Self::EndpointYearDistributed => {
                 "endpoint without a year inherited the other endpoint's stated year"
-            },
+            }
             Self::CrossYearSeason => {
                 "season-year-pair prose may name one boundary-spanning season or a range"
-            },
+            }
         }
     }
 }

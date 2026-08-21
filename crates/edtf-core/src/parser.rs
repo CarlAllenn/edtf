@@ -21,7 +21,7 @@ use crate::{
     },
 };
 
-pub(crate) fn parse(input: &str) -> Result<Edtf, ParseError> {
+pub fn parse(input: &str) -> Result<Edtf, ParseError> {
     if input.is_empty() {
         return Err(err(0, "empty input"));
     }
@@ -150,7 +150,7 @@ impl<'a> Cur<'a> {
                         },
                         offset: self.base + self.i.saturating_sub(1),
                     });
-                },
+                }
             }
         }
         Ok(out)
@@ -159,11 +159,11 @@ impl<'a> Cur<'a> {
 
 // ---------------------------------------------------------------- dates
 
-#[allow(
+#[expect(
     clippy::too_many_lines,
     reason = "one linear scan; splitting scatters the offset bookkeeping"
 )]
-pub(crate) fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
+pub fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
     // Every caller (dispatcher, interval endpoints, set elements) rejects
     // empty slices with its own message first; a graceful error beats a
     // panic if that invariant ever breaks.
@@ -192,7 +192,7 @@ pub(crate) fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
                     c.pos().saturating_sub(1),
                     "year must have exactly four digits (or X)",
                 ));
-            },
+            }
         }
     }
     let year_has_x = ydigits.iter().any(Option::is_none);
@@ -317,7 +317,7 @@ pub(crate) fn parse_date_at(s: &str, base: usize) -> Result<Date, ParseError> {
     )
 }
 
-#[allow(
+#[expect(
     clippy::too_many_arguments,
     reason = "finisher taking every parsed component; it has one caller"
 )]
@@ -364,7 +364,7 @@ fn validate_month_day(
             if (21..=41).contains(&v) && day.is_some() {
                 return Err(err(day_off, "sub-year groupings cannot carry a day"));
             }
-        },
+        }
         None => {
             // Masked months match calendar months 01-12 only (decision D14);
             // sub-year codes must be written explicitly.
@@ -374,7 +374,7 @@ fn validate_month_day(
                     "no calendar month matches the unspecified digits",
                 ));
             }
-        },
+        }
     }
     if let Some(d) = day {
         if !day_has_valid_completion(year, *m, *d) {
@@ -437,7 +437,7 @@ fn month_admits_day(mm: u8, dd: u8, year: &YearKind, leap_possible: &mut Option<
                 let leap = *leap_possible.get_or_insert_with(|| year_leap_possible(year));
                 if leap { 29 } else { 28 }
             }
-        },
+        }
         _ => unreachable!("month candidates are 1-12"),
     };
     dd <= max
@@ -453,9 +453,9 @@ fn year_leap_possible(year: &YearKind) -> bool {
                 }
                 is_leap(if *negative { -v } else { v })
             } else {
-                (0..=9999i64).any(|y| year_matches(*digits, y) && is_leap(y))
+                (0..=9999_i64).any(|y| year_matches(*digits, y) && is_leap(y))
             }
-        },
+        }
         // Y-prefixed years never carry months, so this is only reachable in
         // theory; be permissive.
         YearKind::Big { value } => is_leap(*value),
@@ -507,7 +507,7 @@ fn parse_prefixed_year(s: &str, base: usize) -> Result<Date, ParseError> {
         };
         let significand = if negative { -mantissa } else { mantissa };
         // Reject values expressible as a plain four-digit year (decision D1).
-        if let Some(v) = 10i64
+        if let Some(v) = 10_i64
             .checked_pow(exponent)
             .and_then(|p| significand.checked_mul(p))
         {
@@ -695,20 +695,20 @@ fn parse_shift(s: &str, base: usize) -> Result<TimeShift, ParseError> {
         3 => {
             let h = shift_two(b, 1, base)?;
             (h, 0, true)
-        },
+        }
         6 if b[3] == b':' => {
             let h = shift_two(b, 1, base)?;
             let m = shift_two(b, 4, base)?;
             (h, m, false)
-        },
-        _ => return Err(err(base, "time shift must be ±hh or ±hh:mm")),
+        }
+        _ => return Err(err(base, "time shift must be \u{b1}hh or \u{b1}hh:mm")),
     };
     if minutes > 59 {
         return Err(err(base + 4, "shift minutes must be 00-59"));
     }
     let total = i16::from(hours) * 60 + i16::from(minutes);
     if total > 14 * 60 {
-        return Err(err(base, "time shift exceeds ±14:00"));
+        return Err(err(base, "time shift exceeds \u{b1}14:00"));
     }
     if negative && total == 0 {
         return Err(err(base, "negative zero time shift is not allowed"));

@@ -14,7 +14,7 @@
 
 use alloc::{
     format,
-    string::{String, ToString},
+    string::{String, ToString as _},
     vec,
     vec::Vec,
 };
@@ -55,7 +55,7 @@ enum Single {
 // Construction helpers (core's fields are public; there are no constructors)
 
 /// Single decimal digit as `u8`.
-#[allow(
+#[expect(
     clippy::cast_possible_truncation,
     reason = "callers reduce mod 10 (or divide down to one digit): always < 10"
 )]
@@ -417,7 +417,7 @@ fn decade_tok(t: &str, lang: &Lang) -> Option<DecadeParse> {
             } else {
                 Some(DecadeParse::Exact(prefix3))
             }
-        },
+        }
         2 => Some(DecadeParse::Bare(u8::try_from(v / 10).ok()?)),
         _ => None,
     }
@@ -458,7 +458,7 @@ fn decade_single(parse: DecadeParse, opts: Options) -> Single {
                     )
                 },
             )
-        },
+        }
     }
 }
 
@@ -497,7 +497,7 @@ fn century_toks(toks: &[&str], lang: &Lang) -> Option<(u32, bool)> {
 
 /// Astronomical year span of century `n`: 19th CE = 1801..=1900,
 /// 2nd BC = -0199..=-0100, 1st BC = -0099..=0000 (year 0 exists; N2/N3).
-#[allow(
+#[expect(
     clippy::cast_possible_wrap,
     reason = "n <= 99 (century_ordinal range filter); i32::try_from is not usable in const fn"
 )]
@@ -529,7 +529,7 @@ fn century_expr(n: u32, bc: bool) -> Option<(Expr, Vec<Note>)> {
 }
 
 /// Early/mid/late/half of a century as a decade-rounded interval (N1).
-#[allow(
+#[expect(
     clippy::many_single_char_names,
     reason = "s/e/a/b are interval-endpoint arithmetic; longer names obscure the span algebra"
 )]
@@ -573,7 +573,7 @@ fn dmy(d: u32, m: u32, y: i32) -> Option<Expr> {
     Some(Expr::Date(date_ymd(y, m, d)?))
 }
 
-#[allow(
+#[expect(
     clippy::many_single_char_names,
     clippy::too_many_lines,
     reason = "y/m/d/a/b are date-field names; the arms ARE the grammar"
@@ -599,7 +599,7 @@ fn numeric_token(t: &str, opts: Options, lang: &Lang) -> Option<Single> {
                 (true, true) => None,
                 (false, false) if a == b => {
                     Some(Single::One(day_first?, vec![Note::NumericOrderIrrelevant]))
-                },
+                }
                 (false, false) => {
                     let (order, note) = match (opts.numeric_order, lang.implied_numeric_order) {
                         (Some(o), _) => (Some(o), Note::NumericResolvedByOption),
@@ -610,7 +610,7 @@ fn numeric_token(t: &str, opts: Options, lang: &Lang) -> Option<Single> {
                         Some(NumericOrder::DayFirst) => Some(Single::One(day_first?, vec![note])),
                         Some(NumericOrder::MonthFirst) => {
                             Some(Single::One(month_first?, vec![note]))
-                        },
+                        }
                         None => {
                             let cand = |e: Option<Expr>, reading: &str| {
                                 e.map(|expr| Candidate {
@@ -627,22 +627,22 @@ fn numeric_token(t: &str, opts: Options, lang: &Lang) -> Option<Single> {
                             .flatten()
                             .collect();
                             (!readings.is_empty()).then_some(Single::Many(readings))
-                        },
+                        }
                     }
-                },
+                }
             }
-        },
+        }
         // Month and year: 7/2008, 04.1985.
         ([pa, py], &[m, y]) if pa.len() <= 2 && py.len() == 4 && (1..=12).contains(&m) => {
             let (y, m) = (i32::try_from(y).ok()?, u8::try_from(m).ok()?);
             Some(Single::One(Expr::Date(date_ym(y, m)?), Vec::new()))
-        },
+        }
         // Year then small field: 1985/4, 1985-4 (a full "1985-04" is already
         // valid EDTF and never reaches the grammar).
         ([py, pb], &[y, m]) if py.len() == 4 && pb.len() <= 2 && (1..=12).contains(&m) => {
             let (y, m) = (i32::try_from(y).ok()?, u8::try_from(m).ok()?);
             Some(Single::One(Expr::Date(date_ym(y, m)?), Vec::new()))
-        },
+        }
         // Hyphenated year pair or elided end year: 1914-1918, 1914-18 (N4).
         // 21..=41 collides with EDTF sub-year codes: honest ambiguity (N13).
         ([py, pb], &[y, b]) if py.len() == 4 && sep == '-' => {
@@ -655,7 +655,7 @@ fn numeric_token(t: &str, opts: Options, lang: &Lang) -> Option<Single> {
                     } else {
                         None
                     }
-                },
+                }
                 2 => {
                     let b_u8 = u8::try_from(b).ok()?;
                     let elided = y / 100 * 100 + i32::from(b_u8);
@@ -672,10 +672,10 @@ fn numeric_token(t: &str, opts: Options, lang: &Lang) -> Option<Single> {
                             vec![Note::ElidedEndYear],
                         ))
                     }
-                },
+                }
                 _ => None,
             }
-        },
+        }
         _ => None,
     }
 }
@@ -706,7 +706,7 @@ fn season_range_collision(y: i32, code: u8) -> Option<Single> {
 
 /// Match one date-ish expression. `in_range` suppresses interval-producing
 /// forms (century parts) so range endpoints stay dates (N1 scope).
-#[allow(
+#[expect(
     clippy::too_many_lines,
     reason = "the ordered arms ARE the grammar (N11); order carries meaning"
 )]
@@ -821,7 +821,7 @@ fn parse_single(s: &str, opts: Options, lang: &Lang, in_range: bool) -> Option<S
                 ));
             }
             numeric_token(t, opts, lang)
-        },
+        }
         [a, b] => {
             // "spring 2001" / "весной 2001" / "2001 spring" (N7).
             for (st, yt) in [(a, b), (b, a)] {
@@ -855,7 +855,7 @@ fn parse_single(s: &str, opts: Options, lang: &Lang, in_range: bool) -> Option<S
                 }
             }
             None
-        },
+        }
         [a, b, c] => {
             // "12 April 1985" / "April 12, 1985" / "12-го апреля 1985".
             for (dt, mt) in [(a, b), (b, a)] {
@@ -866,7 +866,7 @@ fn parse_single(s: &str, opts: Options, lang: &Lang, in_range: bool) -> Option<S
                 }
             }
             None
-        },
+        }
         _ => None,
     }
 }
@@ -905,13 +905,13 @@ fn with_note(s: Single, note: Note) -> Single {
         Single::One(e, mut notes) => {
             notes.push(note);
             Single::One(e, notes)
-        },
+        }
         Single::Many(mut cands) => {
             for c in &mut cands {
                 c.notes.push(note);
             }
             Single::Many(cands)
-        },
+        }
     }
 }
 
@@ -967,7 +967,7 @@ fn parse_or(toks: &[&str], opts: Options, lang: &Lang) -> Option<Single> {
                     reading: String::from("alternative"),
                     notes,
                 });
-            },
+            }
             Single::Many(_) => return None, // nested ambiguity: refuse to guess
         }
     }
@@ -1012,7 +1012,7 @@ fn parse_range(s: &str, toks: &[&str], opts: Options, lang: &Lang) -> Option<Sin
 /// Parse both endpoints of a range, with per-endpoint qualifiers
 /// ("1856-ca. 1865" → `1856/1865~`), elided end years ("1914-18", N4), and
 /// bare-ordinal left centuries ("17-19th centuries" → `16XX/18XX`).
-#[allow(
+#[expect(
     clippy::too_many_lines,
     clippy::many_single_char_names,
     reason = "endpoint pairing is one decision table; l/r/a/b/e its algebra"
@@ -1041,7 +1041,7 @@ fn endpoint_pair(left: &str, right: &str, opts: Options, lang: &Lang) -> Option<
                 ns.push(Note::RomanCentury);
             }
             (Single::One(expr, ns), r)
-        },
+        }
         // "1914 - 18": the right side elides the left year's century (N4).
         (Some(l), None) => {
             let Single::One(Expr::Date(ld), _) = &l else {
@@ -1086,7 +1086,7 @@ fn endpoint_pair(left: &str, right: &str, opts: Options, lang: &Lang) -> Option<
             }
             let r = Single::One(Expr::Date(date_y(elided)?), vec![Note::ElidedEndYear]);
             (l, r)
-        },
+        }
         (None, None) => return None,
     };
 
@@ -1115,7 +1115,7 @@ fn endpoint_pair(left: &str, right: &str, opts: Options, lang: &Lang) -> Option<
             let mut notes = ln;
             notes.extend(rn);
             Some(Single::One(expr, notes))
-        },
+        }
         (Single::One(Expr::Date(ld), ln), Single::Many(cands)) => {
             // A candidate eliminated here (reversed range) is a prose error
             // poisoning the whole input, not a disambiguation — refuse.
@@ -1137,7 +1137,7 @@ fn endpoint_pair(left: &str, right: &str, opts: Options, lang: &Lang) -> Option<
             // `Many` is never built empty, so `out.len() == total` also
             // guarantees at least one candidate survives.
             (out.len() == total).then_some(Single::Many(out))
-        },
+        }
         (Single::Many(cands), Single::One(Expr::Date(rd), rn)) => {
             let total = cands.len();
             let out: Vec<Candidate> = cands
@@ -1157,7 +1157,7 @@ fn endpoint_pair(left: &str, right: &str, opts: Options, lang: &Lang) -> Option<
             // `Many` is never built empty, so `out.len() == total` also
             // guarantees at least one candidate survives.
             (out.len() == total).then_some(Single::Many(out))
-        },
+        }
         // A two-sided ambiguity would be a 4-way product — refuse to guess.
         _ => None,
     }
@@ -1242,7 +1242,7 @@ fn map_single(single: Single, wrap: impl Fn(Expr) -> Option<Expr>, note: Note) -
             let expr = wrap(expr)?;
             notes.push(note);
             Some(Single::One(expr, notes))
-        },
+        }
         Single::Many(cands) => {
             let out: Vec<Candidate> = cands
                 .into_iter()
@@ -1253,7 +1253,7 @@ fn map_single(single: Single, wrap: impl Fn(Expr) -> Option<Expr>, note: Note) -
                 })
                 .collect();
             (!out.is_empty()).then_some(Single::Many(out))
-        },
+        }
     }
 }
 
@@ -1292,7 +1292,7 @@ fn qualify_expr(e: &mut Expr, q: Qualifier) {
                     qualify_date(d, q);
                 }
             }
-        },
+        }
     }
 }
 
@@ -1329,10 +1329,10 @@ fn outcome_from(single: Single, q: Qualifier, base_notes: Vec<Note>) -> Outcome 
                         value,
                         notes: all,
                     })
-                },
+                }
                 None => no_match(NoMatchReason::ImpossibleDate),
             }
-        },
+        }
         Single::Many(cands) => {
             // Fail closed: a reading that dies at the calendar check
             // (February 30, a reversed masked range) is a prose error, and
@@ -1370,14 +1370,14 @@ fn outcome_from(single: Single, q: Qualifier, base_notes: Vec<Note>) -> Outcome 
                     interpretations: interps,
                 })
             }
-        },
+        }
     }
 }
 
 // ---------------------------------------------------------------------------
 // Entry point
 
-pub(crate) fn run(input: &str, opts: Options) -> Outcome {
+pub fn run(input: &str, opts: Options) -> Outcome {
     let lang = lang_for(opts.language);
     let trimmed = input.trim();
     if trimmed.is_empty() {

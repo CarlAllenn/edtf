@@ -29,7 +29,7 @@ fn ok_with(input: &str, opts: Options, expected: &str) {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, expected, "input: {input:?}");
             assert_eq!(Edtf::parse(&n.edtf).expect("output must parse"), n.value);
-        },
+        }
         other => panic!("expected Normalized for {input:?}, got {other:?}"),
     }
 }
@@ -46,7 +46,7 @@ fn ambiguous(input: &str, expected: &[&str]) {
         Outcome::Ambiguous(a) => {
             let got: Vec<&str> = a.interpretations.iter().map(|i| i.edtf.as_str()).collect();
             assert_eq!(got, expected, "input: {input:?}");
-        },
+        }
         other => panic!("expected Ambiguous for {input:?}, got {other:?}"),
     }
 }

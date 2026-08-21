@@ -49,7 +49,7 @@ fn last_day(month: u8, leap: bool) -> u8 {
             } else {
                 28
             }
-        },
+        }
         _ => unreachable!("month is 1-12"),
     }
 }
@@ -623,7 +623,7 @@ fn expected_unenumerable(v: &Edtf) -> Option<Unenumerable> {
                 let err = match e {
                     SetElement::OnOrBefore(_) | SetElement::OnOrAfter(_) => {
                         Some(Unenumerable::UnboundedSetElement)
-                    },
+                    }
                     SetElement::Date(d) => date_unenumerable(d),
                     SetElement::Range(a, b) => {
                         if a.year.value().is_none() || b.year.value().is_none() {
@@ -631,14 +631,14 @@ fn expected_unenumerable(v: &Edtf) -> Option<Unenumerable> {
                         } else {
                             None
                         }
-                    },
+                    }
                 };
                 if err.is_some() {
                     return err;
                 }
             }
             None
-        },
+        }
     }
 }
 

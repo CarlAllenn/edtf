@@ -51,7 +51,7 @@ fn to_pg_date(b: Bound) -> Option<Date> {
             }
             let year = i32::try_from(d.year).ok()?;
             Date::new(year, d.month, d.day).ok()
-        },
+        }
     }
 }
 

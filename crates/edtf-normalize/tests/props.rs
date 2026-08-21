@@ -33,7 +33,7 @@ fn assert_normalized(input: &str, expected: &str, opts: Options) {
             assert_eq!(n.edtf, expected, "input: {input:?}");
             let parsed = Edtf::parse(&n.edtf).expect("output must parse in core");
             assert_eq!(parsed, n.value, "value/edtf mismatch for {input:?}");
-        },
+        }
         other => panic!("expected Normalized for {input:?}, got {other:?}"),
     }
 }

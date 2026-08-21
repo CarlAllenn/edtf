@@ -157,7 +157,7 @@ fn last_day(month: u8, leap: bool) -> u8 {
             } else {
                 28
             }
-        },
+        }
         _ => unreachable!("caller validated month"),
     }
 }
@@ -199,7 +199,7 @@ const fn split(c: i128) -> (i128, u8, u8) {
     let month = m + 3 - 12 * m.div_euclid(10);
     // month ∈ 3..=14 → 1..=12 after the +3-12·q fold; day ∈ 1..=31: both
     // are single-byte by construction of the civil-from-days algorithm.
-    #[allow(
+    #[expect(
         clippy::cast_possible_truncation,
         clippy::cast_sign_loss,
         reason = "month in 1..=12 and day in 1..=31 by the algorithm's arithmetic"
@@ -316,7 +316,7 @@ pub fn convert(year: i64, month: Option<u8>, day: Option<u8>) -> Result<Converte
                     day: last_day(month, leap),
                 })?,
             })
-        },
+        }
         (None, None) => Ok(Converted::Span {
             earliest: julian_to_gregorian(JulianDate {
                 year,

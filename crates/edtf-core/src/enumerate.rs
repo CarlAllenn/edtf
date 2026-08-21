@@ -115,11 +115,11 @@ impl Edtf {
                         SetElement::Range(a, b) => ElementValues::Range(RangeWalk::new(a, b)?),
                         SetElement::OnOrBefore(_) | SetElement::OnOrAfter(_) => {
                             return Err(Unenumerable::UnboundedSetElement);
-                        },
+                        }
                     });
                 }
                 State::Set { queue, idx: 0 }
-            },
+            }
         };
         Ok(Values { state })
     }
@@ -266,7 +266,7 @@ impl DateValues {
                     month: None,
                     day: None,
                 })
-            },
+            }
             Self::Masked(m) => m.next(),
         }
     }
@@ -308,8 +308,8 @@ impl Masked {
             (None, YearKind::Standard { digits, .. }) => {
                 // At most four maskable digit positions.
                 let n = u32::try_from(digits.iter().filter(|x| x.is_none()).count()).unwrap_or(4);
-                (MaskedYear::Pattern(digits), 10u32.pow(n))
-            },
+                (MaskedYear::Pattern(digits), 10_u32.pow(n))
+            }
             (None, _) => unreachable!("only standard years carry X digits"),
         };
         Self {
@@ -339,7 +339,7 @@ impl Masked {
                     }
                 }
                 filled.iter().fold(0, |acc, d| acc * 10 + i64::from(*d))
-            },
+            }
         }
     }
 
@@ -433,7 +433,7 @@ impl RangeWalk {
                     } else {
                         (y, m + 1, 0)
                     }
-                },
+                }
                 Precision::Day => {
                     if d < last_day(m, is_leap(y)) {
                         (y, m, d + 1)
@@ -442,7 +442,7 @@ impl RangeWalk {
                     } else {
                         (y, m + 1, 1)
                     }
-                },
+                }
                 Precision::Season => unreachable!("D27 rejects season range endpoints"),
             };
         }

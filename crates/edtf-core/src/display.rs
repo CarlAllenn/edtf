@@ -50,16 +50,16 @@ fn year_body(year: &Year) -> String {
                     None => s.push('X'),
                 }
             }
-        },
+        }
         YearKind::Big { value } => {
             let _ = write!(s, "Y{value}");
-        },
+        }
         YearKind::Exponential {
             significand,
             exponent,
         } => {
             let _ = write!(s, "Y{significand}E{exponent}");
-        },
+        }
     }
     if let Some(p) = year.significant_digits {
         let _ = write!(s, "S{p}");
@@ -121,11 +121,7 @@ impl Display for Date {
         // Longest qualified prefix sharing the year's qualifier becomes one
         // group marker; anything after it gets individual (left) qualifiers.
         let q0 = parts[0].1;
-        let prefix_end = if q0.is_qualified() {
-            Some(qualified_prefix_end(&parts, q0))
-        } else {
-            None
-        };
+        let prefix_end = q0.is_qualified().then(|| qualified_prefix_end(&parts, q0));
         for (i, (body, q)) in parts.iter().enumerate() {
             if i > 0 {
                 f.write_char('-')?;
@@ -163,7 +159,7 @@ impl Display for Time {
                 } else {
                     write!(f, "{sign}{h:02}:{m:02}")
                 }
-            },
+            }
         }
     }
 }

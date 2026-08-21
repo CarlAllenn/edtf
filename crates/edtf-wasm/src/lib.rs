@@ -274,7 +274,7 @@ pub fn normalize_summary(input: &str, options: Option<&str>) -> Option<Normalize
 /// for the object shape.
 #[wasm_bindgen]
 #[must_use]
-#[allow(
+#[expect(
     clippy::needless_pass_by_value,
     reason = "wasm-bindgen passes JS strings owned, not as Option<&str>"
 )]

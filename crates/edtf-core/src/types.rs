@@ -105,12 +105,12 @@ impl Year {
                     v = v * 10 + i64::from(d?);
                 }
                 Some(if negative { -v } else { v })
-            },
+            }
             YearKind::Big { value } => Some(value),
             YearKind::Exponential {
                 significand,
                 exponent,
-            } => significand.checked_mul(10i64.checked_pow(exponent)?),
+            } => significand.checked_mul(10_i64.checked_pow(exponent)?),
         }
     }
 
@@ -187,7 +187,7 @@ impl Date {
         }
     }
 
-    fn any_component<F: Fn(Qualifier) -> bool>(&self, f: F) -> bool {
+    fn any_component<F>(&self, f: F) -> bool where F: Fn(Qualifier) -> bool {
         f(self.year.qualifier)
             || self.month.is_some_and(|m| f(m.qualifier))
             || self.day.is_some_and(|d| f(d.qualifier))
@@ -366,7 +366,7 @@ impl Edtf {
         }
     }
 
-    fn any_date<F: Fn(&Date) -> bool>(&self, f: F) -> bool {
+    fn any_date<F>(&self, f: F) -> bool where F: Fn(&Date) -> bool {
         match self {
             Self::Date(d) => f(d),
             Self::DateTime(dt) => f(&dt.date),
@@ -410,8 +410,8 @@ fn interval_level(iv: &Interval) -> u8 {
         level = level.max(match endpoint {
             IntervalEndpoint::Open | IntervalEndpoint::Unknown => 1,
             IntervalEndpoint::OnOrBefore(d) | IntervalEndpoint::OnOrAfter(d) => {
-                2u8.max(date_level(d, true))
-            },
+                2_u8.max(date_level(d, true))
+            }
             IntervalEndpoint::Date(d) => date_level(d, true),
         });
     }
@@ -419,13 +419,13 @@ fn interval_level(iv: &Interval) -> u8 {
 }
 
 fn date_level(d: &Date, in_interval: bool) -> u8 {
-    let mut level = 0u8;
+    let mut level = 0_u8;
     match d.year.kind {
         YearKind::Standard { negative, .. } => {
             if negative {
                 level = level.max(1);
             }
-        },
+        }
         YearKind::Big { .. } => level = level.max(1),
         YearKind::Exponential { .. } => level = level.max(2),
     }

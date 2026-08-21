@@ -33,7 +33,7 @@ fn julian_last_day(month: u8, leap: bool) -> u8 {
             } else {
                 28
             }
-        },
+        }
         _ => unreachable!("month is 1-12"),
     }
 }

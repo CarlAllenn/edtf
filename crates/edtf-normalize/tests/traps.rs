@@ -23,7 +23,7 @@ fn ok(input: &str, expected: &str, level: u8) {
             let parsed = Edtf::parse(&n.edtf).expect("output must parse in core");
             assert_eq!(parsed, n.value, "value/edtf mismatch for {input:?}");
             assert_eq!(parsed.level(), level, "level mismatch for {input:?}");
-        },
+        }
         other => panic!("expected Normalized for {input:?}, got {other:?}"),
     }
 }
@@ -41,7 +41,7 @@ fn ambiguous(input: &str, expected: &[&str]) {
                     i.value
                 );
             }
-        },
+        }
         other => panic!("expected Ambiguous for {input:?}, got {other:?}"),
     }
 }
@@ -123,7 +123,7 @@ fn bare_decades_are_ambiguous() {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, "198X");
             assert!(n.notes.contains(&Note::DefaultCenturyApplied));
-        },
+        }
         other => panic!("expected Normalized, got {other:?}"),
     }
 }
@@ -224,7 +224,7 @@ fn numeric_dates_report_ambiguity() {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, "1985-04-12");
             assert!(n.notes.contains(&Note::NumericResolvedByOption));
-        },
+        }
         other => panic!("expected Normalized, got {other:?}"),
     }
     // A field over 12 proves the order (N5).
@@ -310,7 +310,7 @@ fn whole_expression_qualifier_distributes() {
         Outcome::Normalized(n) => {
             assert_eq!(n.edtf, "1914~/1918~");
             assert!(n.notes.contains(&Note::QualifierDistributed));
-        },
+        }
         other => panic!("expected Normalized, got {other:?}"),
     }
     ok("1868-1871?", "1868?/1871?", 1);
@@ -480,7 +480,7 @@ const fn _every_note_is_listed(note: Note) {
         | Note::RomanCentury
         | Note::DecadeOfCentury
         | Note::EndpointYearDistributed
-        | Note::CrossYearSeason => {},
+        | Note::CrossYearSeason => {}
     }
 }
 

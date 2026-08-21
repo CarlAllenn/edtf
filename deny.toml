@@ -1,4 +1,4 @@
-# Dependency policy. Canonical baseline: renovate-config/templates/cargo-deny/
+# Dependency policy. Canonical baseline: monumental-archive/.github scaffold/deny.toml
 # (issue #5, 2026-07-26); per-repo sections filled for this tree. CI runs
 # `cargo deny check -D unmatched-skip` so stale skips/ignores fail.
 

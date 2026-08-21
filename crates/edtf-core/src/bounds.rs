@@ -87,7 +87,7 @@ impl Edtf {
     }
 }
 
-pub(crate) fn date_bounds(d: &Date) -> Bounds {
+pub fn date_bounds(d: &Date) -> Bounds {
     // Y-prefixed / exponential years are year-precision by construction.
     if !matches!(d.year.kind, YearKind::Standard { .. }) {
         let Some(value) = d.year.value() else {
@@ -170,7 +170,7 @@ pub(crate) fn date_bounds(d: &Date) -> Bounds {
 }
 
 /// Digit width of the year form, for significant-digit ranges.
-pub(crate) fn big_width(kind: &YearKind) -> u32 {
+pub fn big_width(kind: &YearKind) -> u32 {
     match kind {
         YearKind::Standard { .. } => 4,
         YearKind::Big { value } => decimal_digits(value.unsigned_abs()),
@@ -195,7 +195,7 @@ const fn decimal_digits(mut v: u64) -> u32 {
 /// `precision` digits, sweep the rest 0..9. `None` when the top of the swept
 /// range exceeds the numeric range this library computes with (e.g.
 /// `Y9E18S1`), mirroring how un-valuable years bound to `Unknown`.
-pub(crate) fn significant_range(
+pub fn significant_range(
     value: i64,
     precision: Option<u32>,
     width: u32,
@@ -206,7 +206,7 @@ pub(crate) fn significant_range(
     let sweep = width.saturating_sub(p);
     // A valuable year magnitude fits i64, capping width at 19 and sweep at
     // 18 (p >= 1), so 10^sweep always fits; stay total if that ever broke.
-    let Some(modulus) = 10i64.checked_pow(sweep) else {
+    let Some(modulus) = 10_i64.checked_pow(sweep) else {
         return Some((value, value));
     };
     let mag = i64::try_from(value.unsigned_abs()).ok()?;
@@ -285,7 +285,7 @@ fn year_value(digits: [Option<u8>; 4], fill: u8) -> i64 {
 /// positions form an odometer (most significant first), so consecutive
 /// counter values yield consecutive matching years in order.
 fn year_completions(digits: [Option<u8>; 4], ascending: bool) -> impl Iterator<Item = i64> {
-    let mut masked = [0usize; 4];
+    let mut masked = [0_usize; 4];
     let mut n: u32 = 0;
     for (i, d) in digits.iter().enumerate() {
         if d.is_none() {
@@ -293,7 +293,7 @@ fn year_completions(digits: [Option<u8>; 4], ascending: bool) -> impl Iterator<I
             n += 1;
         }
     }
-    let count = 10u32.pow(n);
+    let count = 10_u32.pow(n);
     (0..count).map(move |i| {
         let mut rem = if ascending { i } else { count - 1 - i };
         let mut filled = digits.map(|d| d.unwrap_or(0));
@@ -379,14 +379,14 @@ fn extremum_in_year(d: &Date, y: i64, ascending: bool) -> Option<BoundDate> {
     None
 }
 
-pub(crate) fn month_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
+pub fn month_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
     f.value().map_or_else(
         || (1..=12).filter(|v| field_matches(f, *v)).collect(),
         |v| alloc::vec![v],
     )
 }
 
-pub(crate) fn day_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
+pub fn day_candidates_of(f: DateField) -> alloc::vec::Vec<u8> {
     f.value().map_or_else(
         || (1..=31).filter(|v| field_matches(f, *v)).collect(),
         |v| alloc::vec![v],
@@ -398,11 +398,11 @@ fn field_matches(f: DateField, v: u8) -> bool {
 }
 
 /// Proleptic Gregorian leap rule on the astronomical year number.
-pub(crate) const fn is_leap(y: i64) -> bool {
+pub const fn is_leap(y: i64) -> bool {
     y.rem_euclid(4) == 0 && (y.rem_euclid(100) != 0 || y.rem_euclid(400) == 0)
 }
 
-pub(crate) fn last_day(month: u8, leap: bool) -> u8 {
+pub fn last_day(month: u8, leap: bool) -> u8 {
     match month {
         1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
         4 | 6 | 9 | 11 => 30,
@@ -412,7 +412,7 @@ pub(crate) fn last_day(month: u8, leap: bool) -> u8 {
             } else {
                 28
             }
-        },
+        }
         _ => unreachable!("month is 1-12"),
     }
 }
@@ -439,7 +439,7 @@ fn set_bounds(s: &Set) -> Bounds {
             SetElement::Date(d) => {
                 let b = date_bounds(d);
                 (b.earliest, b.latest)
-            },
+            }
             SetElement::OnOrBefore(d) => (Bound::NegativeInfinity, date_bounds(d).latest),
             SetElement::OnOrAfter(d) => (date_bounds(d).earliest, Bound::PositiveInfinity),
             SetElement::Range(a, b) => (date_bounds(a).earliest, date_bounds(b).latest),

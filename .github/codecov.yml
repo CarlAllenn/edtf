@@ -25,3 +25,4 @@ coverage:
 #
 # If a future change stops producing lcov-postgres.info, the right outcome is
 # for Codecov to report the gap, not to be told in advance that it isn't one.
+...
